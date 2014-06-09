@@ -71,17 +71,17 @@ instance (Show a, RealFloat a, Eq a) => Show (Uncertain a) where
 --
 -- This is also the default 'fromInteger' method from the 'Num' instance.
 --
--- > certain 5 * certin 9
--- certain 45.0
--- > (18.2 +/- 0.3) ** certain (1/2)
+-- > ghci> certain 5 * certin 9
+-- > certain 45.0
+-- > ghci> (18.2 +/- 0.3) ** certain (1/2)
 -- > 4.271 +/- 4.e-3
 --
 -- Usually, this can be ignored and only the actual literal needs be
 -- entered.  Use this for explicit conversions.
--- 
--- > 5 * 9 :: Uncertain Double
--- certain 45.0
--- > (18.2 +/- 0.3) ** (1/2)
+--
+-- > ghci> 5 * 9 :: Uncertain Double
+-- > certain 45.0
+-- > ghci> (18.2 +/- 0.3) ** (1/2)
 -- > 4.271 +/- 4.e-3
 certain :: Num a => a -> Uncertain a
 certain = (:+- 0)
