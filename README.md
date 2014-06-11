@@ -2,10 +2,10 @@ Uncertain
 =========
 
 Provides tools to manipulate numbers tagged with inherent
-experimental/measurement uncertainty, and propagates them
-through functions based on principles from statistics.
+experimental/measurement uncertainty, and propagates them through functions
+based on principles from statistics.
 
-## Create numbers
+### Create numbers
 
 ```haskell
 7.13 +/- 0.05
@@ -16,7 +16,7 @@ certain 7.9512
 9.18 :: Uncertain Double
 ```
 
-## Apply functions and have the errors propagate properly
+### Apply functions and have the errors propagate properly
 
 ```haskell
 > let x = 1.52 +/- 0.07
@@ -30,7 +30,7 @@ certain 7.9512
 50.87 +/- 2.e-2
 ```
 
-## Apply arbitrary numeric functions
+### Apply arbitrary numeric functions
 
 ```haskell
 > let f :: Double -> Double -> Double -> Double;
@@ -43,25 +43,22 @@ certain 7.9512
 
 ## Comparisons
 
-Note that this is very different from other libraries
-with similar data types (like `interval` and `rounded`);
-these do not attempt to maintain intervals or simply
-digit precisions; they instead are intended to model
-actual experimental and measurement data with their
-uncertainties, and apply functions to the data with the
-uncertainties and properly propagating the errors with
-sound statistical principles.
+Note that this is very different from other libraries with similar data types
+(like `interval` and `rounded`); these do not attempt to maintain intervals or
+simply digit precisions; they instead are intended to model actual
+experimental and measurement data with their uncertainties, and apply
+functions to the data with the uncertainties and properly propagating the
+errors with sound statistical principles.
 
-As a clear example, take 
+As a clear example, take
 
 ```haskell
-> (7 +/- 2) + (4 +/- 1)
-11 +/- 2
+> (52 +/- 6) + (39 +/- 4)
+91. +/- 7.
 ```
 
-In a library like `interval`, this would result in `11
-+/- 3` (that is, a lower bound of 5 + 3 and an upper
-bound of 9 + 5).  However, with experimental data, two
-points of uncertainty 2 and 1 will add to create a new
-point of uncertainty 2 as well. (technically, 2.2)
+In a library like `interval`, this would result in `91 +/- 10` (that is, a
+lower bound of 46 + 35 and an upper bound of 58 + 43).  However, with
+experimental data, two points of uncertainty 6 and 4 will add to create a new
+point of uncertainty 7.
 
