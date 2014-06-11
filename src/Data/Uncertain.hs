@@ -1,4 +1,9 @@
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+
+#if defined(__GLASGOW_HASKELL) && __GLASGOW_HASKELL__ >= 704
 {-# LANGUAGE DeriveGeneric #-}
+#endif
 
 -- |
 -- Module      : Data.Uncertain
@@ -6,8 +11,8 @@
 -- License     : BSD3
 --
 -- Maintainer  : justin@jle.im
--- Stability   : unstable
--- Portability : portable
+-- Stability   :  experimental
+-- Portability :  DeriveDataTypeable
 --
 --
 -- This module provides the 'Uncertain' type constructor, which represents
@@ -110,9 +115,12 @@ module Data.Uncertain (
   ) where
 
 import Control.Arrow
+import Data.Data
 import Prelude hiding    ((^))
 import qualified Prelude ((^))
+#if defined(__GLASGOW_HASKELL) && __GLASGOW_HASKELL__ >= 704
 import GHC.Generics
+#endif
 
 -- $math
 --
@@ -264,7 +272,16 @@ import GHC.Generics
 --  > 9             -- as if calling `ceiling 8.2`
 --  > > floor (14.1 +/- 0.3)
 --  > 12            -- as if calling `floor 13.8`
-data Uncertain a = !a :+- !a deriving Generic
+data Uncertain a = !a :+- !a deriving (
+                    Data
+                 , Typeable
+#if defined(__GLASGOW_HASKELL) && __GLASGOW_HASKELL__ >= 704
+                 , Generic
+#if __GLASGOW_HASKELL__ >= 706
+                 , Generic1
+#endif
+#endif
+                 )
 
 -- | Displays the "normalized" value.
 instance (Show a, RealFloat a, Eq a) => Show (Uncertain a) where
