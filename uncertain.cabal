@@ -38,12 +38,32 @@ description:
                      > 13.0 +/- 2.
                      > > uMap3 f x y z
                      > 13.0 +/- 2.
+                     .
+                     Note that this is very different from other libraries
+                     with similar data types (like @interval@ and @rounded@);
+                     these do not attempt to maintain intervals or simply
+                     digit precisions; they instead are intended to model
+                     actual experimental and measurement data with their
+                     uncertainties, and apply functions to the data with the
+                     uncertainties and properly propagating the errors with
+                     sound statistical principles.
+                     .
+                     As a clear example, take 
+                     .
+                     > > (7 +/- 2) + (4 +/- 1)
+                     > 11 +/- 2
+                     .
+                     In a library like @interval@, this would result in @11
+                     +/- 3@ (that is, a lower bound of 5 + 3 and an upper
+                     bound of 9 + 5).  However, with experimental data, two
+                     points of uncertainty 2 and 1 will add to create a new
+                     point of uncertainty 2 as well. (technically, 2.2)
 homepage:            http://github.com/mstksg/uncertain
 license:             BSD3
 license-file:        LICENSE
 author:              Justin Le
 maintainer:          justin@jle.im
--- copyright:           
+copyright:           (c) Justin Le 2014
 category:            Math
 build-type:          Simple
 -- extra-source-files:  
