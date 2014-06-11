@@ -14,14 +14,14 @@
 -- a number with associated measurement/experimental uncertainty.  So that
 -- you can treat it like a normal number, it also provides 'Num',
 -- 'Fractional', 'Floating', and 'Real', 'RealFrac', and 'RealFloat'
--- instances, along with all associated functions ('exp', '(**)', 'sin',
--- '(/)', etc.), which properly propagate uncertainty with principles from
+-- instances, along with all associated functions ('exp', '**', 'sin',
+-- '/', etc.), which properly propagate uncertainty with principles from
 -- statistics.
 --
 -- Because of this, all generic functions designed to work for all 'Num'
 -- (or 'Floating', 'Real', etc.) will work, and propagate your uncertainty.
 --
--- You can directly construct these numbers with either '(+/-)' or
+-- You can directly construct these numbers with either '+/-' or
 -- 'certain'.  'withPrecision' is also provided as a helper function; you
 -- can also directly type numeric literals and the 'Num' and 'Fractional'
 -- instances will automatically convert them.
@@ -74,25 +74,34 @@
 module Data.Uncertain (
     -- * The Math
     -- $math
+
+    -- ** Gotchas
+    -- $gotchas
+
     -- * The type
     Uncertain       -- abstract, instances: Show, Eq, Ord, Generic, Num, Fractional, Floating, Real, RealFrac, RealFloat
+
     -- * Constructing uncertain values
   , certain         -- :: Num a => a -> Uncertain a
   , (+/-)           -- :: Num a => a -> a -> Uncertain a
   , withPrecision   -- :: (RealFrac a, Floating a) => a -> Int -> Uncertain a
+
     -- * Extracting and manipulating 'Uncertain'
   , uVal            -- :: Uncertain a -> a
   , uVar            -- :: Uncertain a -> a
   , uComponents     -- :: Uncertain a -> (a, a)
   , uNormalize      -- :: (RealFrac a, Floating a) => Uncertain a -> Uncertain a
+
     -- * Utility functions
   , (*~)            -- :: Floating a => Int -> Uncertain a -> Uncertain a
   , (~*)            -- :: Floating a => Uncertain a -> Int -> Uncertain a
+
     -- * Applying numerical functions
     -- $apply
   , uMap            -- :: (Fractional a, Real a, Floating b) => (a -> b) -> Uncertain a -> Uncertain b
   , uMap2           -- :: (Fractional a, Real a, Floating b) => (a -> a -> b) -> Uncertain a -> Uncertain a -> Uncertain b
   , uMap3           -- :: (Fractional a, Real a, Floating b) => (a -> a -> a -> b) -> Uncertain a -> Uncertain a -> Uncertain a -> Uncertain b
+
     -- * Applying numerical functions (adjustable epsilon)
     -- $applyeps
   , uMap'           -- :: (Fractional a, Real a, Floating b) => a -> (a -> b) -> Uncertain a -> Uncertain b
@@ -170,6 +179,8 @@ import GHC.Generics
 -- This library provides implementations for all generic functions on
 -- 'Num', 'Fractional', 'RealFrac', etc. that propagate uncertainty in this
 -- way.
+
+-- $gotchas
 --
 -- There are a couple things to watch out for that might be unexpected.
 --
@@ -194,7 +205,7 @@ import GHC.Generics
 -- eventually "even out".  Hence, @x + x + x@ has less variance than @3
 -- * x@.
 --
--- In the same token, @y ** n /= y * y * y ...@ (@n@ times).
+-- By the same token, @y ** n /= y * y * y ...@ (@n@ times).
 --
 -- > > x ** 3
 -- > 4300.0 +/- 300
@@ -217,8 +228,8 @@ import GHC.Generics
 -- > > pi * (8.1 +/- 0.2)
 -- > 25.4 +/- 0.6
 --
--- For this reason, the convenience operators '(*~)' and '(~*)' have been
--- provided, where @n *~ x = sum (replicate n x)@, and '(~*)' is the
+-- For this reason, the convenience operators '*~' and '~*' have been
+-- provided, where @n *~ x = sum (replicate n x)@, and '~*' is the
 -- opposite.  The mneumonic is is that the @~@ is on the side of the
 -- "uncertain" value.
 --
@@ -242,6 +253,9 @@ import GHC.Generics
 --  * The 'Show' instance displays the "normalized" value (see
 --  'uNormalize').
 --
+--  * The 'Eq' and 'Ord' instances simply compare the central/most likely
+--  values.
+--
 --  * For 'RealFrac' and 'RealFloat' instances, most functions are
 --  defined to be from the central value/most likely value.  However,
 --  'ceiling' and 'floor' are taken to include the "entire range":
@@ -252,6 +266,7 @@ import GHC.Generics
 --  > 12            -- as if calling `floor 13.8`
 data Uncertain a = !a :+- !a deriving Generic
 
+-- | Displays the "normalized" value.
 instance (Show a, RealFloat a, Eq a) => Show (Uncertain a) where
     showsPrec d (x :+- dx) | dx == 0   = showString "certain " .
                                          showsPrec (up_prec+1) x
@@ -307,15 +322,10 @@ instance Floating a => Floating (Uncertain a) where
                                            + (dx / (x * log b))^2
                                            )
 
-instance Eq a => Eq (Uncertain a) where
-    (x :+- _) == (y :+- _) = x == y
-
-instance Ord a => Ord (Uncertain a) where
-    compare (x :+- _) (y :+- _) = compare x y
-
 instance (Real a, Fractional a, Floating a) => Real (Uncertain a) where
     toRational (x :+- _) = toRational x
 
+-- | See note on 'ceiling' and 'floor'.
 instance (Floating a, RealFrac a) => RealFrac (Uncertain a) where
     properFraction (x :+- dx) = let (j,k) = properFraction x in (j, k :+- dx)
     truncate                  = truncate . uVal
@@ -323,6 +333,7 @@ instance (Floating a, RealFrac a) => RealFrac (Uncertain a) where
     ceiling                   = ceiling  . uncurry (+) . uComponents
     floor                     = floor    . uncurry (-) . uComponents
 
+-- | Most of these work on the central/most likely value.
 instance (RealFloat a) => RealFloat (Uncertain a) where
     floatRadix              = floatRadix     . uVal
     floatDigits             = floatDigits    . uVal
@@ -338,6 +349,14 @@ instance (RealFloat a) => RealFloat (Uncertain a) where
     encodeFloat x y         = certain (encodeFloat x y)
     scaleFloat n (x :+- dx) = scaleFloat n x :+- dx
     atan2 y x               = atan2 (uVal y) (uVal x) :+- uVar (atan (y/x))
+
+-- | Compares the central/most likely values.
+instance Eq a => Eq (Uncertain a) where
+    (x :+- _) == (y :+- _) = x == y
+
+-- | Compares the central/most likely values.
+instance Ord a => Ord (Uncertain a) where
+    compare (x :+- _) (y :+- _) = compare x y
 
 -- | Wraps a 'Num' in an 'Uncertain', associating it with an uncertainty of
 -- @0@.  Represents a number you know exactly, with no uncertainty.
@@ -449,27 +468,27 @@ uNormalize (x :+- dx) = x' :+- dx'
 --
 -- > n *~ x = sum (replicate n x)
 --
--- See the @The Math@ section for more information.
+-- See the @Gotchas@ section for more information.
 --
 -- Where @n * x@ assumes you sampled @x@ once and are multiplying it by
 -- @n@, @n *~ x@ assumes you are sampling @x@ @n@ different times, with
 -- each time independently varying.
 --
--- There is a flipped version, '(~*)'; the mnemonic is that the @~@ is on
+-- There is a flipped version, '~*'; the mnemonic is that the @~@ is on
 -- the side with the "uncertain" value.
 --
--- '(~*)' is to '(*)' as '(^)' is to '(**)'.
+-- '~*' is to '*' as '^' is to '**'.
 (*~) :: Floating a => Int -> Uncertain a -> Uncertain a
 n *~ x = sum (replicate n x)
 
--- | The flipped version of '(*~)'.  See documentation for '(*~)' and the
--- @The Math@ section for more information.
+-- | The flipped version of '*~'.  See documentation for '*~' and the
+-- @Gotchas@ section for more information.
 --
 -- > x ~* n = sum (replicate n x)
 --
 -- The mnemonic is that the @~@ is on the side with the "uncertain" value.
 --
--- '(~*)' is to '(*)' as '(^)' is to '(**)'.
+-- '~*' is to '*' as '^' is to '**'.
 (~*) :: Floating a => Uncertain a -> Int -> Uncertain a
 (~*) = flip (*~)
 
@@ -478,7 +497,7 @@ n *~ x = sum (replicate n x)
 -- 'uMap', 'uMap2', and 'uMap3' allow you to apply numerical functions on
 -- one, two, or three variables (of the same type) to "uncertain" values.
 -- This is only necessary when you have a non-generic/polymorphic function;
--- that is, a function on a specific type, like 'Double'.  It uses an
+-- that is, a function on a specific type, like 'Double'.  They use an
 -- epsilon of 0.001 in order to approximate the necessary first partial
 -- derivatives of the function.
 --
