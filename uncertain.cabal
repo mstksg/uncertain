@@ -3,7 +3,7 @@
 
 name:                uncertain
 version:             0.1.0.0
-synopsis:            Numeric wrapper for keeping track of and effortlessly manipulating numbers with inherent measurement/experimental uncertainty.
+synopsis:            Manipulating numbers with inherent experimental/measurement uncertainty.
 -- description:         
 homepage:            http://github.com/mstksg/uncertain
 license:             BSD3

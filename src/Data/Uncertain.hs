@@ -10,12 +10,13 @@
 -- Portability : portable
 --
 --
--- This module provides the 'Uncertain a' type, which represents a number
--- with associated measurement/experimental uncertainty.  So that you can
--- treat it like a normal number, it also provides 'Num', 'Fractional',
--- 'Floating', and 'Real', 'RealFrac', and 'RealFloat' instances, along
--- with all associated functions ('exp', '(**)', 'sin', '(/)', etc.), which
--- properly propagate uncertainty with principles from statistics.
+-- This module provides the 'Uncertain' type constructor, which represents
+-- a number with associated measurement/experimental uncertainty.  So that
+-- you can treat it like a normal number, it also provides 'Num',
+-- 'Fractional', 'Floating', and 'Real', 'RealFrac', and 'RealFloat'
+-- instances, along with all associated functions ('exp', '(**)', 'sin',
+-- '(/)', etc.), which properly propagate uncertainty with principles from
+-- statistics.
 --
 -- Because of this, all generic functions designed to work for all 'Num'
 -- (or 'Floating', 'Real', etc.) will work, and propagate your uncertainty.
@@ -73,8 +74,6 @@
 module Data.Uncertain (
     -- * The Math
     -- $math
-    -- * * Gotchas
-    -- $gotchas
     -- * The type
     Uncertain       -- abstract, instances: Show, Eq, Ord, Generic, Num, Fractional, Floating, Real, RealFrac, RealFloat
     -- * Constructing uncertain values
@@ -116,20 +115,20 @@ import GHC.Generics
 -- likely value" and a variance (sigma squared) representing the combined
 -- magnitude of the small random indepdent errors.
 --
--- If you have, say, 7 +/- 2, and 4 +/- 1, what should we expect the sum to
--- be?  Well, the new central value is going to be 11, but what is the new
--- sigma/root variance?  Is it 2 + 1 = 3?  11 +/- 3?
+-- If you have, say, @7 +/- 2@, and @4 +/- 1@, what should we expect the
+-- sum to be?  Well, the new central value is going to be 11, but what is
+-- the new sigma/root variance?  Is it 2 + 1 = 3?  @11 +/- 3@?
 --
 -- This actually overestimates the new variance, because while getting 5 on
--- the 7 +/- 2 value is "as common" as 3 on the 4 +/- 1 value, getting an
--- 8 on the sum is comparatively pretty rare --- it only happens when both
--- the first and the second measurements are at their minimum.  In reality,
--- when you measure a lower number for the first value, you might measure
--- a higher number or a lower number on the second.  If you measure
+-- the @7 +/- 2@ value is "as common" as 3 on the @4 +/- 1@ value, getting
+-- an 8 on the sum is comparatively pretty rare --- it only happens when
+-- both the first and the second measurements are at their minimum.  In
+-- reality, when you measure a lower number for the first value, you might
+-- measure a higher number or a lower number on the second.  If you measure
 -- a really low number for the first value, you are pretty unlikely to also
 -- measure a really low number for the second.
 --
--- Basically, saying that the sum is 11 +/- 3 is assuming that the two
+-- Basically, saying that the sum is @11 +/- 3@ is assuming that the two
 -- numbers have some covariance --- that their small random errors aren't
 -- actually independent.
 --
@@ -140,7 +139,8 @@ import GHC.Generics
 -- add together!  Their centers add, and their variances add --- that is,
 -- the new sigma^2 = sum of the old sigma^2.  In our case, our sigmas are
 -- 2 and 1, and our sigma square are 4 and 1.  So the variance of the sum
--- is the square root of 5, 2.24.  So 7 +/- 2 + 4 +/- 1 = 11 +/- 2.24.
+-- is the square root of 5, 2.24.  So @7 +/- 2@ + @4 +/- 1@ = @11 +/-
+-- 2.24@.
 --
 -- > > uComponents $ (7 +/- 2) + (4 +/- 1)
 -- > (11.0, 2.24)
@@ -153,10 +153,9 @@ import GHC.Generics
 --
 -- Surely enough, if you did find measurable things with those given values
 -- and uncertainties, you will find out that this checks out --- the sum of
--- every time you measure both of them will be around 11 +/- 2, not 11 +/-
--- 3, like you'd expect.  You can even test this with a program --- make
--- two values which are sampled from a normal distribution, and add up each
--- sample!
+-- every time you measure both of them will be around @11 +/- 2@, not @11
+-- +/- 3@.  You can even test this with a program --- make two values which
+-- are sampled from a normal distribution, and add up each sample!
 --
 -- Anyway, we can now use this to find a general formula for propagating
 -- uncertainty, based on well known properties of the normal distribution:
@@ -171,8 +170,6 @@ import GHC.Generics
 -- This library provides implementations for all generic functions on
 -- 'Num', 'Fractional', 'RealFrac', etc. that propagate uncertainty in this
 -- way.
-
--- $gotchas
 --
 -- There are a couple things to watch out for that might be unexpected.
 --
@@ -209,13 +206,13 @@ import GHC.Generics
 -- (Note that @x^3@ is just defined as @x * x * x@)
 --
 -- Just some things to be careful about.  If you want to, say, measure the
--- thickness of a 500 page book where very page is 0.13 mm +/- 0.02 mm:
+-- thickness of a 500 page book where very page is @0.13 mm +/- 0.02 mm@:
 --
 -- > > sum (replicate 500 (0.13 +/- 0.02))
 -- > 65.0 +/- 0.4
 --
 -- But if you wanted to, say, find the circumference of a circle of
--- diameter 8.1 +/- 0.2 cm:
+-- diameter @8.1 +/- 0.2 cm@:
 --
 -- > > pi * (8.1 +/- 0.2)
 -- > 25.4 +/- 0.6
@@ -370,12 +367,12 @@ certain = (:+- 0)
 -- | Given a number and a precision, provides an 'Uncertain' with that
 -- amount of precision, in decimal places.
 --
--- > 6.194 `withPrecision` 2
--- 6.2 +/- 0.1
--- > 84723 `withPrecision` 3
--- 84700 +/- 100.
--- > 7.2 `withPrecision` 5
--- 7.2 +/- 1.e-4
+-- > > 6.194 `withPrecision` 2
+-- > 6.2 +/- 0.1
+-- > > 84723 `withPrecision` 3
+-- > 84700 +/- 100.
+-- > > 7.2 `withPrecision` 5
+-- > 7.2 +/- 1.e-4
 withPrecision :: (RealFrac a, Floating a)
               => a      -- ^ number
               -> Int    -- ^ digits of precision/significant figures
@@ -452,7 +449,7 @@ uNormalize (x :+- dx) = x' :+- dx'
 --
 -- > n *~ x = sum (replicate n x)
 --
--- See the @Gotchas@ section for more information.
+-- See the @The Math@ section for more information.
 --
 -- Where @n * x@ assumes you sampled @x@ once and are multiplying it by
 -- @n@, @n *~ x@ assumes you are sampling @x@ @n@ different times, with
@@ -466,7 +463,7 @@ uNormalize (x :+- dx) = x' :+- dx'
 n *~ x = sum (replicate n x)
 
 -- | The flipped version of '(*~)'.  See documentation for '(*~)' and the
--- @Gotchas@ section for more information.
+-- @The Math@ section for more information.
 --
 -- > x ~* n = sum (replicate n x)
 --
