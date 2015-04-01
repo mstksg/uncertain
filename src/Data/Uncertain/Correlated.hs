@@ -40,6 +40,16 @@ data CorrState b = CS { csCount  :: Key
 newtype Correlated b a = C { unCorrelated :: State (CorrState b) a }
                        deriving (Functor, Applicative, Monad)
 
+
+instance Num b => Num (Correlated b (CVar b)) where
+    (+) = liftA2 (+)
+    (-) = liftA2 (-)
+    (*) = liftA2 (*)
+    abs = fmap abs
+    negate = fmap negate
+    signum = fmap signum
+    fromInteger = fromUncertain . certain . fromInteger
+
 fromUncertain :: Num b => Uncertain b -> Correlated b (CVar b)
 fromUncertain (vl :+- vr) = C $ state f
   where
