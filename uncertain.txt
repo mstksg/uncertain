@@ -78,6 +78,16 @@ data H4 a
 H4 :: !a -> !a -> !a -> !a -> H4 a
 data H5 a
 H5 :: !a -> !a -> !a -> !a -> !a -> H5 a
+curryH1 :: (H1 a -> a) -> a -> a
+curryH2 :: (H2 a -> a) -> a -> a -> a
+curryH3 :: (H3 a -> a) -> a -> a -> a -> a
+curryH4 :: (H4 a -> a) -> a -> a -> a -> a -> a
+curryH5 :: (H5 a -> a) -> a -> a -> a -> a -> a -> a
+uncurryH1 :: (a -> a) -> H1 a -> a
+uncurryH2 :: (a -> a -> a) -> H2 a -> a
+uncurryH3 :: (a -> a -> a -> a) -> H3 a -> a
+uncurryH4 :: (a -> a -> a -> a -> a) -> H4 a -> a
+uncurryH5 :: (a -> a -> a -> a -> a -> a) -> H5 a -> a
 instance GHC.Show.Show a => GHC.Show.Show (Data.Hople.H5 a)
 instance Data.Traversable.Traversable Data.Hople.H5
 instance Data.Foldable.Foldable Data.Hople.H5
@@ -202,3 +212,12 @@ instance GHC.Base.Functor (Data.Uncertain.Correlated.CorrF s a)
 instance GHC.Real.Fractional a => GHC.Num.Num (Data.Uncertain.Correlated.CVar s a)
 instance GHC.Real.Fractional a => GHC.Real.Fractional (Data.Uncertain.Correlated.CVar s a)
 instance GHC.Float.Floating a => GHC.Float.Floating (Data.Uncertain.Correlated.CVar s a)
+
+module Data.Uncertain.MonteCarlo
+liftU :: PrimMonad m => (Double -> Double) -> Uncert Double -> Gen (PrimState m) -> m (Uncert Double)
+liftUF :: (Traversable f, PrimMonad m) => (f Double -> Double) -> f (Uncert Double) -> Gen (PrimState m) -> m (Uncert Double)
+liftU2 :: PrimMonad m => (Double -> Double -> Double) -> Uncert Double -> Uncert Double -> Gen (PrimState m) -> m (Uncert Double)
+liftU3 :: PrimMonad m => (Double -> Double -> Double -> Double) -> Uncert Double -> Uncert Double -> Uncert Double -> Gen (PrimState m) -> m (Uncert Double)
+liftU4 :: PrimMonad m => (Double -> Double -> Double -> Double -> Double) -> Uncert Double -> Uncert Double -> Uncert Double -> Uncert Double -> Gen (PrimState m) -> m (Uncert Double)
+liftU5 :: PrimMonad m => (Double -> Double -> Double -> Double -> Double -> Double) -> Uncert Double -> Uncert Double -> Uncert Double -> Uncert Double -> Uncert Double -> Gen (PrimState m) -> m (Uncert Double)
+uncertStats :: Fractional a => [a] -> Uncert a
