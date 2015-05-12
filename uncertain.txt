@@ -165,6 +165,8 @@ liftU2 :: Fractional a => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s 
 liftU3 :: Fractional a => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a)) -> Uncert a -> Uncert a -> Uncert a -> Uncert a
 liftU4 :: Fractional a => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a)) -> Uncert a -> Uncert a -> Uncert a -> Uncert a -> Uncert a
 liftU5 :: Fractional a => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a)) -> Uncert a -> Uncert a -> Uncert a -> Uncert a -> Uncert a -> Uncert a
+uShow :: (Show a, Floating a) => Uncert a -> String
+uShowsPrec :: (Show a, Floating a) => Int -> Uncert a -> ShowS
 instance GHC.Generics.Selector Data.Uncertain.S1_0_1Uncert
 instance GHC.Generics.Selector Data.Uncertain.S1_0_0Uncert
 instance GHC.Generics.Constructor Data.Uncertain.C1_0Uncert
@@ -172,7 +174,7 @@ instance GHC.Generics.Datatype Data.Uncertain.D1Uncert
 instance GHC.Generics.Generic1 Data.Uncertain.Uncert
 instance GHC.Generics.Generic (Data.Uncertain.Uncert a)
 instance Data.Data.Data a => Data.Data.Data (Data.Uncertain.Uncert a)
-instance (GHC.Float.Floating a, GHC.Real.RealFrac a, GHC.Show.Show a) => GHC.Show.Show (Data.Uncertain.Uncert a)
+instance (GHC.Show.Show a, GHC.Float.Floating a, GHC.Real.RealFrac a) => GHC.Show.Show (Data.Uncertain.Uncert a)
 instance GHC.Real.Fractional a => GHC.Num.Num (Data.Uncertain.Uncert a)
 instance GHC.Real.Fractional a => GHC.Real.Fractional (Data.Uncertain.Uncert a)
 instance GHC.Float.Floating a => GHC.Float.Floating (Data.Uncertain.Uncert a)
