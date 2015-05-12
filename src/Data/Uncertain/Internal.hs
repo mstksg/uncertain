@@ -86,8 +86,8 @@ instance Floating a => Num (Uncertain a) where
     (x :+- dx) * (y :+- dy) = (x * y) :+- sqrt ((y*dx)^2 + (x*dy)^2)
     (x :+- dx) - (y :+- dy) = (x - y) :+- sqrt (dx^2 + dy^2)
     negate (x :+- dx)       = negate x :+- dx
-    abs    (x :+- dx)       = abs x    :+- dx
-    signum (x :+- dx)       = signum x :+- dx           -- really?
+    abs    (x :+- dx)       = abs x    :+- dx   -- consider behavior near 0?
+    signum (x :+- dx)       = signum x :+- 1    -- really?
     fromInteger             = certain . fromInteger
 
 instance Floating a => Fractional (Uncertain a) where

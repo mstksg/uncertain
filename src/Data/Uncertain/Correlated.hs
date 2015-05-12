@@ -1,6 +1,3 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE FlexibleInstances #-}
-
 module Data.Uncertain.Correlated (
     CVar
   , Correlated
@@ -8,6 +5,9 @@ module Data.Uncertain.Correlated (
   , fromUncertain2
   , fromUncertain3
   , marginalize
+  , marginalize2
+  , getCorrelation
+  , getCovariance
   , getCorrelated
   , getCorrelateds
   , getCorrelatedT
@@ -15,49 +15,16 @@ module Data.Uncertain.Correlated (
   ) where
 
 import Control.Applicative
-import Control.Monad.Trans.State.Strict
-import Data.Maybe
-import Data.IntMap.Strict               (IntMap, Key, (!))
-import Data.Uncertain
 import Control.Arrow
-import Data.Traversable
+import Control.Monad.Trans.State.Strict
 import Data.Functor.Identity
+import Data.IntMap.Strict                 (IntMap, Key, (!))
+import Data.Maybe
+import Data.Traversable
+import Data.Uncertain
+import Data.Uncertain.Correlated.Internal
 import Data.Uncertain.Internal
-import qualified Data.IntMap.Strict     as IM
-
-data CVar b = CVPure b
-            | CVKey Key
-            | CVProp1 ((b, b) -> (b, b)) (CVar b)
-            | CVProp2 (Propagator2 b) (CVar b) (CVar b)
-
-type Propagator2 a = (a, a) -> (a, a) -> a -> ((a, a), a, a)
-
-data CorrState b = CS { csCount  :: Key
-                      , csValMat :: IntMap b
-                      , csVarMat :: IntMap (IntMap b)
-                      }
-
-newtype Correlated b a = C { unCorrelated :: State (CorrState b) a }
-                       deriving (Functor, Applicative, Monad)
-
-
-instance Num b => Num (Correlated b (CVar b)) where
-    (+) = liftA2 (+)
-    (-) = liftA2 (-)
-    (*) = liftA2 (*)
-    abs = fmap abs
-    negate = fmap negate
-    signum = fmap signum
-    fromInteger = fromUncertain . certain . fromInteger
-
-fromUncertain :: Num b => Uncertain b -> Correlated b (CVar b)
-fromUncertain (vl :+- vr) = C $ state f
-  where
-    f (CS ct cvlm cvrm) = (CVKey ct, CS ct' cvlm' cvrm')
-      where
-        ct'   = ct + 1
-        cvlm' = IM.insert ct vl cvlm
-        cvrm' = IM.insert ct (IM.singleton ct (vr * vr)) cvrm
+import qualified Data.IntMap.Strict       as IM
 
 fromUncertain2 :: Num b
                => Uncertain b
@@ -108,9 +75,9 @@ fromUncertain3 (x :+- dx) (y :+- dy) (z :+- dz) pxy pxz pyz = C $ state f
 marginalize :: Floating b
             => CVar b
             -> Correlated b (Uncertain b)
-marginalize cv = do
-    CVKey k <- normalizeCVar cv
-    C . gets $ \(CS _ vl vr) -> (vl ! k) :+- maybe 0 sqrt (dblu k k vr)
+marginalize = fmap f . getCVar
+  where
+    f (_, x, vx) = x :+- sqrt vx
 
 getCorrelated :: Floating b
               => Correlated b (CVar b)
@@ -125,9 +92,65 @@ getCorrelateds = getCorrelatedT
 getCorrelatedT :: (Floating b, Traversable f)
                => Correlated b (f (CVar b))
                -> f (Uncertain b)
-getCorrelatedT ccs = evalState st (CS 0 IM.empty IM.empty)
+getCorrelatedT ccs = evalState st emptyCorrState
   where
     C st = traverse marginalize =<< ccs
+
+marginalize2 :: Floating b
+             => CVar b
+             -> CVar b
+             -> Correlated b (Uncertain b, Uncertain b, b)
+marginalize2 cx cy = f <$> getCVar2 cx cy
+  where
+    f ((_,x,vx),(_,y,vy),p) = ( x :+- sqrt vx
+                              , y :+- sqrt vy
+                              , p
+                              )
+
+setCorrelation :: CVar b -> CVar b -> b -> Correlated b ()
+setCorrelation cx cy p = undefined
+
+getCVar :: Num b
+        => CVar b
+        -> Correlated b (Key, b, b)
+getCVar cx = do
+    CVKey k <- normalizeCVar cx
+    C . gets $ \(CS _ vl vr) -> let x  = fromMaybe (error $ "Database error on key " ++ show k)
+                                       $ IM.lookup k vl
+                                    vx = fromMaybe 0 $ dblu k k vr
+                                in  (k, x, vx)
+
+getCVar2 :: Num b
+         => CVar b
+         -> CVar b
+         -> Correlated b ((Key, b, b), (Key, b, b), b)
+getCVar2 cx cy = do
+    CVKey kx <- normalizeCVar cx
+    CVKey ky <- normalizeCVar cy
+    C . gets $ \(CS _ vl vr) -> let x  = fromMaybe (error $ "Database error on key " ++ show kx)
+                                       $ IM.lookup kx vl
+                                    y  = fromMaybe (error $ "Database error on key " ++ show kx)
+                                       $ IM.lookup ky vl
+                                    vx = fromMaybe 0 $ dblu kx kx vr
+                                    vy = fromMaybe 0 $ dblu ky ky vr
+                                    cv = fromMaybe 0 $ dblu kx ky vr
+                                in  ((kx, x, vx), (ky, y, vy), cv)
+
+getCorrelation :: Floating b
+               => CVar b
+               -> CVar b
+               -> Correlated b b
+getCorrelation cx cy = f <$> getCVar2 cx cy
+  where
+    f ((_,_,vx), (_,_,vy), p) = p / sqrt (vx * vy)
+
+getCovariance :: Num b
+              => CVar b
+              -> CVar b
+              -> Correlated b b
+getCovariance cx cy = thrd <$> getCVar2 cx cy
+  where
+    thrd (_,_,z) = z
 
 -- major flaw here: also have to update all variables that were correlated
 -- with the original keys to the new covarinces
@@ -138,15 +161,18 @@ normalizeCVar cv = case cv of
                      , csValMat = IM.insert i u iv
                      })
     CVKey k  -> return cv
+    CVProp1 prop cx    -> do
+        (k, x, vx) <- getCVar cx
+        C . state $ \(CS i vl vr) -> let ((y, vy), cv) = prop (x, vx)
+                                         i'      = i + 1
+                                         vl'     = IM.insert i y vl
+                                         vr'     = IM.insertWith IM.union k (IM.singleton i cv)
+                                                 . IM.insertWith IM.union i (IM.fromList [(i, vy), (k, cv)])
+                                                 $ vr
+                                     in  (CVKey i, CS i' vl' vr')
     CVProp2 prop cx cy -> do
-        CVKey kx <- normalizeCVar cx
-        CVKey ky <- normalizeCVar cy
-        C . state $ \(CS i vl vr) -> let x   = vl ! kx
-                                         y   = vl ! ky
-                                         vx  = fromMaybe 0 $ dblu kx kx vr
-                                         vy  = fromMaybe 0 $ dblu ky ky vr
-                                         cv  = fromMaybe 0 $ dblu kx ky vr
-                                         ((z,vz),cvx,cvy) = prop (x, vx) (y, vy) cv
+        ((kx, x, vx), (ky, y, vy), cv) <- getCVar2 cx cy
+        C . state $ \(CS i vl vr) -> let ((z,vz),cvx,cvy) = prop (x, vx) (y, vy) cv
                                          i'  = i + 1
                                          vl' = IM.insert i z vl
                                          vr' = IM.insertWith IM.union ky (IM.singleton i cvy)
@@ -157,35 +183,6 @@ normalizeCVar cv = case cv of
 
 dblu :: Key -> Key -> IntMap (IntMap a) -> Maybe a
 dblu k1 k2 imim = IM.lookup k2 =<< IM.lookup k1 imim
-
-instance Num b => Num (CVar b) where
-    (+) = CVProp2 prop
-      where
-        prop (x, vx) (y, vy) cv = ((x + y, vz), cvx, cvy)
-          where
-            vz  = vx + vy + 2 * cv
-            cvx = vx + vz
-            cvy = vy + vz
-
-    (*) = CVProp2 prop
-      where
-        prop (x, vx) (y, vy) cv = ((x * y, vz), cvx, cvy)
-          where
-            vz  = y * y * vx + x * x * vy + 2 * x * y * cv
-            cvx = y * vx + x * cv
-            cvy = x * vy + y * cv
-
-    (-) = CVProp2 prop
-      where
-        prop (x, vx) (y, vy) cv = ((x - y, vz), cvx, cvy)
-          where
-            vz  = vx + vy - 2 * cv
-            cvx = vx - vz
-            cvy = vy + vz
-    negate = CVProp1 (first negate)
-    abs    = CVProp1 (first abs)
-    signum = CVProp1 (first signum)     -- really?
-    fromInteger = CVPure . fromInteger
 
 -- test :: Floating b => [Uncertain b]
 -- test = getCorrelateds $ do
