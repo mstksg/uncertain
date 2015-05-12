@@ -68,6 +68,8 @@
 @version 0.1.0.0
 
 module Data.Hoples
+data H1 a
+H1 :: !a -> H1 a
 data H2 a
 H2 :: !a -> !a -> H2 a
 data H3 a
@@ -88,6 +90,9 @@ instance GHC.Base.Functor Data.Hoples.H3
 instance Data.Traversable.Traversable Data.Hoples.H2
 instance Data.Foldable.Foldable Data.Hoples.H2
 instance GHC.Base.Functor Data.Hoples.H2
+instance Data.Traversable.Traversable Data.Hoples.H1
+instance Data.Foldable.Foldable Data.Hoples.H1
+instance GHC.Base.Functor Data.Hoples.H1
 
 module Data.Uncertain
 data Uncert a
@@ -102,6 +107,7 @@ uNormalizeAtBase :: (Floating a, RealFrac a) => Int -> Uncert a -> Uncert a
 uNormalize :: (Floating a, RealFrac a) => Uncert a -> Uncert a
 liftUF :: (Traversable f, Num a) => (forall s. Reifies s Tape => f (Reverse s a) -> Reverse s a) -> f (Uncert a) -> Uncert a
 liftU :: Num a => (forall s. AD s (Forward a) -> AD s (Forward a)) -> Uncert a -> Uncert a
+liftU' :: Num a => (forall s. Reifies s Tape => Reverse s a -> Reverse s a) -> Uncert a -> Uncert a
 liftU2 :: Num a => (forall s. Reifies s Tape => Reverse s a -> Reverse s a -> Reverse s a) -> Uncert a -> Uncert a -> Uncert a
 liftU3 :: Num a => (forall s. Reifies s Tape => Reverse s a -> Reverse s a -> Reverse s a -> Reverse s a) -> Uncert a -> Uncert a -> Uncert a -> Uncert a
 liftU4 :: Num a => (forall s. Reifies s Tape => Reverse s a -> Reverse s a -> Reverse s a -> Reverse s a -> Reverse s a) -> Uncert a -> Uncert a -> Uncert a -> Uncert a -> Uncert a
