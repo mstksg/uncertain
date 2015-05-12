@@ -67,7 +67,7 @@
 @package uncertain
 @version 0.1.0.0
 
-module Data.Hoples
+module Data.Hople
 data H1 a
 H1 :: !a -> H1 a
 data H2 a
@@ -78,31 +78,34 @@ data H4 a
 H4 :: !a -> !a -> !a -> !a -> H4 a
 data H5 a
 H5 :: !a -> !a -> !a -> !a -> !a -> H5 a
-instance Data.Traversable.Traversable Data.Hoples.H5
-instance Data.Foldable.Foldable Data.Hoples.H5
-instance GHC.Base.Functor Data.Hoples.H5
-instance Data.Traversable.Traversable Data.Hoples.H4
-instance Data.Foldable.Foldable Data.Hoples.H4
-instance GHC.Base.Functor Data.Hoples.H4
-instance Data.Traversable.Traversable Data.Hoples.H3
-instance Data.Foldable.Foldable Data.Hoples.H3
-instance GHC.Base.Functor Data.Hoples.H3
-instance Data.Traversable.Traversable Data.Hoples.H2
-instance Data.Foldable.Foldable Data.Hoples.H2
-instance GHC.Base.Functor Data.Hoples.H2
-instance Data.Traversable.Traversable Data.Hoples.H1
-instance Data.Foldable.Foldable Data.Hoples.H1
-instance GHC.Base.Functor Data.Hoples.H1
+instance Data.Traversable.Traversable Data.Hople.H5
+instance Data.Foldable.Foldable Data.Hople.H5
+instance GHC.Base.Functor Data.Hople.H5
+instance Data.Traversable.Traversable Data.Hople.H4
+instance Data.Foldable.Foldable Data.Hople.H4
+instance GHC.Base.Functor Data.Hople.H4
+instance Data.Traversable.Traversable Data.Hople.H3
+instance Data.Foldable.Foldable Data.Hople.H3
+instance GHC.Base.Functor Data.Hople.H3
+instance Data.Traversable.Traversable Data.Hople.H2
+instance Data.Foldable.Foldable Data.Hople.H2
+instance GHC.Base.Functor Data.Hople.H2
+instance Data.Traversable.Traversable Data.Hople.H1
+instance Data.Foldable.Foldable Data.Hople.H1
+instance GHC.Base.Functor Data.Hople.H1
 
 module Data.Uncertain
 data Uncert a
 uMean :: Uncert a -> a
 uVar :: Uncert a -> a
 uStd :: Floating a => Uncert a -> a
-uAtRange :: (Profunctor p, Functor f, Floating a) => p (a, a) (f (a, a)) -> p (Uncert a) (f (Uncert a))
+uMeanVar :: Uncert a -> (a, a)
+uMeanStd :: Floating a => Uncert a -> (a, a)
+uRange :: Floating a => Uncert a -> (a, a)
 (+/-) :: Num a => a -> a -> Uncert a
 withPrecisionAtBase :: (Floating a, RealFrac a) => Int -> a -> Int -> Uncert a
 withPrecision :: (Floating a, RealFrac a) => a -> Int -> Uncert a
+withVar :: Num a => a -> a -> Uncert a
 uNormalizeAtBase :: (Floating a, RealFrac a) => Int -> Uncert a -> Uncert a
 uNormalize :: (Floating a, RealFrac a) => Uncert a -> Uncert a
 liftUF :: (Traversable f, Num a) => (forall s. Reifies s Tape => f (Reverse s a) -> Reverse s a) -> f (Uncert a) -> Uncert a
@@ -123,3 +126,35 @@ instance (GHC.Float.Floating a, GHC.Real.RealFrac a, GHC.Show.Show a) => GHC.Sho
 instance GHC.Num.Num a => GHC.Num.Num (Data.Uncertain.Uncert a)
 instance GHC.Real.Fractional a => GHC.Real.Fractional (Data.Uncertain.Uncert a)
 instance GHC.Float.Floating a => GHC.Float.Floating (Data.Uncertain.Uncert a)
+instance GHC.Classes.Eq a => GHC.Classes.Eq (Data.Uncertain.Uncert a)
+instance GHC.Classes.Ord a => GHC.Classes.Ord (Data.Uncertain.Uncert a)
+instance GHC.Real.Real a => GHC.Real.Real (Data.Uncertain.Uncert a)
+instance GHC.Real.RealFrac a => GHC.Real.RealFrac (Data.Uncertain.Uncert a)
+instance GHC.Float.RealFloat a => GHC.Float.RealFloat (Data.Uncertain.Uncert a)
+
+module Data.Uncertain.Correlated
+data CVar :: * -> * -> *
+CK :: a -> CVar s a
+CV :: Key -> CVar s a
+CF :: (forall t. Reifies t Tape => f (Reverse t a) -> Reverse t a) -> f (CVar s a) -> CVar s a
+data CorrF :: * -> * -> * -> *
+Cer :: a -> (CVar s a -> b) -> CorrF s a b
+Gen :: Uncert a -> (CVar s a -> b) -> CorrF s a b
+Fun :: (forall t. Reifies t Tape => f (Reverse t a) -> Reverse t a) -> f (CVar s a) -> (CVar s a -> b) -> CorrF s a b
+Rei :: CVar s a -> (Uncert a -> b) -> CorrF s a b
+Cor :: CVar s a -> CVar s a -> (a -> b) -> CorrF s a b
+type Corr s a = Free (CorrF s a)
+corrToState :: Num a => Corr s a b -> State (Key, IntMap (Uncert a)) b
+runCorr :: Num a => Corr s a b -> b
+sampleUncert :: Uncert a -> Corr s a (CVar s a)
+getUncert :: CVar s a -> Corr s a (Uncert a)
+liftCF :: (Functor f, Num a) => (forall t. Reifies t Tape => f (Reverse t a) -> Reverse t a) -> f (CVar s a) -> CVar s a
+liftC :: Num a => (forall t. Reifies t Tape => Reverse t a -> Reverse t a) -> CVar s a -> CVar s a
+liftC2 :: Num a => (forall t. Reifies t Tape => Reverse t a -> Reverse t a -> Reverse t a) -> CVar s a -> CVar s a -> CVar s a
+liftC3 :: Num a => (forall t. Reifies t Tape => Reverse t a -> Reverse t a -> Reverse t a -> Reverse t a) -> CVar s a -> CVar s a -> CVar s a -> CVar s a
+liftC4 :: Num a => (forall t. Reifies t Tape => Reverse t a -> Reverse t a -> Reverse t a -> Reverse t a -> Reverse t a) -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a
+liftC5 :: Num a => (forall t. Reifies t Tape => Reverse t a -> Reverse t a -> Reverse t a -> Reverse t a -> Reverse t a -> Reverse t a) -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a
+instance GHC.Base.Functor (Data.Uncertain.Correlated.CorrF s a)
+instance GHC.Num.Num a => GHC.Num.Num (Data.Uncertain.Correlated.CVar s a)
+instance GHC.Real.Fractional a => GHC.Real.Fractional (Data.Uncertain.Correlated.CVar s a)
+instance GHC.Float.Floating a => GHC.Float.Floating (Data.Uncertain.Correlated.CVar s a)
