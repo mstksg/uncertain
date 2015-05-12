@@ -100,6 +100,28 @@ instance Data.Foldable.Foldable Data.Hople.H1
 instance GHC.Base.Functor Data.Hople.H1
 
 module Data.Uncertain
+
+-- | Represents an independent experimental value centered around a mean
+--   value with "inherent" and independent uncertainty.
+--   
+--   Mathematically, an experimental value with inherent uncertainty from
+--   accumulated independent contributions of measuring and sampling error.
+--   
+--   Mostly useful due to its instances of numeric typeclasses like
+--   <a>Num</a>, <a>Fractional</a>, etc., which allows you to add and
+--   multiply and apply arbitrary numerical functions to them and have the
+--   uncertainty propagate appropriately.
+--   
+--   Can be created with <a>exact</a> to represent an "exact" measurement
+--   with no uncertainty, <a>+/-</a> and <a>:+/-</a> to specify a standard
+--   deviation as a range, <a>withPrecision</a> to specify through decimal
+--   precision, and <a>withVar</a> to specify with a variance.
+--   
+--   Can be deconstructed with <a>:+/-</a>, the pattern
+--   synonym/pseudo-constructor which matches on the mean and a standard
+--   deviation. You can also access properties with <a>uMean</a>,
+--   <a>uStd</a>, <a>uVar</a>, <a>uMeanStd</a>, <a>uMeanVar</a>,
+--   <a>uRange</a>, etc.
 data Uncert a
 uMean :: Uncert a -> a
 uVar :: Uncert a -> a
