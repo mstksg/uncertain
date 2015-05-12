@@ -178,7 +178,6 @@ liftU4 :: Fractional a => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s 
 liftU5 :: Fractional a => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a)) -> Uncert a -> Uncert a -> Uncert a -> Uncert a -> Uncert a -> Uncert a
 uShow :: (Show a, Floating a) => Uncert a -> String
 uShowsPrec :: (Show a, Floating a) => Int -> Uncert a -> ShowS
-diag :: [[a]] -> [a]
 instance GHC.Generics.Selector Data.Uncertain.S1_0_1Uncert
 instance GHC.Generics.Selector Data.Uncertain.S1_0_0Uncert
 instance GHC.Generics.Constructor Data.Uncertain.C1_0Uncert
