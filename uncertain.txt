@@ -99,7 +99,7 @@ data Uncert a
 uMean :: Uncert a -> a
 uVar :: Uncert a -> a
 uStd :: Floating a => Uncert a -> a
-uRange :: (Profunctor p, Functor f, Floating a) => p (a, a) (f (a, a)) -> p (Uncert a) (f (Uncert a))
+uAtRange :: (Profunctor p, Functor f, Floating a) => p (a, a) (f (a, a)) -> p (Uncert a) (f (Uncert a))
 (+/-) :: Num a => a -> a -> Uncert a
 withPrecisionAtBase :: (Floating a, RealFrac a) => Int -> a -> Int -> Uncert a
 withPrecision :: (Floating a, RealFrac a) => a -> Int -> Uncert a
