@@ -93,6 +93,8 @@ module Data.Uncertain
 data Uncert a
 Un :: a -> a -> Uncert a
 [uMean] :: Uncert a -> a
+
+-- | maintained to be positive by only exporting the :+/- constructor
 [uVar] :: Uncert a -> a
 certain :: Num a => a -> Uncert a
 (+/-) :: Num a => a -> a -> Uncert a
