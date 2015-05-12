@@ -103,7 +103,7 @@ uMeanVar :: Uncert a -> (a, a)
 uMeanStd :: Floating a => Uncert a -> (a, a)
 uRange :: Floating a => Uncert a -> (a, a)
 (+/-) :: Num a => a -> a -> Uncert a
-certain :: Num a => a -> Uncert a
+exact :: Num a => a -> Uncert a
 withPrecisionAtBase :: (Floating a, RealFrac a) => Int -> a -> Int -> Uncert a
 withPrecision :: (Floating a, RealFrac a) => a -> Int -> Uncert a
 withVar :: Num a => a -> a -> Uncert a
@@ -139,7 +139,7 @@ type Corr s a = Free (CorrF s a)
 runCorr :: Fractional a => Corr s a b -> b
 corrToState :: (Monad m, Fractional a) => Corr s a b -> StateT (Key, IntMap (Uncert a)) m b
 sampleUncert :: Uncert a -> Corr s a (CVar s a)
-sampleCertain :: a -> Corr s a (CVar s a)
+sampleExact :: a -> Corr s a (CVar s a)
 resolveUncert :: CVar s a -> Corr s a (Uncert a)
 liftCF :: (Functor f, Fractional a) => (forall t. f (AD t (Sparse a)) -> AD t (Sparse a)) -> f (CVar s a) -> CVar s a
 liftC :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a
