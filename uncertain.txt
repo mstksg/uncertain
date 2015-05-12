@@ -78,18 +78,23 @@ data H4 a
 H4 :: !a -> !a -> !a -> !a -> H4 a
 data H5 a
 H5 :: !a -> !a -> !a -> !a -> !a -> H5 a
+instance GHC.Show.Show a => GHC.Show.Show (Data.Hople.H5 a)
 instance Data.Traversable.Traversable Data.Hople.H5
 instance Data.Foldable.Foldable Data.Hople.H5
 instance GHC.Base.Functor Data.Hople.H5
+instance GHC.Show.Show a => GHC.Show.Show (Data.Hople.H4 a)
 instance Data.Traversable.Traversable Data.Hople.H4
 instance Data.Foldable.Foldable Data.Hople.H4
 instance GHC.Base.Functor Data.Hople.H4
+instance GHC.Show.Show a => GHC.Show.Show (Data.Hople.H3 a)
 instance Data.Traversable.Traversable Data.Hople.H3
 instance Data.Foldable.Foldable Data.Hople.H3
 instance GHC.Base.Functor Data.Hople.H3
+instance GHC.Show.Show a => GHC.Show.Show (Data.Hople.H2 a)
 instance Data.Traversable.Traversable Data.Hople.H2
 instance Data.Foldable.Foldable Data.Hople.H2
 instance GHC.Base.Functor Data.Hople.H2
+instance GHC.Show.Show a => GHC.Show.Show (Data.Hople.H1 a)
 instance Data.Traversable.Traversable Data.Hople.H1
 instance Data.Foldable.Foldable Data.Hople.H1
 instance GHC.Base.Functor Data.Hople.H1
