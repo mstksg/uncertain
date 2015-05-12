@@ -215,10 +215,10 @@ instance GHC.Real.Fractional a => GHC.Real.Fractional (Data.Uncertain.Correlated
 instance GHC.Float.Floating a => GHC.Float.Floating (Data.Uncertain.Correlated.CVar s a)
 
 module Data.Uncertain.MonteCarlo
-sampleUncert :: PrimMonad m => Int -> Uncert Double -> Gen (PrimState m) -> m [Double]
-liftU :: PrimMonad m => (Double -> Double) -> Uncert Double -> Gen (PrimState m) -> m (Uncert Double)
 liftUF :: (Traversable f, PrimMonad m) => (f Double -> Double) -> f (Uncert Double) -> Gen (PrimState m) -> m (Uncert Double)
+liftU :: PrimMonad m => (Double -> Double) -> Uncert Double -> Gen (PrimState m) -> m (Uncert Double)
 liftU2 :: PrimMonad m => (Double -> Double -> Double) -> Uncert Double -> Uncert Double -> Gen (PrimState m) -> m (Uncert Double)
 liftU3 :: PrimMonad m => (Double -> Double -> Double -> Double) -> Uncert Double -> Uncert Double -> Uncert Double -> Gen (PrimState m) -> m (Uncert Double)
 liftU4 :: PrimMonad m => (Double -> Double -> Double -> Double -> Double) -> Uncert Double -> Uncert Double -> Uncert Double -> Uncert Double -> Gen (PrimState m) -> m (Uncert Double)
 liftU5 :: PrimMonad m => (Double -> Double -> Double -> Double -> Double -> Double) -> Uncert Double -> Uncert Double -> Uncert Double -> Uncert Double -> Uncert Double -> Gen (PrimState m) -> m (Uncert Double)
+sampleUncert :: PrimMonad m => Uncert Double -> Gen (PrimState m) -> m Double
