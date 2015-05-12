@@ -95,7 +95,7 @@ Un :: a -> a -> Uncert a
 [uMean] :: Uncert a -> a
 
 -- | maintained to be positive by only exporting the <a>:+/-</a>
---   constructor
+--   "constructor" and other invariant-maintaining smart constructors.
 [uVar] :: Uncert a -> a
 certain :: Num a => a -> Uncert a
 (+/-) :: Num a => a -> a -> Uncert a
