@@ -140,6 +140,10 @@ module Data.Uncertain
 --   However, <tt>x*2</tt> represents taking <i>one</i> sample and
 --   multiplying it by two. This yields a greater uncertainty, because
 --   errors and deviations are amplified.
+--   
+--   Also be aware that the <a>Show</a> instance "normalizes" the result,
+--   and won't show any mean/central point to a decimal precision smaller
+--   than the uncertainty, rounding off the excess.
 data Uncert a
 uMean :: Uncert a -> a
 uVar :: Uncert a -> a
