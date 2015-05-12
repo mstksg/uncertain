@@ -104,9 +104,6 @@ module Data.Uncertain
 -- | Represents an independent experimental value centered around a mean
 --   value with "inherent" and independent uncertainty.
 --   
---   Mathematically, an experimental value with inherent uncertainty from
---   accumulated independent contributions of measuring and sampling error.
---   
 --   Mostly useful due to its instances of numeric typeclasses like
 --   <a>Num</a>, <a>Fractional</a>, etc., which allows you to add and
 --   multiply and apply arbitrary numerical functions to them and have the
@@ -122,6 +119,27 @@ module Data.Uncertain
 --   deviation. You can also access properties with <a>uMean</a>,
 --   <a>uStd</a>, <a>uVar</a>, <a>uMeanStd</a>, <a>uMeanVar</a>,
 --   <a>uRange</a>, etc.
+--   
+--   It's important to remember that each "occurrence" represents a unique
+--   independent sample, so:
+--   
+--   <pre>
+--   &gt; let x = 15 +/- 2 in x + x
+--   30 +/- 3
+--   
+--   &gt; let x = 15 +/- 2 in x*2
+--   30 +/- 4
+--   </pre>
+--   
+--   <tt>x + x</tt> does not represent adding the same sample to itself
+--   twice, it represents <i>independently</i> sampling two values within
+--   the range <tt>15 +/- 2</tt> and adding them together. In general,
+--   errors and deviations will cancel each-other out, leading to a smaller
+--   uncertainty.
+--   
+--   However, <tt>x*2</tt> represents taking <i>one</i> sample and
+--   multiplying it by two. This yields a greater uncertainty, because
+--   errors and deviations are amplified.
 data Uncert a
 uMean :: Uncert a -> a
 uVar :: Uncert a -> a
