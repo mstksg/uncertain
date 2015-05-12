@@ -91,19 +91,14 @@ instance GHC.Base.Functor Data.Hoples.H2
 
 module Data.Uncertain
 data Uncert a
-Un :: a -> a -> Uncert a
-[uMean] :: Uncert a -> a
-
--- | maintained to be positive by only exporting the <a>:+/-</a>
---   "constructor" and other invariant-maintaining smart constructors.
-[uVar] :: Uncert a -> a
-certain :: Num a => a -> Uncert a
-(+/-) :: Num a => a -> a -> Uncert a
+uMean :: Uncert a -> a
+uVar :: Uncert a -> a
 uStd :: Floating a => Uncert a -> a
-asRange :: (Profunctor p, Functor f, Floating a) => p (a, a) (f (a, a)) -> p (Uncert a) (f (Uncert a))
+uRange :: (Profunctor p, Functor f, Floating a) => p (a, a) (f (a, a)) -> p (Uncert a) (f (Uncert a))
+(+/-) :: Num a => a -> a -> Uncert a
 withPrecisionAtBase :: (Floating a, RealFrac a) => Int -> a -> Int -> Uncert a
 withPrecision :: (Floating a, RealFrac a) => a -> Int -> Uncert a
-uNormalizeToBase :: (Floating a, RealFrac a) => Int -> Uncert a -> Uncert a
+uNormalizeAtBase :: (Floating a, RealFrac a) => Int -> Uncert a -> Uncert a
 uNormalize :: (Floating a, RealFrac a) => Uncert a -> Uncert a
 liftUF :: (Traversable f, Num a) => (forall s. Reifies s Tape => f (Reverse s a) -> Reverse s a) -> f (Uncert a) -> Uncert a
 liftU :: Num a => (forall s. AD s (Forward a) -> AD s (Forward a)) -> Uncert a -> Uncert a
