@@ -2,7 +2,7 @@
 {-# LANGUAGE DeriveFoldable #-}
 {-# LANGUAGE DeriveTraversable #-}
 
-module Data.Hoples
+module Data.Hople
   ( H1(..)
   , H2(..)
   , H3(..)

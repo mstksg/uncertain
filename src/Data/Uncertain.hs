@@ -21,7 +21,7 @@ import Control.Arrow               ((&&&))
 import Data.Data
 import Data.Foldable
 import Data.Function
-import Data.Hoples
+import Data.Hople
 import Data.Ord
 import Data.Reflection
 import GHC.Generics
@@ -31,11 +31,7 @@ import Numeric.AD.Mode.Reverse     (Reverse)
 import Numeric.AD.Rank1.Forward    (Forward)
 
 data Uncert a = Un { _uMean :: a
-                   , _uVar  :: a     -- ^ maintained to be positive
-                                     --   by only exporting the `:+/-`
-                                     --   "constructor" and other
-                                     --   invariant-maintaining smart
-                                     --   constructors.
+                   , _uVar  :: a     -- ^ maintained to be positive!
                    }
   deriving (Data, Typeable, Generic, Generic1)
 
@@ -74,7 +70,12 @@ uRange :: Floating a => Uncert a -> (a, a)
 uRange u = let x :+/- dx = u
            in  (x - dx, x + dx)
 
-withPrecisionAtBase :: (Floating a, RealFrac a) => Int -> a -> Int -> Uncert a
+withPrecisionAtBase
+    :: (Floating a, RealFrac a)
+    => Int
+    -> a
+    -> Int
+    -> Uncert a
 withPrecisionAtBase b x p = x' :+/- dx'
   where
     leading :: Int
@@ -87,10 +88,18 @@ withPrecisionAtBase b x p = x' :+/- dx'
     round'  :: RealFrac a => a -> Integer
     round'  = round
 
-withPrecision :: (Floating a, RealFrac a) => a -> Int -> Uncert a
+withPrecision
+    :: (Floating a, RealFrac a)
+    => a
+    -> Int
+    -> Uncert a
 withPrecision = withPrecisionAtBase 10
 
-uNormalizeAtBase :: (Floating a, RealFrac a) => Int -> Uncert a -> Uncert a
+uNormalizeAtBase
+    :: (Floating a, RealFrac a)
+    => Int
+    -> Uncert a
+    -> Uncert a
 uNormalizeAtBase b u = x' :+/- dx'
   where
     x :+/- dx = u
@@ -103,7 +112,10 @@ uNormalizeAtBase b u = x' :+/- dx'
     round'    :: RealFrac a => a -> Integer
     round'    = round
 
-uNormalize :: (Floating a, RealFrac a) => Uncert a -> Uncert a
+uNormalize
+    :: (Floating a, RealFrac a)
+    => Uncert a
+    -> Uncert a
 uNormalize = uNormalizeAtBase 10
 
 instance (Floating a, RealFrac a, Show a) => Show (Uncert a) where

@@ -71,15 +71,16 @@ cabal-version:       >=1.10
 
 library
   exposed-modules:     Data.Uncertain
-                       -- Data.Uncertain.Correlated
+                       Data.Uncertain.Correlated
                        -- Data.Uncertain.Interactive
   -- other-modules:       
   -- other-extensions:    
   build-depends:       base >=4.6 && < 5
                      , ad
                      , reflection
-                     -- , containers
-                     -- , transformers
+                     , containers
+                     , free
+                     , transformers
   hs-source-dirs:      src
   default-language:    Haskell2010
   ghc-options:         -Wall
