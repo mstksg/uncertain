@@ -25,7 +25,7 @@ import           Data.Hople
 import           Data.Ord
 import           GHC.Generics
 import           Numeric.AD.Mode.Sparse
-import qualified Numeric.AD.Mode.Forward as F
+import qualified Numeric.AD.Mode.Tower as T
 
 data Uncert a = Un { _uMean :: a
                    , _uVar  :: a     -- ^ maintained to be positive!
@@ -149,16 +149,14 @@ liftUF f us = Un y vy
 
 liftU
     :: Fractional a
-    => (forall s. AD s (F.Forward a) -> AD s (F.Forward a))
+    => (forall s. AD s (T.Tower a) -> AD s (T.Tower a))
     -> Uncert a
     -> Uncert a
 liftU f (Un x vx) = Un y vy
   where
-    (fx,dfx) = F.diff' f x
-    y        = fx + hessTerm / 2
-      where
-        hessTerm = undefined
-    vy       = dfx*dfx * vx
+    fx:dfx:ddfx:_ = T.diffs0 f x
+    y             = fx + ddfx * vx / 2
+    vy            = dfx*dfx * vx
 
 liftU'
     :: Fractional a
