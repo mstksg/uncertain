@@ -10,25 +10,22 @@ module Data.Uncertain
   ( Uncert
   , pattern (:+/-)
   , uMean, uVar, uStd, uMeanVar, uMeanStd, uRange
-  , (+/-), withPrecisionAtBase, withPrecision, withVar
+  , (+/-), certain, withPrecisionAtBase, withPrecision, withVar
   , uNormalizeAtBase, uNormalize
   , liftUF
   , liftU, liftU', liftU2, liftU3, liftU4, liftU5
   )
   where
 
-import Control.Arrow               ((&&&))
-import Data.Data
-import Data.Foldable
-import Data.Function
-import Data.Hople
-import Data.Ord
-import Data.Reflection
-import GHC.Generics
-import Numeric.AD
-import Numeric.AD.Internal.Reverse (Tape)
-import Numeric.AD.Mode.Reverse     (Reverse)
-import Numeric.AD.Rank1.Forward    (Forward)
+import           Control.Arrow           ((&&&))
+import           Data.Data
+import           Data.Foldable
+import           Data.Function
+import           Data.Hople
+import           Data.Ord
+import           GHC.Generics
+import           Numeric.AD.Mode.Sparse
+import qualified Numeric.AD.Mode.Forward as F
 
 data Uncert a = Un { _uMean :: a
                    , _uVar  :: a     -- ^ maintained to be positive!
@@ -130,40 +127,43 @@ instance (Floating a, RealFrac a, Show a) => Show (Uncert a) where
 
 liftUF
     :: (Traversable f, Num a)
-    => (forall s. Reifies s Tape => f (Reverse s a) -> Reverse s a)
+    => (forall s. f (AD s (Sparse a)) -> AD s (Sparse a))
     -> f (Uncert a)
     -> Uncert a
 liftUF f us = Un y vy
   where
-    xs         = uMean <$> us
-    vxs        = uVar  <$> us
-    (fx, dfxs) = grad' f xs
-    y          = fx
-    vy         = sum $ zipWith (\dfx vx -> dfx*dfx*vx)
-                               (toList dfxs)
-                               (toList vxs)
+    xs          = uMean <$> us
+    vxs         = uVar  <$> us
+    vxsL        = toList vxs
+    (fx, dfxsh) = hessian' f xs
+    dfxs        = fst <$> dfxsh
+    hess        = snd <$> dfxsh
+    y           = fx + sum (sum . zipWith (+) vxsL . toList <$> hess)
+    vy          = sum $ zipWith (\dfx vx -> dfx*dfx*vx)
+                                (toList dfxs)
+                                vxsL
 
 liftU
     :: Num a
-    => (forall s. AD s (Forward a) -> AD s (Forward a))
+    => (forall s. AD s (F.Forward a) -> AD s (F.Forward a))
     -> Uncert a
     -> Uncert a
 liftU f (Un x vx) = Un y vy
   where
-    (fx,dfx) = diff' f x
+    (fx,dfx) = F.diff' f x
     y        = fx
     vy       = dfx*dfx * vx
 
 liftU'
     :: Num a
-    => (forall s. Reifies s Tape => Reverse s a -> Reverse s a)
+    => (forall s. AD s (Sparse a) -> AD s (Sparse a))
     -> Uncert a
     -> Uncert a
 liftU' f x = liftUF (\(H1 x') -> f x') (H1 x)
 
 liftU2
     :: Num a
-    => (forall s. Reifies s Tape => Reverse s a -> Reverse s a -> Reverse s a)
+    => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a))
     -> Uncert a
     -> Uncert a
     -> Uncert a
@@ -171,7 +171,7 @@ liftU2 f x y = liftUF (\(H2 x' y') -> f x' y') (H2 x y)
 
 liftU3
     :: Num a
-    => (forall s. Reifies s Tape => Reverse s a -> Reverse s a -> Reverse s a -> Reverse s a)
+    => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a))
     -> Uncert a
     -> Uncert a
     -> Uncert a
@@ -180,7 +180,7 @@ liftU3 f x y z = liftUF (\(H3 x' y' z') -> f x' y' z') (H3 x y z)
 
 liftU4
     :: Num a
-    => (forall s. Reifies s Tape => Reverse s a -> Reverse s a -> Reverse s a -> Reverse s a -> Reverse s a)
+    => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a))
     -> Uncert a
     -> Uncert a
     -> Uncert a
@@ -190,7 +190,7 @@ liftU4 f x y z a = liftUF (\(H4 x' y' z' a') -> f x' y' z' a') (H4 x y z a)
 
 liftU5
     :: Num a
-    => (forall s. Reifies s Tape => Reverse s a -> Reverse s a -> Reverse s a -> Reverse s a -> Reverse s a -> Reverse s a)
+    => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a))
     -> Uncert a
     -> Uncert a
     -> Uncert a

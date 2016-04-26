@@ -7,25 +7,32 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving  #-}
 
-module Data.Uncertain.Correlated where
+module Data.Uncertain.Correlated
+  ( CVar
+  , Corr
+  , runCorr
+  , corrToState
+  , sampleUncert
+  , sampleCertain
+  , resolveUncert
+  , liftCF
+  , liftC, liftC2, liftC3, liftC4, liftC5
+  )
+  where
 
 import           Control.Monad.Free
-import           Data.Hople
 import           Control.Monad.Trans.State
 import           Data.Bifunctor
--- import           Data.Functor.Identity
-import           Data.Reflection
+import           Data.Hople
 import           Data.Uncertain
-import           Numeric.AD
-import           Numeric.AD.Internal.Reverse (Tape)
-import           Numeric.AD.Mode.Reverse     (Reverse)
-import qualified Data.IntMap.Strict          as M
+import           Numeric.AD.Mode.Sparse
+import qualified Data.IntMap.Strict        as M
 
 data CVar :: * -> * -> * where
     CK :: a -> CVar s a
     CV :: M.Key -> CVar s a
     CF :: Functor f
-       => (forall t. Reifies t Tape => f (Reverse t a) -> Reverse t a)
+       => (forall t. f (AD t (Sparse a)) -> AD t (Sparse a))
        -> f (CVar s a)
        -> CVar s a
 
@@ -33,7 +40,7 @@ data CorrF :: * -> * -> * -> * where
     Cer :: a -> (CVar s a -> b) -> CorrF s a b
     Gen :: Uncert a -> (CVar s a -> b) -> CorrF s a b
     Fun :: Functor f
-        => (forall t. Reifies t Tape => f (Reverse t a) -> Reverse t a)
+        => (forall t. f (AD t (Sparse a)) -> AD t (Sparse a))
         -> f (CVar s a)
         -> (CVar s a -> b)
         -> CorrF s a b
@@ -50,9 +57,9 @@ deriving instance Functor (CorrF s a)
 type Corr s a = Free (CorrF s a)
 
 corrToState
-    :: Num a
+    :: (Monad m, Num a)
     => Corr s a b
-    -> State (M.Key, M.IntMap (Uncert a)) b
+    -> StateT (M.Key, M.IntMap (Uncert a)) m b
 corrToState = iterM $ \case
                         Cer c next    -> do
                           next (CK c)
@@ -77,7 +84,7 @@ corrToState = iterM $ \case
       where
         cVarToF
             :: CVar s a
-            -> (forall t. Reifies t Tape => M.IntMap (Reverse t a) -> Reverse t a)
+            -> (forall t. M.IntMap (AD t (Sparse a)) -> AD t (Sparse a))
         cVarToF (CK x)    _  = auto x
         cVarToF (CV k)    us = us M.! k
         cVarToF (CF f cs) us = f (flip cVarToF us <$> cs)
@@ -88,26 +95,29 @@ runCorr = flip evalState (0, M.empty) . corrToState
 sampleUncert :: Uncert a -> Corr s a (CVar s a)
 sampleUncert u = liftF $ Gen u id
 
-getUncert :: CVar s a -> Corr s a (Uncert a)
-getUncert v = liftF $ Rei v id
+sampleCertain :: a -> Corr s a (CVar s a)
+sampleCertain x = liftF $ Cer x id
+
+resolveUncert :: CVar s a -> Corr s a (Uncert a)
+resolveUncert v = liftF $ Rei v id
 
 liftCF
     :: (Functor f, Num a)
-    => (forall t. Reifies t Tape => f (Reverse t a) -> Reverse t a)
+    => (forall t. f (AD t (Sparse a)) -> AD t (Sparse a))
     -> f (CVar s a)
     -> CVar s a
 liftCF f cs = CF f cs
 
 liftC
     :: Num a
-    => (forall t. Reifies t Tape => Reverse t a -> Reverse t a)
+    => (forall t. AD t (Sparse a) -> AD t (Sparse a))
     -> CVar s a
     -> CVar s a
 liftC f x = liftCF (\(H1 x') -> f x') (H1 x)
 
 liftC2
     :: Num a
-    => (forall t. Reifies t Tape => Reverse t a -> Reverse t a -> Reverse t a)
+    => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a))
     -> CVar s a
     -> CVar s a
     -> CVar s a
@@ -115,7 +125,7 @@ liftC2 f x y = liftCF (\(H2 x' y') -> f x' y') (H2 x y)
 
 liftC3
     :: Num a
-    => (forall t. Reifies t Tape => Reverse t a -> Reverse t a -> Reverse t a -> Reverse t a)
+    => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a))
     -> CVar s a
     -> CVar s a
     -> CVar s a
@@ -124,7 +134,7 @@ liftC3 f x y z = liftCF (\(H3 x' y' z') -> f x' y' z') (H3 x y z)
 
 liftC4
     :: Num a
-    => (forall t. Reifies t Tape => Reverse t a -> Reverse t a -> Reverse t a -> Reverse t a -> Reverse t a)
+    => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a))
     -> CVar s a
     -> CVar s a
     -> CVar s a
@@ -134,7 +144,7 @@ liftC4 f x y z a = liftCF (\(H4 x' y' z' a') -> f x' y' z' a') (H4 x y z a)
 
 liftC5
     :: Num a
-    => (forall t. Reifies t Tape => Reverse t a -> Reverse t a -> Reverse t a -> Reverse t a -> Reverse t a -> Reverse t a)
+    => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a))
     -> CVar s a
     -> CVar s a
     -> CVar s a

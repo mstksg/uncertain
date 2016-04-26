@@ -77,7 +77,6 @@ library
   -- other-extensions:    
   build-depends:       base >=4.6 && < 5
                      , ad
-                     , reflection
                      , containers
                      , free
                      , transformers
