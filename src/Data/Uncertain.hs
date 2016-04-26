@@ -5,7 +5,16 @@
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE FlexibleContexts #-}
 
-module Data.Uncertain where
+module Data.Uncertain
+  ( Uncert
+  , pattern (:+/-)
+  , uMean, uVar, uStd, uRange
+  , (+/-), withPrecisionAtBase, withPrecision
+  , uNormalizeAtBase, uNormalize
+  , liftUF
+  , liftU, liftU2, liftU3, liftU4, liftU5
+  )
+  where
 
 import Data.Data
 import Data.Foldable
@@ -18,12 +27,23 @@ import Numeric.AD.Internal.Reverse (Tape)
 import Numeric.AD.Mode.Reverse     (Reverse)
 import Numeric.AD.Rank1.Forward    (Forward)
 
-data Uncert a = Un { uMean :: a
-                   , uVar  :: a     -- ^ maintained to be positive
-                                    --   by only exporting the :+/-
-                                    --   constructor
+data Uncert a = Un { _uMean :: a
+                   , _uVar  :: a     -- ^ maintained to be positive
+                                     --   by only exporting the `:+/-`
+                                     --   "constructor" and other
+                                     --   invariant-maintaining smart
+                                     --   constructors.
                    }
   deriving (Data, Typeable, Generic, Generic1)
+
+uMean :: Uncert a -> a
+uMean = _uMean
+
+uVar :: Uncert a -> a
+uVar = _uVar
+
+uStd :: Floating a => Uncert a -> a
+uStd = sqrt . uVar
 
 certain :: Num a => a -> Uncert a
 certain x = Un x 0
@@ -38,15 +58,12 @@ pattern x :+/- dx <- Un x (sqrt->dx)
   where
     x :+/- dx = Un x (dx*dx)
 
-uStd :: Floating a => Uncert a -> a
-uStd = sqrt . uVar
-
-asRange
+uRange
     :: (Profunctor p, Functor f, Floating a)
     => p (a, a) (f (a, a))
     -> p (Uncert a) (f (Uncert a))
-asRange = dimap       (\(x :+/- dx) -> (x, dx)  )
-                (fmap (\(x, dx)     -> x :+/- dx))
+uRange = dimap       (\(x :+/- dx) -> (x ,    dx))
+               (fmap (\(x ,    dx) -> (x :+/- dx)))
 
 withPrecisionAtBase :: (Floating a, RealFrac a) => Int -> a -> Int -> Uncert a
 withPrecisionAtBase b x p = x' :+/- dx'
@@ -64,8 +81,8 @@ withPrecisionAtBase b x p = x' :+/- dx'
 withPrecision :: (Floating a, RealFrac a) => a -> Int -> Uncert a
 withPrecision = withPrecisionAtBase 10
 
-uNormalizeToBase :: (Floating a, RealFrac a) => Int -> Uncert a -> Uncert a
-uNormalizeToBase b u = x' :+/- dx'
+uNormalizeAtBase :: (Floating a, RealFrac a) => Int -> Uncert a -> Uncert a
+uNormalizeAtBase b u = x' :+/- dx'
   where
     x :+/- dx = u
     uncert    :: Int
@@ -78,7 +95,7 @@ uNormalizeToBase b u = x' :+/- dx'
     round'    = round
 
 uNormalize :: (Floating a, RealFrac a) => Uncert a -> Uncert a
-uNormalize = uNormalizeToBase 10
+uNormalize = uNormalizeAtBase 10
 
 instance (Floating a, RealFrac a, Show a) => Show (Uncert a) where
     showsPrec d u | dx == 0   = showString "certain "
