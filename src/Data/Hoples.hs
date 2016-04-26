@@ -3,12 +3,16 @@
 {-# LANGUAGE DeriveTraversable #-}
 
 module Data.Hoples
-  ( H2(..)
+  ( H1(..)
+  , H2(..)
   , H3(..)
   , H4(..)
   , H5(..)
   )
   where
+
+data H1 a = H1 !a
+  deriving (Functor, Foldable, Traversable)
 
 data H2 a = H2 !a !a
   deriving (Functor, Foldable, Traversable)

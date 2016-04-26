@@ -12,7 +12,7 @@ module Data.Uncertain
   , (+/-), withPrecisionAtBase, withPrecision
   , uNormalizeAtBase, uNormalize
   , liftUF
-  , liftU, liftU2, liftU3, liftU4, liftU5
+  , liftU, liftU', liftU2, liftU3, liftU4, liftU5
   )
   where
 
@@ -132,6 +132,13 @@ liftU f (Un x vx) = Un y vy
     (fx,dfx) = diff' f x
     y        = fx
     vy       = dfx*dfx * vx
+
+liftU'
+    :: Num a
+    => (forall s. Reifies s Tape => Reverse s a -> Reverse s a)
+    -> Uncert a
+    -> Uncert a
+liftU' f x = liftUF (\(H1 x') -> f x') (H1 x)
 
 liftU2
     :: Num a
