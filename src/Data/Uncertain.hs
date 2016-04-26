@@ -9,20 +9,20 @@
 module Data.Uncertain
   ( Uncert
   , pattern (:+/-)
-  , uMean, uVar, uStd, uAtRange
-  , (+/-), withPrecisionAtBase, withPrecision
+  , uMean, uVar, uStd, uMeanVar, uMeanStd, uRange
+  , (+/-), withPrecisionAtBase, withPrecision, withVar
   , uNormalizeAtBase, uNormalize
   , liftUF
   , liftU, liftU', liftU2, liftU3, liftU4, liftU5
   )
   where
 
+import Control.Arrow               ((&&&))
 import Data.Data
 import Data.Foldable
 import Data.Function
 import Data.Hoples
 import Data.Ord
-import Data.Profunctor
 import Data.Reflection
 import GHC.Generics
 import Numeric.AD
@@ -56,17 +56,23 @@ infixl 6 :+/-
 (+/-) :: Num a => a -> a -> Uncert a
 x +/- dx = Un x (dx*dx)
 
+withVar :: Num a => a -> a -> Uncert a
+withVar x vx = Un x (abs vx)
+
 pattern (:+/-) :: () => Floating a => a -> a -> Uncert a
 pattern x :+/- dx <- Un x (sqrt->dx)
   where
     x :+/- dx = Un x (dx*dx)
 
-uAtRange
-    :: (Profunctor p, Functor f, Floating a)
-    => p (a, a) (f (a, a))
-    -> p (Uncert a) (f (Uncert a))
-uAtRange = dimap       (\(x :+/- dx) -> (x ,    dx))
-                 (fmap (\(x ,    dx) -> (x :+/- dx)))
+uMeanVar :: Uncert a -> (a, a)
+uMeanVar = uMean &&& uVar
+
+uMeanStd :: Floating a => Uncert a -> (a, a)
+uMeanStd = uMean &&& uStd
+
+uRange :: Floating a => Uncert a -> (a, a)
+uRange u = let x :+/- dx = u
+           in  (x - dx, x + dx)
 
 withPrecisionAtBase :: (Floating a, RealFrac a) => Int -> a -> Int -> Uncert a
 withPrecisionAtBase b x p = x' :+/- dx'
