@@ -126,7 +126,7 @@ instance (Floating a, RealFrac a, Show a) => Show (Uncert a) where
         x :+/- dx = uNormalize u
 
 liftUF
-    :: (Traversable f, Num a)
+    :: (Traversable f, Fractional a)
     => (forall s. f (AD s (Sparse a)) -> AD s (Sparse a))
     -> f (Uncert a)
     -> Uncert a
@@ -138,31 +138,37 @@ liftUF f us = Un y vy
     (fx, dfxsh) = hessian' f xs
     dfxs        = fst <$> dfxsh
     hess        = snd <$> dfxsh
-    y           = fx + sum (sum . zipWith (+) vxsL . toList <$> hess)
+    y           = fx + hessTerm / 2
+      where
+        hessTerm = sum . zipWith (*) vxsL . toList
+                 . fmap (sum . zipWith (*) vxsL . toList)
+                 $ hess
     vy          = sum $ zipWith (\dfx vx -> dfx*dfx*vx)
                                 (toList dfxs)
                                 vxsL
 
 liftU
-    :: Num a
+    :: Fractional a
     => (forall s. AD s (F.Forward a) -> AD s (F.Forward a))
     -> Uncert a
     -> Uncert a
 liftU f (Un x vx) = Un y vy
   where
     (fx,dfx) = F.diff' f x
-    y        = fx
+    y        = fx + hessTerm / 2
+      where
+        hessTerm = undefined
     vy       = dfx*dfx * vx
 
 liftU'
-    :: Num a
+    :: Fractional a
     => (forall s. AD s (Sparse a) -> AD s (Sparse a))
     -> Uncert a
     -> Uncert a
 liftU' f x = liftUF (\(H1 x') -> f x') (H1 x)
 
 liftU2
-    :: Num a
+    :: Fractional a
     => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a))
     -> Uncert a
     -> Uncert a
@@ -170,7 +176,7 @@ liftU2
 liftU2 f x y = liftUF (\(H2 x' y') -> f x' y') (H2 x y)
 
 liftU3
-    :: Num a
+    :: Fractional a
     => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a))
     -> Uncert a
     -> Uncert a
@@ -179,7 +185,7 @@ liftU3
 liftU3 f x y z = liftUF (\(H3 x' y' z') -> f x' y' z') (H3 x y z)
 
 liftU4
-    :: Num a
+    :: Fractional a
     => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a))
     -> Uncert a
     -> Uncert a
@@ -189,7 +195,7 @@ liftU4
 liftU4 f x y z a = liftUF (\(H4 x' y' z' a') -> f x' y' z' a') (H4 x y z a)
 
 liftU5
-    :: Num a
+    :: Fractional a
     => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a))
     -> Uncert a
     -> Uncert a
@@ -199,7 +205,7 @@ liftU5
     -> Uncert a
 liftU5 f x y z a b = liftUF (\(H5 x' y' z' a' b') -> f x' y' z' a' b') (H5 x y z a b)
 
-instance Num a => Num (Uncert a) where
+instance Fractional a => Num (Uncert a) where
     (+)    = liftU2 (+)
     (*)    = liftU2 (*)
     (-)    = liftU2 (-)
@@ -238,7 +244,7 @@ instance Eq a => Eq (Uncert a) where
 instance Ord a => Ord (Uncert a) where
     compare = comparing uMean
 
-instance Real a => Real (Uncert a) where
+instance (Fractional a, Real a) => Real (Uncert a) where
     toRational = toRational . uMean
 
 instance RealFrac a => RealFrac (Uncert a) where

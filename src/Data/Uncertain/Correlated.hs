@@ -57,7 +57,7 @@ deriving instance Functor (CorrF s a)
 type Corr s a = Free (CorrF s a)
 
 corrToState
-    :: (Monad m, Num a)
+    :: (Monad m, Fractional a)
     => Corr s a b
     -> StateT (M.Key, M.IntMap (Uncert a)) m b
 corrToState = iterM $ \case
@@ -76,7 +76,7 @@ corrToState = iterM $ \case
                           undefined
   where
     getCVar
-        :: forall a s. Num a
+        :: forall a s. Fractional a
         => CVar s a
         -> M.IntMap (Uncert a)
         -> Uncert a
@@ -89,7 +89,7 @@ corrToState = iterM $ \case
         cVarToF (CV k)    us = us M.! k
         cVarToF (CF f cs) us = f (flip cVarToF us <$> cs)
 
-runCorr :: Num a => Corr s a b -> b
+runCorr :: Fractional a => Corr s a b -> b
 runCorr = flip evalState (0, M.empty) . corrToState
 
 sampleUncert :: Uncert a -> Corr s a (CVar s a)
@@ -102,21 +102,21 @@ resolveUncert :: CVar s a -> Corr s a (Uncert a)
 resolveUncert v = liftF $ Rei v id
 
 liftCF
-    :: (Functor f, Num a)
+    :: (Functor f, Fractional a)
     => (forall t. f (AD t (Sparse a)) -> AD t (Sparse a))
     -> f (CVar s a)
     -> CVar s a
 liftCF f cs = CF f cs
 
 liftC
-    :: Num a
+    :: Fractional a
     => (forall t. AD t (Sparse a) -> AD t (Sparse a))
     -> CVar s a
     -> CVar s a
 liftC f x = liftCF (\(H1 x') -> f x') (H1 x)
 
 liftC2
-    :: Num a
+    :: Fractional a
     => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a))
     -> CVar s a
     -> CVar s a
@@ -124,7 +124,7 @@ liftC2
 liftC2 f x y = liftCF (\(H2 x' y') -> f x' y') (H2 x y)
 
 liftC3
-    :: Num a
+    :: Fractional a
     => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a))
     -> CVar s a
     -> CVar s a
@@ -133,7 +133,7 @@ liftC3
 liftC3 f x y z = liftCF (\(H3 x' y' z') -> f x' y' z') (H3 x y z)
 
 liftC4
-    :: Num a
+    :: Fractional a
     => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a))
     -> CVar s a
     -> CVar s a
@@ -143,7 +143,7 @@ liftC4
 liftC4 f x y z a = liftCF (\(H4 x' y' z' a') -> f x' y' z' a') (H4 x y z a)
 
 liftC5
-    :: Num a
+    :: Fractional a
     => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a))
     -> CVar s a
     -> CVar s a
@@ -153,7 +153,7 @@ liftC5
     -> CVar s a
 liftC5 f x y z a b = liftCF (\(H5 x' y' z' a' b') -> f x' y' z' a' b') (H5 x y z a b)
 
-instance Num a => Num (CVar s a) where
+instance Fractional a => Num (CVar s a) where
     (+)    = liftC2 (+)
     (*)    = liftC2 (*)
     (-)    = liftC2 (-)
