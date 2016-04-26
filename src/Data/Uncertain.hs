@@ -8,7 +8,7 @@
 module Data.Uncertain
   ( Uncert
   , pattern (:+/-)
-  , uMean, uVar, uStd, uRange
+  , uMean, uVar, uStd, uAtRange
   , (+/-), withPrecisionAtBase, withPrecision
   , uNormalizeAtBase, uNormalize
   , liftUF
@@ -58,12 +58,12 @@ pattern x :+/- dx <- Un x (sqrt->dx)
   where
     x :+/- dx = Un x (dx*dx)
 
-uRange
+uAtRange
     :: (Profunctor p, Functor f, Floating a)
     => p (a, a) (f (a, a))
     -> p (Uncert a) (f (Uncert a))
-uRange = dimap       (\(x :+/- dx) -> (x ,    dx))
-               (fmap (\(x ,    dx) -> (x :+/- dx)))
+uAtRange = dimap       (\(x :+/- dx) -> (x ,    dx))
+                 (fmap (\(x ,    dx) -> (x :+/- dx)))
 
 withPrecisionAtBase :: (Floating a, RealFrac a) => Int -> a -> Int -> Uncert a
 withPrecisionAtBase b x p = x' :+/- dx'
