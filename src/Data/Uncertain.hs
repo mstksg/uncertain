@@ -19,21 +19,24 @@ import Numeric.AD.Mode.Reverse     (Reverse)
 import Numeric.AD.Rank1.Forward    (Forward)
 
 data Uncert a = Un { uMean :: a
-                   , uVar  :: a
+                   , uVar  :: a     -- ^ maintained to be positive
+                                    --   by only exporting the :+/-
+                                    --   constructor
                    }
   deriving (Data, Typeable, Generic, Generic1)
 
 certain :: Num a => a -> Uncert a
 certain x = Un x 0
 
-infixl 6 +/-
 infixl 6 :+/-
 
-(+/-) :: Num a => a -> a -> Uncert a
-x +/- dx = Un x (dx*dx)
+-- (+/-) :: Num a => a -> a -> Uncert a
+-- x +/- dx = Un x (dx*dx)
 
 pattern (:+/-) :: () => Floating a => a -> a -> Uncert a
 pattern x :+/- dx <- Un x (sqrt->dx)
+  where
+    x :+/- dx = Un x (dx*dx)
 
 uStd :: Floating a => Uncert a -> a
 uStd = sqrt . uVar
@@ -43,10 +46,10 @@ asRange
     => p (a, a) (f (a, a))
     -> p (Uncert a) (f (Uncert a))
 asRange = dimap       (\(x :+/- dx) -> (x, dx)  )
-                (fmap (\(x, dx)     -> x +/- dx))
+                (fmap (\(x, dx)     -> x :+/- dx))
 
 withPrecisionAtBase :: (Floating a, RealFrac a) => Int -> a -> Int -> Uncert a
-withPrecisionAtBase b x p = x' +/- dx'
+withPrecisionAtBase b x p = x' :+/- dx'
   where
     leading :: Int
     leading = negate . floor . logBase (fromIntegral b) $ x
@@ -62,7 +65,7 @@ withPrecision :: (Floating a, RealFrac a) => a -> Int -> Uncert a
 withPrecision = withPrecisionAtBase 10
 
 uNormalizeToBase :: (Floating a, RealFrac a) => Int -> Uncert a -> Uncert a
-uNormalizeToBase b u = x' +/- dx'
+uNormalizeToBase b u = x' :+/- dx'
   where
     x :+/- dx = u
     uncert    :: Int
