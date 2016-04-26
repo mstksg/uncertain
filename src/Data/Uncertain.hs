@@ -30,8 +30,8 @@ certain x = Un x 0
 
 infixl 6 :+/-
 
--- (+/-) :: Num a => a -> a -> Uncert a
--- x +/- dx = Un x (dx*dx)
+(+/-) :: Num a => a -> a -> Uncert a
+x +/- dx = Un x (dx*dx)
 
 pattern (:+/-) :: () => Floating a => a -> a -> Uncert a
 pattern x :+/- dx <- Un x (sqrt->dx)
