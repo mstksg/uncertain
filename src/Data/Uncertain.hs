@@ -1,9 +1,10 @@
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE PatternSynonyms #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE DeriveDataTypeable  #-}
+{-# LANGUAGE DeriveGeneric       #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE PatternSynonyms     #-}
+{-# LANGUAGE RankNTypes          #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ViewPatterns        #-}
 
 module Data.Uncertain
   ( Uncert
@@ -18,7 +19,9 @@ module Data.Uncertain
 
 import Data.Data
 import Data.Foldable
+import Data.Function
 import Data.Hoples
+import Data.Ord
 import Data.Profunctor
 import Data.Reflection
 import GHC.Generics
@@ -210,3 +213,39 @@ instance Floating a => Floating (Uncert a) where
     acosh   = liftU acosh
     atanh   = liftU atanh
 
+instance Eq a => Eq (Uncert a) where
+    (==) = (==) `on` uMean
+    (/=) = (/=) `on` uMean
+
+instance Ord a => Ord (Uncert a) where
+    compare = comparing uMean
+
+instance Real a => Real (Uncert a) where
+    toRational = toRational . uMean
+
+instance RealFrac a => RealFrac (Uncert a) where
+    properFraction x = (n, d)
+      where
+        d    = liftU (snd' . properFraction) x
+        n    = fst . properFraction $ uMean x
+        snd' :: (Int, b) -> b
+        snd' = snd
+    truncate = truncate . uMean
+    round    = round    . uMean
+    ceiling  = ceiling  . uMean
+    floor    = floor    . uMean
+
+instance RealFloat a => RealFloat (Uncert a) where
+    floatRadix      = floatRadix        . uMean
+    floatDigits     = floatDigits       . uMean
+    floatRange      = floatRange        . uMean
+    decodeFloat     = decodeFloat       . uMean
+    exponent        = exponent          . uMean
+    isNaN           = isNaN             . uMean
+    isInfinite      = isInfinite        . uMean
+    isDenormalized  = isDenormalized    . uMean
+    isNegativeZero  = isNegativeZero    . uMean
+    isIEEE          = isIEEE            . uMean
+    encodeFloat a b = certain (encodeFloat a b)
+    significand     = liftU significand
+    atan2           = liftU2 atan2
