@@ -10,7 +10,7 @@ module Data.Uncertain
   ( Uncert
   , pattern (:+/-)
   , uMean, uVar, uStd, uMeanVar, uMeanStd, uRange
-  , (+/-), certain, withPrecisionAtBase, withPrecision, withVar
+  , (+/-), exact, withPrecisionAtBase, withPrecision, withVar
   , uNormalizeAtBase, uNormalize
   , liftUF
   , liftU, liftU', liftU2, liftU3, liftU4, liftU5
@@ -41,8 +41,8 @@ uVar = _uVar
 uStd :: Floating a => Uncert a -> a
 uStd = sqrt . uVar
 
-certain :: Num a => a -> Uncert a
-certain x = Un x 0
+exact :: Num a => a -> Uncert a
+exact x = Un x 0
 
 infixl 6 :+/-
 
@@ -116,7 +116,7 @@ uNormalize
 uNormalize = uNormalizeAtBase 10
 
 instance (Floating a, RealFrac a, Show a) => Show (Uncert a) where
-    showsPrec d u | dx == 0   = showString "certain "
+    showsPrec d u | dx == 0   = showString "exact "
                               . showsPrec 9 x
                   | otherwise = showParen (d > 5) $
                                     showsPrec 6 x
@@ -210,15 +210,15 @@ instance Fractional a => Num (Uncert a) where
     negate = liftU negate
     abs    = liftU abs
     signum = liftU signum
-    fromInteger = certain . fromInteger
+    fromInteger = exact . fromInteger
 
 instance Fractional a => Fractional (Uncert a) where
     recip = liftU recip
     (/)   = liftU2 (/)
-    fromRational = certain . fromRational
+    fromRational = exact . fromRational
 
 instance Floating a => Floating (Uncert a) where
-    pi      = certain pi
+    pi      = exact pi
     exp     = liftU exp
     log     = liftU log
     sqrt    = liftU sqrt
@@ -268,6 +268,6 @@ instance RealFloat a => RealFloat (Uncert a) where
     isDenormalized  = isDenormalized    . uMean
     isNegativeZero  = isNegativeZero    . uMean
     isIEEE          = isIEEE            . uMean
-    encodeFloat a b = certain (encodeFloat a b)
+    encodeFloat a b = exact (encodeFloat a b)
     significand     = liftU significand
     atan2           = liftU2 atan2
