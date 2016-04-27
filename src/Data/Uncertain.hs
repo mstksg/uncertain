@@ -27,6 +27,46 @@ import           GHC.Generics
 import           Numeric.AD.Mode.Sparse
 import qualified Numeric.AD.Mode.Tower  as T
 
+-- | Represents an independent experimental value centered around a mean
+-- value with "inherent" and independent uncertainty.
+--
+-- Mostly useful due to its instances of numeric typeclasses like `Num`,
+-- `Fractional`, etc., which allows you to add and multiply and apply
+-- arbitrary numerical functions to them and have the uncertainty
+-- propagate appropriately.
+--
+-- Can be created with 'exact' to represent an "exact" measurement with no
+-- uncertainty, '+/-' and ':+/-' to specify a standard deviation as
+-- a range, 'withPrecision' to specify through decimal precision, and
+-- 'withVar' to specify with a variance.
+--
+-- Can be deconstructed with ':+/-', the pattern synonym/pseudo-constructor
+-- which matches on the mean and a standard deviation.  You can also access
+-- properties with 'uMean', 'uStd', 'uVar', 'uMeanStd', 'uMeanVar',
+-- 'uRange', etc.
+--
+-- It's important to remember that each "occurrence" represents a unique
+-- independent sample, so:
+--
+-- > > let x = 15 +/- 2 in x + x
+-- > 30 +/- 3
+-- >
+-- > > let x = 15 +/- 2 in x*2
+-- > 30 +/- 4
+--
+-- @x + x@ does not represent adding the same sample to itself twice, it
+-- represents /independently/ sampling two values within the range @15 +/- 2@
+-- and adding them together.  In general, errors and deviations will cancel
+-- each-other out, leading to a smaller uncertainty.
+--
+-- However, @x*2@ represents taking /one/ sample and multiplying it by two.
+-- This yields a greater uncertainty, because errors and deviations are
+-- amplified.
+--
+-- Also be aware that the 'Show' instance "normalizes" the result, and
+-- won't show any mean/central point to a decimal precision smaller than
+-- the uncertainty, rounding off the excess.
+--
 data Uncert a = Un { _uMean :: a
                    , _uVar  :: a     -- ^ maintained to be positive!
                    }
@@ -44,6 +84,7 @@ uStd = sqrt . uVar
 exact :: Num a => a -> Uncert a
 exact x = Un x 0
 
+infixl 6 +/-
 infixl 6 :+/-
 
 (+/-) :: Num a => a -> a -> Uncert a
