@@ -12,8 +12,7 @@ module Data.Uncertain.Correlated
   , Corr
   , runCorr
   , corrToState
-  , sampleUncert
-  , sampleCertain
+  , sampleUncert, sampleExact
   , resolveUncert
   , liftCF
   , liftC, liftC2, liftC3, liftC4, liftC5
@@ -95,8 +94,8 @@ runCorr = flip evalState (0, M.empty) . corrToState
 sampleUncert :: Uncert a -> Corr s a (CVar s a)
 sampleUncert u = liftF $ Gen u id
 
-sampleCertain :: a -> Corr s a (CVar s a)
-sampleCertain x = liftF $ Cer x id
+sampleExact :: a -> Corr s a (CVar s a)
+sampleExact x = liftF $ Cer x id
 
 resolveUncert :: CVar s a -> Corr s a (Uncert a)
 resolveUncert v = liftF $ Rei v id
