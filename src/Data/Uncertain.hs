@@ -10,39 +10,51 @@ module Data.Uncertain
   ( Uncert
   , pattern (:+/-)
   , uMean, uVar, uStd, uMeanVar, uMeanStd, uRange
-  , (+/-), certain, withPrecisionAtBase, withPrecision, withVar
+  , uVar', uStd', uMeanVar', uMeanStd'
+  , (+/-), exact, withPrecisionAtBase, withPrecision, withVar
   , uNormalizeAtBase, uNormalize
   , liftUF
   , liftU, liftU', liftU2, liftU3, liftU4, liftU5
   )
   where
 
-import           Control.Arrow           ((&&&))
+import           Control.Applicative
+import           Control.Arrow          ((&&&))
 import           Data.Data
+import           Data.Coerce
 import           Data.Foldable
 import           Data.Function
 import           Data.Hople
+import           Data.Maybe
+import           Data.Monoid
 import           Data.Ord
 import           GHC.Generics
 import           Numeric.AD.Mode.Sparse
-import qualified Numeric.AD.Mode.Tower as T
+import qualified Numeric.AD.Mode.Tower  as T
 
-data Uncert a = Un { _uMean :: a
-                   , _uVar  :: a     -- ^ maintained to be positive!
-                   }
+data Uncert a = Un !a !a -- should be positive!
+              | Ce !a
   deriving (Data, Typeable, Generic, Generic1)
 
 uMean :: Uncert a -> a
-uMean = _uMean
+uMean (Un x _) = x
+uMean (Ce x)   = x
 
-uVar :: Uncert a -> a
-uVar = _uVar
+uVar :: Num a => Uncert a -> a
+uVar = fromMaybe 0 . uVar'
+
+uVar' :: Uncert a -> Maybe a
+uVar' (Un _ v) = Just v
+uVar' (Ce _)   = Nothing
 
 uStd :: Floating a => Uncert a -> a
 uStd = sqrt . uVar
 
-certain :: Num a => a -> Uncert a
-certain x = Un x 0
+uStd' :: Floating a => Uncert a -> Maybe a
+uStd' = fmap sqrt . uVar'
+
+exact :: a -> Uncert a
+exact = Ce
 
 infixl 6 :+/-
 
@@ -53,19 +65,25 @@ withVar :: Num a => a -> a -> Uncert a
 withVar x vx = Un x (abs vx)
 
 pattern (:+/-) :: () => Floating a => a -> a -> Uncert a
-pattern x :+/- dx <- Un x (sqrt->dx)
+pattern x :+/- dx <- (uMeanStd->(x, dx))
   where
     x :+/- dx = Un x (dx*dx)
 
-uMeanVar :: Uncert a -> (a, a)
+uMeanVar :: Num a => Uncert a -> (a, a)
 uMeanVar = uMean &&& uVar
+
+uMeanVar' :: Uncert a -> (a, Maybe a)
+uMeanVar' = uMean &&& uVar'
 
 uMeanStd :: Floating a => Uncert a -> (a, a)
 uMeanStd = uMean &&& uStd
 
+uMeanStd' :: Floating a => Uncert a -> (a, Maybe a)
+uMeanStd' = uMean &&& uStd'
+
 uRange :: Floating a => Uncert a -> (a, a)
-uRange u = let x :+/- dx = u
-           in  (x - dx, x + dx)
+uRange (Un x (sqrt->dx)) = (x - dx, x + dx)
+uRange (Ce x)            = (x     , x)
 
 withPrecisionAtBase
     :: (Floating a, RealFrac a)
@@ -97,9 +115,9 @@ uNormalizeAtBase
     => Int
     -> Uncert a
     -> Uncert a
-uNormalizeAtBase b u = x' :+/- dx'
+uNormalizeAtBase _ (Ce x)            = Ce x
+uNormalizeAtBase b (Un x (sqrt->dx)) = x' :+/- dx'
   where
-    x :+/- dx = u
     uncert    :: Int
     uncert    = negate . floor . logBase (fromIntegral b) $ dx
     rounder   = fromIntegral b ** fromIntegral uncert
@@ -116,47 +134,67 @@ uNormalize
 uNormalize = uNormalizeAtBase 10
 
 instance (Floating a, RealFrac a, Show a) => Show (Uncert a) where
-    showsPrec d u | dx == 0   = showString "certain "
-                              . showsPrec 9 x
-                  | otherwise = showParen (d > 5) $
-                                    showsPrec 6 x
-                                  . showString " +/- "
-                                  . showsPrec 6 dx
-      where
-        x :+/- dx = uNormalize u
+    showsPrec d (uNormalize->u) =
+        case u of
+          Ce x            -> showString "exact "
+                           . showsPrec 9 x
+          Un x (sqrt->dx) -> showParen (d > 5) $
+                                 showsPrec 6 x
+                               . showString " +/- "
+                               . showsPrec 6 dx
 
 liftUF
-    :: (Traversable f, Fractional a)
+    :: forall f a. (Traversable f, Fractional a)
     => (forall s. f (AD s (Sparse a)) -> AD s (Sparse a))
     -> f (Uncert a)
     -> Uncert a
-liftUF f us = Un y vy
+liftUF f us = case vy' of
+                Just vy -> Un y vy
+                Nothing -> Ce y
   where
+    xs          :: f a
     xs          = uMean <$> us
-    vxs         = uVar  <$> us
-    vxsL        = toList vxs
+    vxsL        :: [Maybe a]
+    vxsL        = map uVar' . toList $ us
     (fx, dfxsh) = hessian' f xs
+    dfxs        :: f a
     dfxs        = fst <$> dfxsh
+    hess        :: f (f a)
     hess        = snd <$> dfxsh
-    y           = fx + hessTerm / 2
+    y           :: a
+    y           = case hessTerm of
+                    Just h  -> fx + h / 2
+                    Nothing -> fx
       where
-        hessTerm = sum . zipWith (*) vxsL . toList
-                 . fmap (sum . zipWith (*) vxsL . toList)
+        hessTerm :: Maybe a
+        hessTerm = sumMaybes . zipWith (liftA2 (*)) vxsL . toList
+                 . fmap (sumMaybes . zipWith (*!) vxsL . toList)
                  $ hess
-    vy          = sum $ zipWith (\dfx vx -> dfx*dfx*vx)
-                                (toList dfxs)
-                                vxsL
+    vy'         :: Maybe a
+    vy'         = sumMaybes $
+                    zipWith (\dfx vx -> vx *! (dfx*dfx))
+                            (toList dfxs)
+                            vxsL
+    (*!) :: Maybe a -> a -> Maybe a
+    v *! d = fmap (*d) v
+    sumMaybes :: [Maybe a] -> Maybe a
+    sumMaybes = (coerce :: Maybe (Sum a) -> Maybe a)
+              . foldMap coerce
 
 liftU
     :: Fractional a
     => (forall s. AD s (T.Tower a) -> AD s (T.Tower a))
     -> Uncert a
     -> Uncert a
-liftU f (Un x vx) = Un y vy
+liftU f (uMeanVar'->(x, vx')) =
+    case vx' of
+      Just vx -> let dfx:ddfx:_ = dfs
+                     y          = fx + ddfx * vx / 2
+                     vy         = dfx*dfx * vx
+                 in  Un y vy
+      Nothing -> Ce fx
   where
-    fx:dfx:ddfx:_ = T.diffs0 f x
-    y             = fx + ddfx * vx / 2
-    vy            = dfx*dfx * vx
+    fx:dfs = T.diffs0 f x
 
 liftU'
     :: Fractional a
@@ -210,15 +248,15 @@ instance Fractional a => Num (Uncert a) where
     negate = liftU negate
     abs    = liftU abs
     signum = liftU signum
-    fromInteger = certain . fromInteger
+    fromInteger = exact . fromInteger
 
 instance Fractional a => Fractional (Uncert a) where
     recip = liftU recip
     (/)   = liftU2 (/)
-    fromRational = certain . fromRational
+    fromRational = exact . fromRational
 
 instance Floating a => Floating (Uncert a) where
-    pi      = certain pi
+    pi      = exact pi
     exp     = liftU exp
     log     = liftU log
     sqrt    = liftU sqrt
@@ -268,6 +306,6 @@ instance RealFloat a => RealFloat (Uncert a) where
     isDenormalized  = isDenormalized    . uMean
     isNegativeZero  = isNegativeZero    . uMean
     isIEEE          = isIEEE            . uMean
-    encodeFloat a b = certain (encodeFloat a b)
+    encodeFloat a b = exact (encodeFloat a b)
     significand     = liftU significand
     atan2           = liftU2 atan2
