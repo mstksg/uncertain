@@ -17,7 +17,7 @@ module Data.Uncertain
   )
   where
 
-import           Control.Arrow           ((&&&))
+import           Control.Arrow          ((&&&))
 import           Data.Data
 import           Data.Foldable
 import           Data.Function
@@ -25,7 +25,7 @@ import           Data.Hople
 import           Data.Ord
 import           GHC.Generics
 import           Numeric.AD.Mode.Sparse
-import qualified Numeric.AD.Mode.Tower as T
+import qualified Numeric.AD.Mode.Tower  as T
 
 data Uncert a = Un { _uMean :: a
                    , _uVar  :: a     -- ^ maintained to be positive!
