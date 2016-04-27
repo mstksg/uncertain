@@ -4,28 +4,36 @@
 {-# LANGUAGE PatternSynonyms     #-}
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE ViewPatterns        #-}
 
 module Data.Uncertain
-  ( Uncert
-  , pattern (:+/-)
-  , uMean, uVar, uStd, uMeanVar, uMeanStd, uRange
-  , (+/-), certain, withPrecisionAtBase, withPrecision, withVar
-  , uNormalizeAtBase, uNormalize
-  , liftUF
-  , liftU, liftU', liftU2, liftU3, liftU4, liftU5
-  )
+  -- ( Uncert
+  -- , pattern (:+/-)
+  -- , uMean, uVar, uStd, uMeanVar, uMeanStd, uRange
+  -- , (+/-), certain, withPrecisionAtBase, withPrecision, withVar
+  -- , uNormalizeAtBase, uNormalize
+  -- , liftUF
+  -- , liftU, liftU', liftU2, liftU3, liftU4, liftU5
+  -- )
   where
 
-import           Control.Arrow           ((&&&))
+import           Control.Arrow               ((&&&))
+import           Data.Coerce
 import           Data.Data
 import           Data.Foldable
 import           Data.Function
 import           Data.Hople
 import           Data.Ord
 import           GHC.Generics
-import           Numeric.AD.Mode.Sparse
-import qualified Numeric.AD.Mode.Tower as T
+import           Numeric.AD
+import           Numeric.AD.Internal.On
+import           Numeric.AD.Internal.Type
+import           Numeric.AD.Mode
+import           Numeric.AD.Mode.Forward     (Forward)
+import qualified Numeric.AD.Internal.Forward as F
+import qualified Numeric.AD.Mode.Forward     as F
+import qualified Numeric.AD.Mode.Tower       as T
 
 data Uncert a = Un { _uMean :: a
                    , _uVar  :: a     -- ^ maintained to be positive!
@@ -126,148 +134,145 @@ instance (Floating a, RealFrac a, Show a) => Show (Uncert a) where
         x :+/- dx = uNormalize u
 
 liftUF
-    :: (Traversable f, Fractional a)
-    => (forall s. f (AD s (Sparse a)) -> AD s (Sparse a))
+    :: forall f a. (Traversable f, Fractional a)
+    => (forall s. f (AD s (On (Forward (Forward a)))) -> AD s (On (Forward (Forward a))))
     -> f (Uncert a)
     -> Uncert a
 liftUF f us = Un y vy
   where
+    f'          :: f (AD s (Forward a)) -> AD s (Forward a)
+    f'          = AD . F.primal . off . runAD . f . fmap (AD . On . auto . runAD)
     xs          = uMean <$> us
     vxs         = uVar  <$> us
     vxsL        = toList vxs
-    (fx, dfxsh) = hessian' f xs
-    dfxs        = fst <$> dfxsh
-    hess        = snd <$> dfxsh
-    y           = fx + hessTerm / 2
-      where
-        hessTerm = sum . zipWith (*) vxsL . toList
-                 . fmap (sum . zipWith (*) vxsL . toList)
-                 $ hess
+    (fx, dfxs)  = F.grad' f' xs
+    hess        = F.hessianProduct f (uMeanVar <$> us)
+    y           = fx + sum (zipWith (*) vxsL (toList hess)) / 2
     vy          = sum $ zipWith (\dfx vx -> dfx*dfx*vx)
                                 (toList dfxs)
                                 vxsL
 
-liftU
-    :: Fractional a
-    => (forall s. AD s (T.Tower a) -> AD s (T.Tower a))
-    -> Uncert a
-    -> Uncert a
-liftU f (Un x vx) = Un y vy
-  where
-    fx:dfx:ddfx:_ = T.diffs0 f x
-    y             = fx + ddfx * vx / 2
-    vy            = dfx*dfx * vx
+-- liftU
+--     :: Fractional a
+--     => (forall s. (Mode s, Scalar s ~ a) => s -> s)
+--     -> Uncert a
+--     -> Uncert a
+-- liftU f (Un x vx) = Un y vy
+--   where
+--     fx:dfx:ddfx:_ = T.diffs0 f x
+--     y             = fx + ddfx * vx / 2
+--     vy            = dfx*dfx * vx
 
-liftU'
-    :: Fractional a
-    => (forall s. AD s (Sparse a) -> AD s (Sparse a))
-    -> Uncert a
-    -> Uncert a
-liftU' f x = liftUF (\(H1 x') -> f x') (H1 x)
+-- liftU'
+--     :: Fractional a
+--     => (forall s. (Mode s, Scalar s ~ a) => s -> s)
+--     -> Uncert a
+--     -> Uncert a
+-- liftU' f x = liftUF (\(H1 x') -> f x') (H1 x)
 
-liftU2
-    :: Fractional a
-    => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a))
-    -> Uncert a
-    -> Uncert a
-    -> Uncert a
-liftU2 f x y = liftUF (\(H2 x' y') -> f x' y') (H2 x y)
+-- liftU2
+--     :: Fractional a
+--     => (forall s. (Mode s, Scalar s ~ a) => s -> s -> s)
+--     -> Uncert a
+--     -> Uncert a
+--     -> Uncert a
+-- liftU2 f x y = liftUF (\(H2 x' y') -> f x' y') (H2 x y)
 
-liftU3
-    :: Fractional a
-    => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a))
-    -> Uncert a
-    -> Uncert a
-    -> Uncert a
-    -> Uncert a
-liftU3 f x y z = liftUF (\(H3 x' y' z') -> f x' y' z') (H3 x y z)
+-- liftU3
+--     :: Fractional a
+--     => (forall s. AD s (Forward a) -> AD s (Forward a) -> AD s (Forward a) -> AD s (Forward a))
+--     -> Uncert a
+--     -> Uncert a
+--     -> Uncert a
+--     -> Uncert a
+-- liftU3 f x y z = liftUF (\(H3 x' y' z') -> f x' y' z') (H3 x y z)
 
-liftU4
-    :: Fractional a
-    => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a))
-    -> Uncert a
-    -> Uncert a
-    -> Uncert a
-    -> Uncert a
-    -> Uncert a
-liftU4 f x y z a = liftUF (\(H4 x' y' z' a') -> f x' y' z' a') (H4 x y z a)
+-- liftU4
+--     :: Fractional a
+--     => (forall s. AD s (Forward a) -> AD s (Forward a) -> AD s (Forward a) -> AD s (Forward a) -> AD s (Forward a))
+--     -> Uncert a
+--     -> Uncert a
+--     -> Uncert a
+--     -> Uncert a
+--     -> Uncert a
+-- liftU4 f x y z a = liftUF (\(H4 x' y' z' a') -> f x' y' z' a') (H4 x y z a)
 
-liftU5
-    :: Fractional a
-    => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a))
-    -> Uncert a
-    -> Uncert a
-    -> Uncert a
-    -> Uncert a
-    -> Uncert a
-    -> Uncert a
-liftU5 f x y z a b = liftUF (\(H5 x' y' z' a' b') -> f x' y' z' a' b') (H5 x y z a b)
+-- liftU5
+--     :: Fractional a
+--     => (forall s. AD s (Forward a) -> AD s (Forward a) -> AD s (Forward a) -> AD s (Forward a) -> AD s (Forward a) -> AD s (Forward a))
+--     -> Uncert a
+--     -> Uncert a
+--     -> Uncert a
+--     -> Uncert a
+--     -> Uncert a
+--     -> Uncert a
+-- liftU5 f x y z a b = liftUF (\(H5 x' y' z' a' b') -> f x' y' z' a' b') (H5 x y z a b)
 
-instance Fractional a => Num (Uncert a) where
-    (+)    = liftU2 (+)
-    (*)    = liftU2 (*)
-    (-)    = liftU2 (-)
-    negate = liftU negate
-    abs    = liftU abs
-    signum = liftU signum
-    fromInteger = certain . fromInteger
+-- instance Fractional a => Num (Uncert a) where
+--     (+)    = liftU2 (+)
+--     (*)    = liftU2 (*)
+--     (-)    = liftU2 (-)
+--     negate = liftU negate
+--     abs    = liftU abs
+--     signum = liftU signum
+--     fromInteger = certain . fromInteger
 
-instance Fractional a => Fractional (Uncert a) where
-    recip = liftU recip
-    (/)   = liftU2 (/)
-    fromRational = certain . fromRational
+-- instance Fractional a => Fractional (Uncert a) where
+--     recip = liftU recip
+--     (/)   = liftU2 (/)
+--     fromRational = certain . fromRational
 
-instance Floating a => Floating (Uncert a) where
-    pi      = certain pi
-    exp     = liftU exp
-    log     = liftU log
-    sqrt    = liftU sqrt
-    (**)    = liftU2 (**)
-    logBase = liftU2 logBase
-    sin     = liftU sin
-    cos     = liftU cos
-    asin    = liftU asin
-    acos    = liftU acos
-    atan    = liftU atan
-    sinh    = liftU sinh
-    cosh    = liftU cosh
-    asinh   = liftU asinh
-    acosh   = liftU acosh
-    atanh   = liftU atanh
+-- instance Floating a => Floating (Uncert a) where
+--     pi      = certain pi
+--     exp     = liftU exp
+--     log     = liftU log
+--     sqrt    = liftU sqrt
+--     (**)    = liftU2 (**)
+--     logBase = liftU2 logBase
+--     sin     = liftU sin
+--     cos     = liftU cos
+--     asin    = liftU asin
+--     acos    = liftU acos
+--     atan    = liftU atan
+--     sinh    = liftU sinh
+--     cosh    = liftU cosh
+--     asinh   = liftU asinh
+--     acosh   = liftU acosh
+--     atanh   = liftU atanh
 
-instance Eq a => Eq (Uncert a) where
-    (==) = (==) `on` uMean
-    (/=) = (/=) `on` uMean
+-- instance Eq a => Eq (Uncert a) where
+--     (==) = (==) `on` uMean
+--     (/=) = (/=) `on` uMean
 
-instance Ord a => Ord (Uncert a) where
-    compare = comparing uMean
+-- instance Ord a => Ord (Uncert a) where
+--     compare = comparing uMean
 
-instance (Fractional a, Real a) => Real (Uncert a) where
-    toRational = toRational . uMean
+-- instance (Fractional a, Real a) => Real (Uncert a) where
+--     toRational = toRational . uMean
 
-instance RealFrac a => RealFrac (Uncert a) where
-    properFraction x = (n, d)
-      where
-        d    = liftU (snd' . properFraction) x
-        n    = fst . properFraction $ uMean x
-        snd' :: (Int, b) -> b
-        snd' = snd
-    truncate = truncate . uMean
-    round    = round    . uMean
-    ceiling  = ceiling  . uMean
-    floor    = floor    . uMean
+-- instance RealFrac a => RealFrac (Uncert a) where
+--     properFraction x = (n, d)
+--       where
+--         d    = liftU (snd' . properFraction) x
+--         n    = fst . properFraction $ uMean x
+--         snd' :: (Int, b) -> b
+--         snd' = snd
+--     truncate = truncate . uMean
+--     round    = round    . uMean
+--     ceiling  = ceiling  . uMean
+--     floor    = floor    . uMean
 
-instance RealFloat a => RealFloat (Uncert a) where
-    floatRadix      = floatRadix        . uMean
-    floatDigits     = floatDigits       . uMean
-    floatRange      = floatRange        . uMean
-    decodeFloat     = decodeFloat       . uMean
-    exponent        = exponent          . uMean
-    isNaN           = isNaN             . uMean
-    isInfinite      = isInfinite        . uMean
-    isDenormalized  = isDenormalized    . uMean
-    isNegativeZero  = isNegativeZero    . uMean
-    isIEEE          = isIEEE            . uMean
-    encodeFloat a b = certain (encodeFloat a b)
-    significand     = liftU significand
-    atan2           = liftU2 atan2
+-- instance RealFloat a => RealFloat (Uncert a) where
+--     floatRadix      = floatRadix        . uMean
+--     floatDigits     = floatDigits       . uMean
+--     floatRange      = floatRange        . uMean
+--     decodeFloat     = decodeFloat       . uMean
+--     exponent        = exponent          . uMean
+--     isNaN           = isNaN             . uMean
+--     isInfinite      = isInfinite        . uMean
+--     isDenormalized  = isDenormalized    . uMean
+--     isNegativeZero  = isNegativeZero    . uMean
+--     isIEEE          = isIEEE            . uMean
+--     encodeFloat a b = certain (encodeFloat a b)
+--     significand     = liftU significand
+--     atan2           = liftU2 atan2

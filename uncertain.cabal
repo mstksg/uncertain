@@ -71,7 +71,7 @@ cabal-version:       >=1.10
 
 library
   exposed-modules:     Data.Uncertain
-                       Data.Uncertain.Correlated
+                       -- Data.Uncertain.Correlated
                        -- Data.Uncertain.Interactive
   -- other-modules:       
   -- other-extensions:    
