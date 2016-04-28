@@ -184,14 +184,11 @@ liftUF f us = Un y vy
     (fx, dfxsh) = hessian' f xs
     dfxs        = fst <$> dfxsh
     hess        = snd <$> dfxsh
-    y           = fx + hessTerm / 2
+    y           = fx + hessQuad / 2
       where
-        hessTerm = sum . zipWith (*) vxsL . toList
-                 . fmap (sum . zipWith (*) vxsL . toList)
-                 $ hess
-    vy          = sum $ zipWith (\dfx vx -> dfx*dfx*vx)
-                                (toList dfxs)
-                                vxsL
+        hessQuad = dot vxsL (dot vxsL <$> hess)
+    vy          = dot vxsL ((^ (2::Int)) <$> dfxs)
+    dot x = sum . zipWith (*) x . toList
 
 liftU
     :: Fractional a
