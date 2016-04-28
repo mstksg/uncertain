@@ -67,8 +67,8 @@ import qualified Numeric.AD.Mode.Tower  as T
 -- won't show any mean/central point to a decimal precision smaller than
 -- the uncertainty, rounding off the excess.
 --
-data Uncert a = Un { _uMean :: a
-                   , _uVar  :: a     -- ^ maintained to be positive!
+data Uncert a = Un { _uMean :: !a
+                   , _uVar  :: !a    -- ^ maintained to be positive!
                    }
   deriving (Data, Typeable, Generic, Generic1)
 
@@ -156,15 +156,16 @@ uNormalize
     -> Uncert a
 uNormalize = uNormalizeAtBase 10
 
-instance (Floating a, RealFrac a, Show a) => Show (Uncert a) where
-    showsPrec d u | dx == 0   = showString "exact "
-                              . showsPrec 9 x
-                  | otherwise = showParen (d > 5) $
-                                    showsPrec 6 x
-                                  . showString " +/- "
-                                  . showsPrec 6 dx
-      where
-        x :+/- dx = uNormalize u
+instance (Show a, Floating a, RealFrac a) => Show (Uncert a) where
+    showsPrec d = uShowsPrec' d . uNormalize
+
+uShowsPrec' :: (Show a, Floating a) => Int -> Uncert a -> ShowS
+uShowsPrec' d u = showParen (d > 5) $
+                      showsPrec 6 x
+                    . showString " +/- "
+                    . showsPrec 6 dx
+  where
+    x :+/- dx = u
 
 liftUF
     :: (Traversable f, Fractional a)
