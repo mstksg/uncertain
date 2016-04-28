@@ -14,6 +14,7 @@ module Data.Uncertain
   , uNormalizeAtBase, uNormalize
   , liftUF
   , liftU, liftU', liftU2, liftU3, liftU4, liftU5
+  , uShow, uShowsPrec
   )
   where
 
@@ -157,15 +158,18 @@ uNormalize
 uNormalize = uNormalizeAtBase 10
 
 instance (Show a, Floating a, RealFrac a) => Show (Uncert a) where
-    showsPrec d = uShowsPrec' d . uNormalize
+    showsPrec d = uShowsPrec d . uNormalize
 
-uShowsPrec' :: (Show a, Floating a) => Int -> Uncert a -> ShowS
-uShowsPrec' d u = showParen (d > 5) $
-                      showsPrec 6 x
-                    . showString " +/- "
-                    . showsPrec 6 dx
+uShowsPrec :: (Show a, Floating a) => Int -> Uncert a -> ShowS
+uShowsPrec d u = showParen (d > 5) $
+                     showsPrec 6 x
+                   . showString " +/- "
+                   . showsPrec 6 dx
   where
     x :+/- dx = u
+
+uShow :: (Show a, Floating a) => Uncert a -> String
+uShow u = uShowsPrec 0 u ""
 
 liftUF
     :: (Traversable f, Fractional a)
