@@ -17,7 +17,7 @@ liftU
     -> Uncert Double
     -> Gen (PrimState m)
     -> m (Uncert Double)
-liftU f u g = uncertStats <$> replicateM 1000000 samp
+liftU f u g = uncertStats <$> replicateM 10000 samp
   where
     samp = f <$> normal x dx g
     x :+/- dx = u
@@ -28,7 +28,7 @@ liftUF
     -> f (Uncert Double)
     -> Gen (PrimState m)
     -> m (Uncert Double)
-liftUF f us g = uncertStats <$> replicateM 1000000 samp
+liftUF f us g = uncertStats <$> replicateM 10000 samp
   where
     samp = fmap f . for us $ \(x :+/- dx) ->
              normal x dx g
