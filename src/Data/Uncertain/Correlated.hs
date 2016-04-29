@@ -1,190 +1,186 @@
-module Data.Uncertain.Correlated (
-    CVar
-  , Correlated
-  , fromUncertain
-  , fromUncertain2
-  , fromUncertain3
-  , marginalize
-  , marginalize2
-  , getCorrelation
-  , getCovariance
-  , getCorrelated
-  , getCorrelateds
-  , getCorrelatedT
-  , normalizeCVar
-  ) where
+{-# LANGUAGE DeriveFunctor       #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE GADTs               #-}
+{-# LANGUAGE KindSignatures      #-}
+{-# LANGUAGE LambdaCase          #-}
+{-# LANGUAGE RankNTypes          #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE StandaloneDeriving  #-}
 
-import Control.Applicative
-import Control.Arrow
-import Control.Monad.Trans.State.Strict
-import Data.Functor.Identity
-import Data.IntMap.Strict                 (IntMap, Key, (!))
-import Data.Maybe
-import Data.Traversable
-import Data.Uncertain
-import Data.Uncertain.Correlated.Internal
-import Data.Uncertain.Internal
-import qualified Data.IntMap.Strict       as IM
-
-fromUncertain2 :: Num b
-               => Uncertain b
-               -> Uncertain b
-               -> b
-               -> Correlated b (CVar b, CVar b)
-fromUncertain2 (x :+- dx) (y :+- dy) p = C $ state f
+module Data.Uncertain.Correlated
+  ( CVar
+  , Corr
+  , runCorr
+  , corrToState
+  , sampleUncert, sampleExact
+  , resolveUncert
+  , liftCF
+  , liftC, liftC2, liftC3, liftC4, liftC5
+  )
   where
-    f (CS i1 cvlm cvrm) = ((CVKey i1, CVKey i2), CS i3 cvlm' cvrm')
+
+import           Control.Monad.Free
+import           Control.Monad.Trans.State
+import           Data.Bifunctor
+import           Data.Hople
+import           Data.Uncertain
+import           Numeric.AD.Mode.Sparse
+import qualified Data.IntMap.Strict        as M
+
+data CVar :: * -> * -> * where
+    CK :: a -> CVar s a
+    CV :: M.Key -> CVar s a
+    CF :: Functor f
+       => (forall t. f (AD t (Sparse a)) -> AD t (Sparse a))
+       -> f (CVar s a)
+       -> CVar s a
+
+data CorrF :: * -> * -> * -> * where
+    Cer :: a -> (CVar s a -> b) -> CorrF s a b
+    Gen :: Uncert a -> (CVar s a -> b) -> CorrF s a b
+    Fun :: Functor f
+        => (forall t. f (AD t (Sparse a)) -> AD t (Sparse a))
+        -> f (CVar s a)
+        -> (CVar s a -> b)
+        -> CorrF s a b
+    Rei :: CVar s a
+        -> (Uncert a -> b)
+        -> CorrF s a b
+    Cor :: CVar s a
+        -> CVar s a
+        -> (a -> b)
+        -> CorrF s a b
+
+deriving instance Functor (CorrF s a)
+
+type Corr s a = Free (CorrF s a)
+
+corrToState
+    :: (Monad m, Fractional a)
+    => Corr s a b
+    -> StateT (M.Key, M.IntMap (Uncert a)) m b
+corrToState = iterM $ \case
+                        Cer c next    -> do
+                          next (CK c)
+                        Gen u next    -> do
+                          i <- gets fst
+                          modify $ bimap succ (M.insert i u)
+                          next (CV i)
+                        Fun f us next -> do
+                          next $ CF f us
+                        Rei v next    -> do
+                          u <- gets (getCVar v . snd)
+                          next u
+                        Cor _ _ _     ->
+                          undefined
+  where
+    getCVar
+        :: forall a s. Fractional a
+        => CVar s a
+        -> M.IntMap (Uncert a)
+        -> Uncert a
+    getCVar cv = liftUF (cVarToF cv)
       where
-        i2    = i1 + 1
-        i3    = i2 + 1
-        cvlm' = IM.insert i2 y
-              . IM.insert i1 x
-              $ cvlm
-        cov   = p * dx * dy         -- p should be between -1 and 1
-        cvrm' = IM.insertWith IM.union i2 (IM.fromList [(i2, dy * dy), (i1, cov)])
-              . IM.insertWith IM.union i1 (IM.fromList [(i1, dx * dx), (i2, cov)])
-              $ cvrm
+        cVarToF
+            :: CVar s a
+            -> (forall t. M.IntMap (AD t (Sparse a)) -> AD t (Sparse a))
+        cVarToF (CK x)    _  = auto x
+        cVarToF (CV k)    us = us M.! k
+        cVarToF (CF f cs) us = f (flip cVarToF us <$> cs)
 
-fromUncertain3 :: Num b
-               => Uncertain b
-               -> Uncertain b
-               -> Uncertain b
-               -> b
-               -> b
-               -> b
-               -> Correlated b (CVar b, CVar b, CVar b)
-fromUncertain3 (x :+- dx) (y :+- dy) (z :+- dz) pxy pxz pyz = C $ state f
-  where
-    f (CS i1 cvlm cvrm) = ((CVKey i1, CVKey i2, CVKey i3), CS i4 cvlm' cvrm')
-      where
-        i2 = i1 + 1
-        i3 = i2 + 1
-        i4 = i3 + 1
-        cxy = pxy * dx * dy
-        cxz = pxz * dx * dz
-        cyz = pyz * dy * dz
-        cvlm' = IM.insert i3 z
-              . IM.insert i2 y
-              . IM.insert i1 x
-              $ cvlm
-        cvrm' = IM.insertWith IM.union i3 (IM.fromList [(i3, dz * dz), (i1, cxz), (i2, cyz)])
-              . IM.insertWith IM.union i2 (IM.fromList [(i2, dy * dy), (i1, cxy), (i3, cyz)])
-              . IM.insertWith IM.union i1 (IM.fromList [(i1, dx * dx), (i2, cxy), (i3, cxz)])
-              $ cvrm
+runCorr :: Fractional a => Corr s a b -> b
+runCorr = flip evalState (0, M.empty) . corrToState
 
-marginalize :: Floating b
-            => CVar b
-            -> Correlated b (Uncertain b)
-marginalize = fmap f . getCVar
-  where
-    f (_, x, vx) = x :+- sqrt vx
+sampleUncert :: Uncert a -> Corr s a (CVar s a)
+sampleUncert u = liftF $ Gen u id
 
-getCorrelated :: Floating b
-              => Correlated b (CVar b)
-              -> Uncertain b
-getCorrelated = runIdentity . getCorrelatedT . fmap Identity
+sampleExact :: a -> Corr s a (CVar s a)
+sampleExact x = liftF $ Cer x id
 
-getCorrelateds :: Floating b
-               => Correlated b [CVar b]
-               -> [Uncertain b]
-getCorrelateds = getCorrelatedT
+resolveUncert :: CVar s a -> Corr s a (Uncert a)
+resolveUncert v = liftF $ Rei v id
 
-getCorrelatedT :: (Floating b, Traversable f)
-               => Correlated b (f (CVar b))
-               -> f (Uncertain b)
-getCorrelatedT ccs = evalState st emptyCorrState
-  where
-    C st = traverse marginalize =<< ccs
+liftCF
+    :: (Functor f, Fractional a)
+    => (forall t. f (AD t (Sparse a)) -> AD t (Sparse a))
+    -> f (CVar s a)
+    -> CVar s a
+liftCF f cs = CF f cs
 
-marginalize2 :: Floating b
-             => CVar b
-             -> CVar b
-             -> Correlated b (Uncertain b, Uncertain b, b)
-marginalize2 cx cy = f <$> getCVar2 cx cy
-  where
-    f ((_,x,vx),(_,y,vy),p) = ( x :+- sqrt vx
-                              , y :+- sqrt vy
-                              , p
-                              )
+liftC
+    :: Fractional a
+    => (forall t. AD t (Sparse a) -> AD t (Sparse a))
+    -> CVar s a
+    -> CVar s a
+liftC f = curryH1 $ liftCF (uncurryH1 f)
 
-setCorrelation :: CVar b -> CVar b -> b -> Correlated b ()
-setCorrelation cx cy p = undefined
+liftC2
+    :: Fractional a
+    => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a))
+    -> CVar s a
+    -> CVar s a
+    -> CVar s a
+liftC2 f = curryH2 $ liftCF (uncurryH2 f)
 
-getCVar :: Num b
-        => CVar b
-        -> Correlated b (Key, b, b)
-getCVar cx = do
-    CVKey k <- normalizeCVar cx
-    C . gets $ \(CS _ vl vr) -> let x  = fromMaybe (error $ "Database error on key " ++ show k)
-                                       $ IM.lookup k vl
-                                    vx = fromMaybe 0 $ dblu k k vr
-                                in  (k, x, vx)
+liftC3
+    :: Fractional a
+    => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a))
+    -> CVar s a
+    -> CVar s a
+    -> CVar s a
+    -> CVar s a
+liftC3 f = curryH3 $ liftCF (uncurryH3 f)
 
-getCVar2 :: Num b
-         => CVar b
-         -> CVar b
-         -> Correlated b ((Key, b, b), (Key, b, b), b)
-getCVar2 cx cy = do
-    CVKey kx <- normalizeCVar cx
-    CVKey ky <- normalizeCVar cy
-    C . gets $ \(CS _ vl vr) -> let x  = fromMaybe (error $ "Database error on key " ++ show kx)
-                                       $ IM.lookup kx vl
-                                    y  = fromMaybe (error $ "Database error on key " ++ show kx)
-                                       $ IM.lookup ky vl
-                                    vx = fromMaybe 0 $ dblu kx kx vr
-                                    vy = fromMaybe 0 $ dblu ky ky vr
-                                    cv = fromMaybe 0 $ dblu kx ky vr
-                                in  ((kx, x, vx), (ky, y, vy), cv)
+liftC4
+    :: Fractional a
+    => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a))
+    -> CVar s a
+    -> CVar s a
+    -> CVar s a
+    -> CVar s a
+    -> CVar s a
+liftC4 f = curryH4 $ liftCF (uncurryH4 f)
 
-getCorrelation :: Floating b
-               => CVar b
-               -> CVar b
-               -> Correlated b b
-getCorrelation cx cy = f <$> getCVar2 cx cy
-  where
-    f ((_,_,vx), (_,_,vy), p) = p / sqrt (vx * vy)
+liftC5
+    :: Fractional a
+    => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a))
+    -> CVar s a
+    -> CVar s a
+    -> CVar s a
+    -> CVar s a
+    -> CVar s a
+    -> CVar s a
+liftC5 f = curryH5 $ liftCF (uncurryH5 f)
 
-getCovariance :: Num b
-              => CVar b
-              -> CVar b
-              -> Correlated b b
-getCovariance cx cy = thrd <$> getCVar2 cx cy
-  where
-    thrd (_,_,z) = z
+instance Fractional a => Num (CVar s a) where
+    (+)    = liftC2 (+)
+    (*)    = liftC2 (*)
+    (-)    = liftC2 (-)
+    negate = liftC negate
+    abs    = liftC abs
+    signum = liftC signum
+    fromInteger = CK . fromInteger
 
--- major flaw here: also have to update all variables that were correlated
--- with the original keys to the new covarinces
-normalizeCVar :: Num b => CVar b -> Correlated b (CVar b)
-normalizeCVar cv = case cv of
-    CVPure u -> C . state $ \cs@(CS i iv _) ->
-        (CVKey i, cs { csCount = i + 1
-                     , csValMat = IM.insert i u iv
-                     })
-    CVKey k  -> return cv
-    CVProp1 prop cx    -> do
-        (k, x, vx) <- getCVar cx
-        C . state $ \(CS i vl vr) -> let ((y, vy), cv) = prop (x, vx)
-                                         i'      = i + 1
-                                         vl'     = IM.insert i y vl
-                                         vr'     = IM.insertWith IM.union k (IM.singleton i cv)
-                                                 . IM.insertWith IM.union i (IM.fromList [(i, vy), (k, cv)])
-                                                 $ vr
-                                     in  (CVKey i, CS i' vl' vr')
-    CVProp2 prop cx cy -> do
-        ((kx, x, vx), (ky, y, vy), cv) <- getCVar2 cx cy
-        C . state $ \(CS i vl vr) -> let ((z,vz),cvx,cvy) = prop (x, vx) (y, vy) cv
-                                         i'  = i + 1
-                                         vl' = IM.insert i z vl
-                                         vr' = IM.insertWith IM.union ky (IM.singleton i cvy)
-                                             . IM.insertWith IM.union kx (IM.singleton i cvx)
-                                             . IM.insertWith IM.union i (IM.fromList [(i, vz),(kx, cvx),(ky,cvy)])
-                                             $ vr
-                                     in  (CVKey i, CS i' vl' vr')
+instance Fractional a => Fractional (CVar s a) where
+    recip = liftC recip
+    (/)   = liftC2 (/)
+    fromRational = CK . fromRational
 
-dblu :: Key -> Key -> IntMap (IntMap a) -> Maybe a
-dblu k1 k2 imim = IM.lookup k2 =<< IM.lookup k1 imim
+instance Floating a => Floating (CVar s a) where
+    pi      = CK pi
+    exp     = liftC exp
+    log     = liftC log
+    sqrt    = liftC sqrt
+    (**)    = liftC2 (**)
+    logBase = liftC2 logBase
+    sin     = liftC sin
+    cos     = liftC cos
+    asin    = liftC asin
+    acos    = liftC acos
+    atan    = liftC atan
+    sinh    = liftC sinh
+    cosh    = liftC cosh
+    asinh   = liftC asinh
+    acosh   = liftC acosh
+    atanh   = liftC atanh
 
--- test :: Floating b => [Uncertain b]
--- test = getCorrelateds $ do
---     (x,y,z) <- fromUncertain3 (11 +/- 4) (15 +/- 6) (9 +/- 2) 0.9 (-0.7) 0.2
---     return [x + y, x - y, x + z * y, (x * y) * z, x * (y * z), 2 * x, x + x]
