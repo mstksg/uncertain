@@ -112,7 +112,7 @@ liftC
     => (forall t. AD t (Sparse a) -> AD t (Sparse a))
     -> CVar s a
     -> CVar s a
-liftC f x = liftCF (\(H1 x') -> f x') (H1 x)
+liftC f = curryH1 $ liftCF (uncurryH1 f)
 
 liftC2
     :: Fractional a
@@ -120,7 +120,7 @@ liftC2
     -> CVar s a
     -> CVar s a
     -> CVar s a
-liftC2 f x y = liftCF (\(H2 x' y') -> f x' y') (H2 x y)
+liftC2 f = curryH2 $ liftCF (uncurryH2 f)
 
 liftC3
     :: Fractional a
@@ -129,7 +129,7 @@ liftC3
     -> CVar s a
     -> CVar s a
     -> CVar s a
-liftC3 f x y z = liftCF (\(H3 x' y' z') -> f x' y' z') (H3 x y z)
+liftC3 f = curryH3 $ liftCF (uncurryH3 f)
 
 liftC4
     :: Fractional a
@@ -139,7 +139,7 @@ liftC4
     -> CVar s a
     -> CVar s a
     -> CVar s a
-liftC4 f x y z a = liftCF (\(H4 x' y' z' a') -> f x' y' z' a') (H4 x y z a)
+liftC4 f = curryH4 $ liftCF (uncurryH4 f)
 
 liftC5
     :: Fractional a
@@ -150,7 +150,7 @@ liftC5
     -> CVar s a
     -> CVar s a
     -> CVar s a
-liftC5 f x y z a b = liftCF (\(H5 x' y' z' a' b') -> f x' y' z' a' b') (H5 x y z a b)
+liftC5 f = curryH5 $ liftCF (uncurryH5 f)
 
 instance Fractional a => Num (CVar s a) where
     (+)    = liftC2 (+)

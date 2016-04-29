@@ -72,6 +72,7 @@ cabal-version:       >=1.10
 library
   exposed-modules:     Data.Uncertain
                        Data.Uncertain.Correlated
+                       Data.Uncertain.MonteCarlo
                        -- Data.Uncertain.Interactive
   -- other-modules:       
   -- other-extensions:    
@@ -80,6 +81,8 @@ library
                      , containers
                      , free
                      , transformers
+                     , mwc-random
+                     , primitive
   hs-source-dirs:      src
   default-language:    Haskell2010
   ghc-options:         -Wall
