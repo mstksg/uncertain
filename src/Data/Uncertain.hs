@@ -10,7 +10,7 @@ module Data.Uncertain
   ( Uncert
   , pattern (:+/-)
   , uMean, uVar, uStd, uMeanVar, uMeanStd, uRange
-  , (+/-), exact, withPrecisionAtBase, withPrecision, withVar
+  , (+/-), exact, withPrecisionAtBase, withPrecision, withVar, fromSamples
   , uNormalizeAtBase, uNormalize
   , liftUF
   , liftU, liftU', liftU2, liftU3, liftU4, liftU5
@@ -314,3 +314,13 @@ instance RealFloat a => RealFloat (Uncert a) where
     encodeFloat a b = exact (encodeFloat a b)
     significand     = liftU significand
     atan2           = liftU2 atan2
+
+fromSamples :: Fractional a => [a] -> Uncert a
+fromSamples = (Un <$> getMean <*> getVar) . foldStats
+  where
+    getMean (H3 x0 x1 _ ) = x1/x0
+    getVar  (H3 x0 x1 x2) = x2/x0 - (x1/x0)^(2 :: Int)      -- use pop variance?
+    foldStats = flip foldl' (H3 0 0 0) $
+                  \(H3 s0 s1 s2) x ->
+                    H3 (s0 + 1) (s1 + x) (s2 + x*x)
+
