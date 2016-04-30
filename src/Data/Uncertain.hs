@@ -16,7 +16,6 @@ module Data.Uncertain
   , liftUF
   , liftU, liftU', liftU2, liftU3, liftU4, liftU5
   , uShow, uShowsPrec
-  , diag
   )
   where
 
