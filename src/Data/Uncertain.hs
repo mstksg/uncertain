@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable  #-}
 {-# LANGUAGE DeriveGeneric       #-}
 {-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE PatternSynonyms     #-}
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -15,6 +16,7 @@ module Data.Uncertain
   , liftUF
   , liftU, liftU', liftU2, liftU3, liftU4, liftU5
   , uShow, uShowsPrec
+  , diag
   )
   where
 
@@ -172,7 +174,7 @@ uShow :: (Show a, Floating a) => Uncert a -> String
 uShow u = uShowsPrec 0 u ""
 
 liftUF
-    :: (Traversable f, Floating a)
+    :: (Traversable f, Fractional a)
     => (forall s. f (AD s (Sparse a)) -> AD s (Sparse a))
     -> f (Uncert a)
     -> Uncert a
@@ -181,15 +183,25 @@ liftUF f us = Un y vy
     xs          = uMean <$> us
     vxs         = uVar  <$> us
     vxsL        = toList vxs
-    vxsLsqrt    = sqrt <$> vxsL
     (fx, dfxsh) = hessian' f xs
     dfxs        = fst <$> dfxsh
     hess        = snd <$> dfxsh
     y           = fx + hessQuad / 2
       where
-        hessQuad = dot vxsLsqrt (dot vxsLsqrt <$> hess)
+        hessQuad = dot vxsL
+                 . diag
+                 . toList
+                 $ fmap toList hess
     vy          = dot vxsL ((^ (2::Int)) <$> dfxs)
     dot x = sum . zipWith (*) x . toList
+
+diag :: [[a]] -> [a]
+diag = \case []        -> []
+             []:yss    -> diag (drop1 <$> yss)
+             (x:_):yss -> x : diag (drop1 <$> yss)
+  where
+    drop1 []     = []
+    drop1 (_:zs) = zs
 
 liftU
     :: Fractional a
@@ -203,14 +215,14 @@ liftU f (Un x vx) = Un y vy
     vy            = dfx*dfx * vx
 
 liftU'
-    :: Floating a
+    :: Fractional a
     => (forall s. AD s (Sparse a) -> AD s (Sparse a))
     -> Uncert a
     -> Uncert a
 liftU' f = curryH1 $ liftUF (uncurryH1 f)
 
 liftU2
-    :: Floating a
+    :: Fractional a
     => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a))
     -> Uncert a
     -> Uncert a
@@ -218,7 +230,7 @@ liftU2
 liftU2 f = curryH2 $ liftUF (uncurryH2 f)
 
 liftU3
-    :: Floating a
+    :: Fractional a
     => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a))
     -> Uncert a
     -> Uncert a
@@ -227,7 +239,7 @@ liftU3
 liftU3 f = curryH3 $ liftUF (uncurryH3 f)
 
 liftU4
-    :: Floating a
+    :: Fractional a
     => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a))
     -> Uncert a
     -> Uncert a
@@ -237,7 +249,7 @@ liftU4
 liftU4 f = curryH4 $ liftUF (uncurryH4 f)
 
 liftU5
-    :: Floating a
+    :: Fractional a
     => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a))
     -> Uncert a
     -> Uncert a
@@ -247,7 +259,7 @@ liftU5
     -> Uncert a
 liftU5 f = curryH5 $ liftUF (uncurryH5 f)
 
-instance Floating a => Num (Uncert a) where
+instance Fractional a => Num (Uncert a) where
     (+)    = liftU2 (+)
     (*)    = liftU2 (*)
     (-)    = liftU2 (-)
@@ -256,7 +268,7 @@ instance Floating a => Num (Uncert a) where
     signum = liftU signum
     fromInteger = exact . fromInteger
 
-instance Floating a => Fractional (Uncert a) where
+instance Fractional a => Fractional (Uncert a) where
     recip = liftU recip
     (/)   = liftU2 (/)
     fromRational = exact . fromRational
@@ -286,10 +298,10 @@ instance Eq a => Eq (Uncert a) where
 instance Ord a => Ord (Uncert a) where
     compare = comparing uMean
 
-instance (Floating a, Real a) => Real (Uncert a) where
+instance (Fractional a, Real a) => Real (Uncert a) where
     toRational = toRational . uMean
 
-instance (RealFrac a, Floating a) => RealFrac (Uncert a) where
+instance RealFrac a => RealFrac (Uncert a) where
     properFraction x = (n, d)
       where
         d    = liftU (snd' . properFraction) x
