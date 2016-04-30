@@ -1,14 +1,27 @@
 {-# LANGUAGE PatternSynonyms #-}
 
-module Data.Uncertain.MonteCarlo where
+module Data.Uncertain.MonteCarlo
+  ( liftUF
+  , liftU, liftU2, liftU3, liftU4, liftU5
+  , sampleUncert
+  )
+  where
 
 import Control.Monad
 import Control.Monad.Primitive
 import Data.Hople
-import Data.Traversable
 import Data.Uncertain (Uncert, pattern (:+/-), fromSamples)
 import System.Random.MWC
 import System.Random.MWC.Distributions
+
+sampleUncert
+    :: PrimMonad m
+    => Uncert Double
+    -> Gen (PrimState m)
+    -> m Double
+sampleUncert u g = normal x dx g
+  where
+    x :+/- dx = u
 
 liftU
     :: PrimMonad m
@@ -18,8 +31,7 @@ liftU
     -> m (Uncert Double)
 liftU f u g = fromSamples <$> replicateM 10000 samp
   where
-    samp = f <$> normal x dx g
-    x :+/- dx = u
+    samp = f <$> sampleUncert u g
 
 liftUF
     :: (Traversable f, PrimMonad m)
@@ -29,8 +41,7 @@ liftUF
     -> m (Uncert Double)
 liftUF f us g = fromSamples <$> replicateM 10000 samp
   where
-    samp = fmap f . for us $ \(x :+/- dx) ->
-             normal x dx g
+    samp = f <$> traverse (flip sampleUncert g) us
 
 liftU2
     :: PrimMonad m

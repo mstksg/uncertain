@@ -328,10 +328,12 @@ instance RealFloat a => RealFloat (Uncert a) where
     atan2           = liftU2 atan2
 
 fromSamples :: Fractional a => [a] -> Uncert a
-fromSamples = (Un <$> getMean <*> getVar) . foldStats
+fromSamples = makeUn . foldStats
   where
-    getMean (H3 x0 x1 _ ) = x1/x0
-    getVar  (H3 x0 x1 x2) = x2/x0 - (x1/x0)^(2 :: Int)      -- use pop variance?
+    makeUn (H3 x0 x1 x2) = Un μ v
+      where
+        μ = x1/x0
+        v = x2/x0 - μ*μ     -- maybe use pop var?
     foldStats = flip foldl' (H3 0 0 0) $
                   \(H3 s0 s1 s2) x ->
                     H3 (s0 + 1) (s1 + x) (s2 + x*x)
