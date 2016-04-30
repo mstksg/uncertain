@@ -172,7 +172,7 @@ uShow :: (Show a, Floating a) => Uncert a -> String
 uShow u = uShowsPrec 0 u ""
 
 liftUF
-    :: (Traversable f, Fractional a)
+    :: (Traversable f, Floating a)
     => (forall s. f (AD s (Sparse a)) -> AD s (Sparse a))
     -> f (Uncert a)
     -> Uncert a
@@ -181,12 +181,13 @@ liftUF f us = Un y vy
     xs          = uMean <$> us
     vxs         = uVar  <$> us
     vxsL        = toList vxs
+    vxsLsqrt    = sqrt <$> vxsL
     (fx, dfxsh) = hessian' f xs
     dfxs        = fst <$> dfxsh
     hess        = snd <$> dfxsh
     y           = fx + hessQuad / 2
       where
-        hessQuad = dot vxsL (dot vxsL <$> hess)
+        hessQuad = dot vxsLsqrt (dot vxsLsqrt <$> hess)
     vy          = dot vxsL ((^ (2::Int)) <$> dfxs)
     dot x = sum . zipWith (*) x . toList
 
@@ -202,14 +203,14 @@ liftU f (Un x vx) = Un y vy
     vy            = dfx*dfx * vx
 
 liftU'
-    :: Fractional a
+    :: Floating a
     => (forall s. AD s (Sparse a) -> AD s (Sparse a))
     -> Uncert a
     -> Uncert a
 liftU' f = curryH1 $ liftUF (uncurryH1 f)
 
 liftU2
-    :: Fractional a
+    :: Floating a
     => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a))
     -> Uncert a
     -> Uncert a
@@ -217,7 +218,7 @@ liftU2
 liftU2 f = curryH2 $ liftUF (uncurryH2 f)
 
 liftU3
-    :: Fractional a
+    :: Floating a
     => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a))
     -> Uncert a
     -> Uncert a
@@ -226,7 +227,7 @@ liftU3
 liftU3 f = curryH3 $ liftUF (uncurryH3 f)
 
 liftU4
-    :: Fractional a
+    :: Floating a
     => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a))
     -> Uncert a
     -> Uncert a
@@ -236,7 +237,7 @@ liftU4
 liftU4 f = curryH4 $ liftUF (uncurryH4 f)
 
 liftU5
-    :: Fractional a
+    :: Floating a
     => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a))
     -> Uncert a
     -> Uncert a
@@ -246,7 +247,7 @@ liftU5
     -> Uncert a
 liftU5 f = curryH5 $ liftUF (uncurryH5 f)
 
-instance Fractional a => Num (Uncert a) where
+instance Floating a => Num (Uncert a) where
     (+)    = liftU2 (+)
     (*)    = liftU2 (*)
     (-)    = liftU2 (-)
@@ -255,7 +256,7 @@ instance Fractional a => Num (Uncert a) where
     signum = liftU signum
     fromInteger = exact . fromInteger
 
-instance Fractional a => Fractional (Uncert a) where
+instance Floating a => Fractional (Uncert a) where
     recip = liftU recip
     (/)   = liftU2 (/)
     fromRational = exact . fromRational
@@ -285,10 +286,10 @@ instance Eq a => Eq (Uncert a) where
 instance Ord a => Ord (Uncert a) where
     compare = comparing uMean
 
-instance (Fractional a, Real a) => Real (Uncert a) where
+instance (Floating a, Real a) => Real (Uncert a) where
     toRational = toRational . uMean
 
-instance RealFrac a => RealFrac (Uncert a) where
+instance (RealFrac a, Floating a) => RealFrac (Uncert a) where
     properFraction x = (n, d)
       where
         d    = liftU (snd' . properFraction) x

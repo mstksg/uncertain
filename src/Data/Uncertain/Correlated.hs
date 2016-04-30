@@ -56,7 +56,7 @@ deriving instance Functor (CorrF s a)
 type Corr s a = Free (CorrF s a)
 
 corrToState
-    :: (Monad m, Fractional a)
+    :: (Monad m, Floating a)
     => Corr s a b
     -> StateT (M.Key, M.IntMap (Uncert a)) m b
 corrToState = iterM $ \case
@@ -75,7 +75,7 @@ corrToState = iterM $ \case
                           undefined
   where
     getCVar
-        :: forall a s. Fractional a
+        :: forall a s. Floating a
         => CVar s a
         -> M.IntMap (Uncert a)
         -> Uncert a
@@ -88,7 +88,7 @@ corrToState = iterM $ \case
         cVarToF (CV k)    us = us M.! k
         cVarToF (CF f cs) us = f (flip cVarToF us <$> cs)
 
-runCorr :: Fractional a => Corr s a b -> b
+runCorr :: Floating a => Corr s a b -> b
 runCorr = flip evalState (0, M.empty) . corrToState
 
 sampleUncert :: Uncert a -> Corr s a (CVar s a)
@@ -101,21 +101,21 @@ resolveUncert :: CVar s a -> Corr s a (Uncert a)
 resolveUncert v = liftF $ Rei v id
 
 liftCF
-    :: (Functor f, Fractional a)
+    :: (Functor f, Floating a)
     => (forall t. f (AD t (Sparse a)) -> AD t (Sparse a))
     -> f (CVar s a)
     -> CVar s a
 liftCF f cs = CF f cs
 
 liftC
-    :: Fractional a
+    :: Floating a
     => (forall t. AD t (Sparse a) -> AD t (Sparse a))
     -> CVar s a
     -> CVar s a
 liftC f = curryH1 $ liftCF (uncurryH1 f)
 
 liftC2
-    :: Fractional a
+    :: Floating a
     => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a))
     -> CVar s a
     -> CVar s a
@@ -123,7 +123,7 @@ liftC2
 liftC2 f = curryH2 $ liftCF (uncurryH2 f)
 
 liftC3
-    :: Fractional a
+    :: Floating a
     => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a))
     -> CVar s a
     -> CVar s a
@@ -132,7 +132,7 @@ liftC3
 liftC3 f = curryH3 $ liftCF (uncurryH3 f)
 
 liftC4
-    :: Fractional a
+    :: Floating a
     => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a))
     -> CVar s a
     -> CVar s a
@@ -142,7 +142,7 @@ liftC4
 liftC4 f = curryH4 $ liftCF (uncurryH4 f)
 
 liftC5
-    :: Fractional a
+    :: Floating a
     => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a))
     -> CVar s a
     -> CVar s a
@@ -152,7 +152,7 @@ liftC5
     -> CVar s a
 liftC5 f = curryH5 $ liftCF (uncurryH5 f)
 
-instance Fractional a => Num (CVar s a) where
+instance Floating a => Num (CVar s a) where
     (+)    = liftC2 (+)
     (*)    = liftC2 (*)
     (-)    = liftC2 (-)
@@ -161,7 +161,7 @@ instance Fractional a => Num (CVar s a) where
     signum = liftC signum
     fromInteger = CK . fromInteger
 
-instance Fractional a => Fractional (CVar s a) where
+instance Floating a => Fractional (CVar s a) where
     recip = liftC recip
     (/)   = liftC2 (/)
     fromRational = CK . fromRational
