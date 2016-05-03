@@ -52,6 +52,12 @@ import qualified Numeric.AD.Mode.Tower  as T
 -- propagate appropriately.  You can also lift arbitrary (sufficiently
 -- polymorphic) functions with 'liftU', 'liftUF', 'liftU2' and family.
 --
+-- Uncertaintly is properly propagated according to the second-degree
+-- taylor series approximations of the applied functions.  However, if the
+-- higher-degree terms are large with respect to to the means and
+-- variances of the uncertain values, these approximations may be
+-- inaccurate.
+--
 -- Can be created with 'exact' to represent an "exact" measurement with no
 -- uncertainty, '+/-' and ':+/-' to specify a standard deviation as
 -- a range, 'withPrecision' to specify through decimal precision, and
@@ -284,10 +290,12 @@ uShowsPrec d u = showParen (d > 5) $
 uShow :: (Show a, Floating a) => Uncert a -> String
 uShow u = uShowsPrec 0 u ""
 
--- | Lifts a multivariate function on a container (given as an @f a -> a@)
--- to work on a container of 'Uncert's.  Correctly propagates the
+-- | Lifts a multivariate numeric function on a container (given as an @f
+-- a -> a@) to work on a container of 'Uncert's.  Correctly propagates the
 -- uncertainty according to the second-order (multivariate) taylor
--- expansion of the function.
+-- expansion of the function.  Note that if the higher-degree taylor series
+-- terms are large with respect to the means and variances, this
+-- approximation may be inaccurate.
 --
 -- Should take any function sufficiently polymorphic over numeric types, so
 -- you can use things like '*', 'sqrt', 'atan2', etc.
@@ -327,7 +335,9 @@ liftUF f us = Un y vy
 
 -- | Lifts a numeric function over an 'Uncert'.  Correctly propagates the
 -- uncertainty according to the second-order taylor expansion expansion of
--- the function.
+-- the function.  Note that if the higher-degree taylor series terms are
+-- large with respect to the mean and variance, this approximation may be
+-- inaccurate.
 --
 -- Should take any function sufficiently polymorphic over numeric types, so
 -- you can use things like 'sqrt', 'sin', 'negate', etc.
@@ -349,7 +359,9 @@ liftU f (Un x vx) = Un y vy
 
 -- | Lifts a two-argument (curried) function over two 'Uncert's.  Correctly
 -- propagates the uncertainty according to the second-order (multivariate)
--- taylor expansion expansion of the function.
+-- taylor expansion expansion of the function.  Note that if the
+-- higher-degree taylor series terms are large with respect to the mean and
+-- variance, this approximation may be inaccurate.
 --
 -- @
 -- ghci> liftU2 (\x y -> x**y) (13.5 +/- 0.1) (1.64 +/- 0.08)
