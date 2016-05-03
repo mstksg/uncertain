@@ -1,11 +1,13 @@
-{-# LANGUAGE DeriveFunctor       #-}
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE GADTs               #-}
-{-# LANGUAGE KindSignatures      #-}
-{-# LANGUAGE LambdaCase          #-}
-{-# LANGUAGE RankNTypes          #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneDeriving  #-}
+{-# LANGUAGE DeriveFunctor              #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE GADTs                      #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE KindSignatures             #-}
+{-# LANGUAGE LambdaCase                 #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE RankNTypes                 #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE StandaloneDeriving         #-}
 
 module Data.Uncertain.Correlated
   ( CVar
@@ -46,34 +48,34 @@ data CorrF :: * -> * -> * -> * where
     Rei :: CVar s a
         -> (Uncert a -> b)
         -> CorrF s a b
-    Cor :: CVar s a
-        -> CVar s a
-        -> (a -> b)
-        -> CorrF s a b
 
 deriving instance Functor (CorrF s a)
 
-type Corr s a = Free (CorrF s a)
+newtype Corr s a b = Corr { corrFree :: Free (CorrF s a) b
+                          }
+                   deriving (Functor, Applicative, Monad)
+
+deriving instance MonadFree (CorrF s a) (Corr s a)
+
 
 corrToState
     :: (Monad m, Fractional a)
     => Corr s a b
     -> StateT (M.Key, M.IntMap (Uncert a)) m b
-corrToState = iterM $ \case
-                        Cer c next    -> do
-                          next (CK c)
-                        Gen u next    -> do
-                          i <- gets fst
-                          modify $ bimap succ (M.insert i u)
-                          next (CV i)
-                        Fun f us next -> do
-                          next $ CF f us
-                        Rei v next    -> do
-                          u <- gets (getCVar v . snd)
-                          next u
-                        Cor _ _ _     ->
-                          undefined
+corrToState = iterM go . corrFree
   where
+    go = \case
+            Cer c next    ->
+              next (CK c)
+            Gen u next    -> do
+              i <- gets fst
+              modify $ bimap succ (M.insert i u)
+              next (CV i)
+            Fun f us next ->
+              next $ CF f us
+            Rei v next    -> do
+              u <- gets (getCVar v . snd)
+              next u
     getCVar
         :: forall a s. Fractional a
         => CVar s a
