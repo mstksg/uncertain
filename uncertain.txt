@@ -109,6 +109,7 @@ instance Data.Traversable.Traversable Data.Hople.H1
 instance Data.Foldable.Foldable Data.Hople.H1
 instance GHC.Base.Functor Data.Hople.H1
 
+
 module Data.Uncertain
 
 -- | Represents an independent experimental value centered around a mean
@@ -117,7 +118,9 @@ module Data.Uncertain
 --   Mostly useful due to its instances of numeric typeclasses like
 --   <a>Num</a>, <a>Fractional</a>, etc., which allows you to add and
 --   multiply and apply arbitrary numerical functions to them and have the
---   uncertainty propagate appropriately.
+--   uncertainty propagate appropriately. You can also lift arbitrary
+--   (sufficiently polymorphic) functions with <a>liftU</a>, <a>liftUF</a>,
+--   <a>liftU2</a> and family.
 --   
 --   Can be created with <a>exact</a> to represent an "exact" measurement
 --   with no uncertainty, <a>+/-</a> and <a>:+/-</a> to specify a standard
