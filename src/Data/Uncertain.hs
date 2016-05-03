@@ -363,6 +363,9 @@ liftU f (Un x vx) = Un y vy
 -- higher-degree taylor series terms are large with respect to the mean and
 -- variance, this approximation may be inaccurate.
 --
+-- Should take any function sufficiently polymorphic over numeric types, so
+-- you can use things like '*', 'atan2', '**', etc.
+--
 -- @
 -- ghci> liftU2 (\x y -> x**y) (13.5 +/- 0.1) (1.64 +/- 0.08)
 -- 70 +/- 10
