@@ -122,6 +122,12 @@ module Data.Uncertain
 --   (sufficiently polymorphic) functions with <a>liftU</a>, <a>liftUF</a>,
 --   <a>liftU2</a> and family.
 --   
+--   Uncertaintly is properly propagated according to the second-degree
+--   taylor series approximations of the applied functions. However, if the
+--   higher-degree terms are large with respect to to the means and
+--   variances of the uncertain values, these approximations may be
+--   inaccurate.
+--   
 --   Can be created with <a>exact</a> to represent an "exact" measurement
 --   with no uncertainty, <a>+/-</a> and <a>:+/-</a> to specify a standard
 --   deviation as a range, <a>withPrecision</a> to specify through decimal
@@ -254,7 +260,9 @@ uRange :: Floating a => Uncert a -> (a, a)
 
 -- | Lifts a numeric function over an <a>Uncert</a>. Correctly propagates
 --   the uncertainty according to the second-order taylor expansion
---   expansion of the function.
+--   expansion of the function. Note that if the higher-degree taylor
+--   series terms are large with respect to the mean and variance, this
+--   approximation may be inaccurate.
 --   
 --   Should take any function sufficiently polymorphic over numeric types,
 --   so you can use things like <a>sqrt</a>, <a>sin</a>, <a>negate</a>,
@@ -266,10 +274,12 @@ uRange :: Floating a => Uncert a -> (a, a)
 --   </pre>
 liftU :: Fractional a => (forall s. AD s (Tower a) -> AD s (Tower a)) -> Uncert a -> Uncert a
 
--- | Lifts a multivariate function on a container (given as an <tt>f a
---   -&gt; a</tt>) to work on a container of <a>Uncert</a>s. Correctly
---   propagates the uncertainty according to the second-order
---   (multivariate) taylor expansion of the function.
+-- | Lifts a multivariate numeric function on a container (given as an
+--   <tt>f a -&gt; a</tt>) to work on a container of <a>Uncert</a>s.
+--   Correctly propagates the uncertainty according to the second-order
+--   (multivariate) taylor expansion of the function. Note that if the
+--   higher-degree taylor series terms are large with respect to the means
+--   and variances, this approximation may be inaccurate.
 --   
 --   Should take any function sufficiently polymorphic over numeric types,
 --   so you can use things like <a>*</a>, <a>sqrt</a>, <a>atan2</a>, etc.
@@ -282,7 +292,9 @@ liftUF :: (Traversable f, Fractional a) => (forall s. f (AD s (Sparse a)) -> AD 
 
 -- | Lifts a two-argument (curried) function over two <a>Uncert</a>s.
 --   Correctly propagates the uncertainty according to the second-order
---   (multivariate) taylor expansion expansion of the function.
+--   (multivariate) taylor expansion expansion of the function. Note that
+--   if the higher-degree taylor series terms are large with respect to the
+--   mean and variance, this approximation may be inaccurate.
 --   
 --   <pre>
 --   ghci&gt; liftU2 (x y -&gt; x**y) (13.5 +<i>- 0.1) (1.64 +</i>- 0.08)
