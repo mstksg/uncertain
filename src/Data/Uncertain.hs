@@ -7,19 +7,33 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns        #-}
 
+-- |
+-- Module      : Data.Uncertain
+-- Copyright   : (c) Justin Le 2016
+-- License     : BSD3
+--
+-- Maintainer  : justin@jle.im
+-- Stability   : experimental
+-- Portability : non-portable
+--
+
 module Data.Uncertain
-  ( Uncert
+  ( -- * 'Uncert'
+    Uncert
   , pattern (:+/-)
+    -- ** Creating 'Uncert' values
+  , (+/-), exact, withPrecision, withPrecisionAtBase, withVar, fromSamples
+    -- ** Inspecting properties
   , uMean, uVar, uStd, uMeanVar, uMeanStd, uRange
-  , (+/-), exact, withPrecisionAtBase, withPrecision, withVar, fromSamples
-  , uNormalizeAtBase, uNormalize
-  , liftUF
-  , liftU, liftU', liftU2, liftU3, liftU4, liftU5
+    -- * Applying functions and propagating uncertainty
+  , liftU
+  , liftUF, liftU2, liftU3, liftU4, liftU5
+    -- * Utility functions
+  , uNormalize, uNormalizeAtBase
   , uShow, uShowsPrec
   )
   where
 
-import           Control.Arrow          ((&&&))
 import           Data.Data
 import           Data.Foldable
 import           Data.Function
@@ -35,7 +49,8 @@ import qualified Numeric.AD.Mode.Tower  as T
 -- Mostly useful due to its instances of numeric typeclasses like `Num`,
 -- `Fractional`, etc., which allows you to add and multiply and apply
 -- arbitrary numerical functions to them and have the uncertainty
--- propagate appropriately.
+-- propagate appropriately.  You can also lift arbitrary (sufficiently
+-- polymorphic) functions with 'liftU', 'liftUF', 'liftU2' and family.
 --
 -- Can be created with 'exact' to represent an "exact" measurement with no
 -- uncertainty, '+/-' and ':+/-' to specify a standard deviation as
@@ -74,47 +89,118 @@ data Uncert a = Un { _uMean :: !a
                    }
   deriving (Data, Typeable, Generic, Generic1)
 
+-- | Get the mean/central value/expected value of an 'Uncert'.
 uMean :: Uncert a -> a
 uMean = _uMean
 
+-- | Get the /variance/ of the uncertainty of an 'Uncert', proportional to
+-- the square of "how uncertain" a value is.  Is the square of 'uStd'.
 uVar :: Uncert a -> a
 uVar = _uVar
 
+-- | Get the /standard deviation/ of the uncertainty of an 'Uncert',
+-- proportional to "how uncertain" a value is.
+--
+-- Very informally, it can be thought of as the interval above and below
+-- the mean that about 68% of sampled values will fall under after repeated
+-- sampling, or as the range that one is 68% sure the true value is within.
+--
+-- Is the square root of 'uVar'.
 uStd :: Floating a => Uncert a -> a
 uStd = sqrt . uVar
 
-exact :: Num a => a -> Uncert a
+-- | Create an 'Uncert' with an exact value and 0 uncertainty.
+exact
+    :: Num a
+    => a            -- ^ The exact value
+    -> Uncert a
 exact x = Un x 0
 
 infixl 6 +/-
 infixl 6 :+/-
 
-(+/-) :: Num a => a -> a -> Uncert a
+-- | Create an 'Uncert' around a central value and a given "range" of
+-- uncertainty.  The range is interpreted as the standard deviation of the
+-- underlying random variable.  Might be preferrable over ':+/-' because it
+-- is more general (doesn't require a 'Floating' constraint) and looks
+-- a bit nicer.
+--
+-- See 'uStd' for more details.
+(+/-)
+    :: Num a
+    => a            -- ^ The mean or central value
+    -> a            -- ^ The standard deviation of the underlying uncertainty
+    -> Uncert a
 x +/- dx = Un x (dx*dx)
 
-withVar :: Num a => a -> a -> Uncert a
+-- | Create an 'Uncert' around a central value, specifying its uncertainty
+-- with a given /variance/.  The variance is taken to be proportional to
+-- the square of the range of uncertainty.  See 'uStd' for more details.
+--
+-- "Negative variances" are treated as positive.
+withVar
+    :: Num a
+    => a            -- ^ The mean or central value
+    -> a            -- ^ The variance of the underlying uncertainty
+    -> Uncert a
 withVar x vx = Un x (abs vx)
 
+-- | Pattern match on an 'Uncert' with its central value and its standard
+-- deviation (see 'uStd' for clarification).
+--
+-- Can also be used to /construct/ an 'Uncert', identically as '+/-'.
 pattern (:+/-) :: () => Floating a => a -> a -> Uncert a
 pattern x :+/- dx <- Un x (sqrt->dx)
   where
     x :+/- dx = Un x (dx*dx)
 
+-- | Infer an 'Uncert' from a given list of independent /samples/ of an
+-- underlying uncertain or random distribution.
+fromSamples :: Fractional a => [a] -> Uncert a
+fromSamples = makeUn . foldStats
+  where
+    makeUn (H3 x0 x1 x2) = Un μ v
+      where
+        μ = x1/x0
+        v = x2/x0 - μ*μ     -- maybe use pop var?
+    foldStats = flip foldl' (H3 0 0 0) $
+                  \(H3 s0 s1 s2) x ->
+                    H3 (s0 + 1) (s1 + x) (s2 + x*x)
+
+-- | Retrieve both the mean (central) value and the underlying variance of
+-- an 'Uncert' together.
+--
+-- @uMeanVar ≡ 'uMean' &&& 'uVar'@
 uMeanVar :: Uncert a -> (a, a)
-uMeanVar = uMean &&& uVar
+uMeanVar (Un x vx) = (x, vx)
 
+-- | Retreve both the mean (central) value and the underlying standard
+-- deviation of an 'Uncert' together.  (See 'uStd' for more details)
+--
+-- @uMeanStd ≡ 'uMean' &&& 'uStd'@
 uMeanStd :: Floating a => Uncert a -> (a, a)
-uMeanStd = uMean &&& uStd
+uMeanStd (Un x vx) = (x, sqrt vx)
 
+-- | Retrieve the "range" of the underlying distribution of an 'Uncert',
+-- derived from the standard deviation, where which approximly 68% of
+-- sampled values are expected to occur (or within which you are 68%
+-- certain the true value is).
+--
+-- @uRange (x +/- dx) ≡ (x - dx, x + dx)@
 uRange :: Floating a => Uncert a -> (a, a)
 uRange u = let x :+/- dx = u
            in  (x - dx, x + dx)
 
+-- | Like 'withPrecision', except takes a number of "digits" of precision in
+-- the desired numeric base.  For example, in base 2, takes the number of
+-- /bits/ of precision.
+--
+-- @'withPrecision' ≡ withPrecisionAtBase 10@
 withPrecisionAtBase
     :: (Floating a, RealFrac a)
-    => Int
-    -> a
-    -> Int
+    => Int          -- ^ The base to determine precision with respect to
+    -> a            -- ^ The approximate value of the 'Uncert'
+    -> Int          -- ^ The number of "digits" of precision to take
     -> Uncert a
 withPrecisionAtBase b x p = x' :+/- dx'
   where
@@ -128,16 +214,24 @@ withPrecisionAtBase b x p = x' :+/- dx'
     round'  :: RealFrac a => a -> Integer
     round'  = round
 
+-- | Create an 'Uncert' about a given approximate central value, with the
+-- given number of /digits of precision/ (in decimal notation).
+--
+-- @5.21 `withPrecision` 3 ≡ 5.21 '+/-' 0.01@
 withPrecision
     :: (Floating a, RealFrac a)
-    => a
-    -> Int
+    => a            -- ^ The approximate value of the 'Uncert'
+    -> Int          -- ^ The number of "digits" of precision to take
     -> Uncert a
 withPrecision = withPrecisionAtBase 10
 
+-- | Like 'uNormalize', but takes a numerical base to round with respect
+-- to.
+--
+-- @'uNormalize' ≡ uNormalizeAtBase 10@
 uNormalizeAtBase
     :: (Floating a, RealFrac a)
-    => Int
+    => Int          -- ^ The base to normalize with respect to
     -> Uncert a
     -> Uncert a
 uNormalizeAtBase b u = x' :+/- dx'
@@ -152,6 +246,17 @@ uNormalizeAtBase b u = x' :+/- dx'
     round'    :: RealFrac a => a -> Integer
     round'    = round
 
+-- | Attempts to "normalize" an 'Uncert'.  Rounds the uncertainty (the
+-- standard deviation) to one digit of precision, and rounds the central
+-- moment up to the implied precision.
+--
+-- For example, it makes no real sense to have @542.185433 +/- 83.584@,
+-- because the extra digits of @542.185433@ past the tens place has no
+-- meaning because of the overpowering uncertainty.   Normalizing this
+-- results in @540 +/- 80@.
+--
+-- Note that the 'Show' instance for 'Uncert' normalizes values before
+-- showing them.
 uNormalize
     :: (Floating a, RealFrac a)
     => Uncert a
@@ -161,6 +266,9 @@ uNormalize = uNormalizeAtBase 10
 instance (Show a, Floating a, RealFrac a) => Show (Uncert a) where
     showsPrec d = uShowsPrec d . uNormalize
 
+-- | Like 'showsPrec' for 'Uncert', but does not normalize the value (see
+-- 'uNormalize') before showing.  See documentation for 'showsPrec' for
+-- more information on how this is meant to be used.
 uShowsPrec :: (Show a, Floating a) => Int -> Uncert a -> ShowS
 uShowsPrec d u = showParen (d > 5) $
                      showsPrec 6 x
@@ -169,13 +277,30 @@ uShowsPrec d u = showParen (d > 5) $
   where
     x :+/- dx = u
 
+-- | Like 'show' for 'Uncert', but does not normalize the value (see
+-- 'uNormalize') before showing.
+--
+-- @'show' ≡ uShow . 'uNormalize'@
 uShow :: (Show a, Floating a) => Uncert a -> String
 uShow u = uShowsPrec 0 u ""
 
+-- | Lifts a multivariate function on a container (given as an @f a -> a@)
+-- to work on a container of 'Uncert's.  Correctly propagates the
+-- uncertainty according to the second-order (multivariate) taylor
+-- expansion of the function.
+--
+-- Should take any function sufficiently polymorphic over numeric types, so
+-- you can use things like '*', 'sqrt', 'atan2', etc.
+--
+-- @
+-- ghci> liftUF (\[x,y,z] -> x*y+z) [12.2 +/- 0.5, 56 +/- 2, 0.12 +/- 0.08]
+-- 680 +/- 40
+-- @
+--
 liftUF
     :: (Traversable f, Fractional a)
-    => (forall s. f (AD s (Sparse a)) -> AD s (Sparse a))
-    -> f (Uncert a)
+    => (forall s. f (AD s (Sparse a)) -> AD s (Sparse a))   -- ^ Function on container of values to lift
+    -> f (Uncert a)         -- ^ Container of 'Uncert's to apply the function to
     -> Uncert a
 liftUF f us = Un y vy
   where
@@ -193,19 +318,28 @@ liftUF f us = Un y vy
                  $ fmap toList hess
     vy          = dot vxsL ((^ (2::Int)) <$> dfxs)
     dot x = sum . zipWith (*) x . toList
+    diag = \case []        -> []
+                 []   :yss -> diag (drop1 <$> yss)
+                 (x:_):yss -> x : diag (drop1 <$> yss)
+      where
+        drop1 []     = []
+        drop1 (_:zs) = zs
 
-diag :: [[a]] -> [a]
-diag = \case []        -> []
-             []:yss    -> diag (drop1 <$> yss)
-             (x:_):yss -> x : diag (drop1 <$> yss)
-  where
-    drop1 []     = []
-    drop1 (_:zs) = zs
-
+-- | Lifts a numeric function over an 'Uncert'.  Correctly propagates the
+-- uncertainty according to the second-order taylor expansion expansion of
+-- the function.
+--
+-- Should take any function sufficiently polymorphic over numeric types, so
+-- you can use things like 'sqrt', 'sin', 'negate', etc.
+--
+-- @
+-- ghci> liftU (\x -> log x ^ 2) (12.2 +/- 0.5)
+-- 6.3 +/- 0.2
+-- @
 liftU
     :: Fractional a
-    => (forall s. AD s (T.Tower a) -> AD s (T.Tower a))
-    -> Uncert a
+    => (forall s. AD s (T.Tower a) -> AD s (T.Tower a))     -- ^ Function on values to lift
+    -> Uncert a     -- ^ 'Uncert' to apply the function to
     -> Uncert a
 liftU f (Un x vx) = Un y vy
   where
@@ -213,13 +347,14 @@ liftU f (Un x vx) = Un y vy
     y             = fx + ddfx * vx / 2
     vy            = dfx*dfx * vx
 
-liftU'
-    :: Fractional a
-    => (forall s. AD s (Sparse a) -> AD s (Sparse a))
-    -> Uncert a
-    -> Uncert a
-liftU' f = curryH1 $ liftUF (uncurryH1 f)
-
+-- | Lifts a two-argument (curried) function over two 'Uncert's.  Correctly
+-- propagates the uncertainty according to the second-order (multivariate)
+-- taylor expansion expansion of the function.
+--
+-- @
+-- ghci> liftU2 (\x y -> x**y) (13.5 +/- 0.1) (1.64 +/- 0.08)
+-- 70 +/- 10
+-- @
 liftU2
     :: Fractional a
     => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a))
@@ -228,6 +363,8 @@ liftU2
     -> Uncert a
 liftU2 f = curryH2 $ liftUF (uncurryH2 f)
 
+-- | Lifts a three-argument (curried) function over three 'Uncert's.  See
+-- 'liftU2' and 'liftUF' for more details.
 liftU3
     :: Fractional a
     => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a))
@@ -237,6 +374,8 @@ liftU3
     -> Uncert a
 liftU3 f = curryH3 $ liftUF (uncurryH3 f)
 
+-- | Lifts a four-argument (curried) function over four 'Uncert's.  See
+-- 'liftU2' and 'liftUF' for more details.
 liftU4
     :: Fractional a
     => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a))
@@ -247,6 +386,8 @@ liftU4
     -> Uncert a
 liftU4 f = curryH4 $ liftUF (uncurryH4 f)
 
+-- | Lifts a five-argument (curried) function over five 'Uncert's.  See
+-- 'liftU2' and 'liftUF' for more details.
 liftU5
     :: Fractional a
     => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a))
@@ -259,17 +400,17 @@ liftU5
 liftU5 f = curryH5 $ liftUF (uncurryH5 f)
 
 instance Fractional a => Num (Uncert a) where
-    (+)    = liftU2 (+)
-    (*)    = liftU2 (*)
-    (-)    = liftU2 (-)
-    negate = liftU negate
-    abs    = liftU abs
-    signum = liftU signum
+    (+)         = liftU2 (+)
+    (*)         = liftU2 (*)
+    (-)         = liftU2 (-)
+    negate      = liftU negate
+    abs         = liftU abs
+    signum      = liftU signum
     fromInteger = exact . fromInteger
 
 instance Fractional a => Fractional (Uncert a) where
-    recip = liftU recip
-    (/)   = liftU2 (/)
+    recip        = liftU recip
+    (/)          = liftU2 (/)
     fromRational = exact . fromRational
 
 instance Floating a => Floating (Uncert a) where
@@ -313,28 +454,17 @@ instance RealFrac a => RealFrac (Uncert a) where
     floor    = floor    . uMean
 
 instance RealFloat a => RealFloat (Uncert a) where
-    floatRadix      = floatRadix        . uMean
-    floatDigits     = floatDigits       . uMean
-    floatRange      = floatRange        . uMean
-    decodeFloat     = decodeFloat       . uMean
-    exponent        = exponent          . uMean
-    isNaN           = isNaN             . uMean
-    isInfinite      = isInfinite        . uMean
-    isDenormalized  = isDenormalized    . uMean
-    isNegativeZero  = isNegativeZero    . uMean
-    isIEEE          = isIEEE            . uMean
+    floatRadix      = floatRadix     . uMean
+    floatDigits     = floatDigits    . uMean
+    floatRange      = floatRange     . uMean
+    decodeFloat     = decodeFloat    . uMean
+    exponent        = exponent       . uMean
+    isNaN           = isNaN          . uMean
+    isInfinite      = isInfinite     . uMean
+    isDenormalized  = isDenormalized . uMean
+    isNegativeZero  = isNegativeZero . uMean
+    isIEEE          = isIEEE         . uMean
     encodeFloat a b = exact (encodeFloat a b)
     significand     = liftU significand
     atan2           = liftU2 atan2
-
-fromSamples :: Fractional a => [a] -> Uncert a
-fromSamples = makeUn . foldStats
-  where
-    makeUn (H3 x0 x1 x2) = Un μ v
-      where
-        μ = x1/x0
-        v = x2/x0 - μ*μ     -- maybe use pop var?
-    foldStats = flip foldl' (H3 0 0 0) $
-                  \(H3 s0 s1 s2) x ->
-                    H3 (s0 + 1) (s1 + x) (s2 + x*x)
 
