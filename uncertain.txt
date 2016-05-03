@@ -162,6 +162,47 @@ data Uncert a
 --   Can also be used to <i>construct</i> an <a>Uncert</a>, identically as
 --   <a>+/-</a>.
 
+-- | Create an <a>Uncert</a> around a central value and a given "range" of
+--   uncertainty. The range is interpreted as the standard deviation of the
+--   underlying random variable. Might be preferrable over <a>:+/-</a>
+--   because it is more general (doesn't require a <a>Floating</a>
+--   constraint) and looks a bit nicer.
+--   
+--   See <a>uStd</a> for more details.
+(+/-) :: Num a => a -> a -> Uncert a
+
+-- | Create an <a>Uncert</a> with an exact value and 0 uncertainty.
+exact :: Num a => a -> Uncert a
+
+-- | Create an <a>Uncert</a> about a given approximate central value, with
+--   the given number of <i>digits of precision</i> (in decimal notation).
+--   
+--   <pre>
+--   5.21 <a>withPrecision</a> 3 ≡ 5.21 <a>+/-</a> 0.01
+--   </pre>
+withPrecision :: (Floating a, RealFrac a) => a -> Int -> Uncert a
+
+-- | Like <a>withPrecision</a>, except takes a number of "digits" of
+--   precision in the desired numeric base. For example, in base 2, takes
+--   the number of <i>bits</i> of precision.
+--   
+--   <pre>
+--   <a>withPrecision</a> ≡ withPrecisionAtBase 10
+--   </pre>
+withPrecisionAtBase :: (Floating a, RealFrac a) => Int -> a -> Int -> Uncert a
+
+-- | Create an <a>Uncert</a> around a central value, specifying its
+--   uncertainty with a given <i>variance</i>. The variance is taken to be
+--   proportional to the square of the range of uncertainty. See
+--   <a>uStd</a> for more details.
+--   
+--   "Negative variances" are treated as positive.
+withVar :: Num a => a -> a -> Uncert a
+
+-- | Infer an <a>Uncert</a> from a given list of independent <i>samples</i>
+--   of an underlying uncertain or random distribution.
+fromSamples :: Fractional a => [a] -> Uncert a
+
 -- | Get the mean<i>central value</i>expected value of an <a>Uncert</a>.
 uMean :: Uncert a -> a
 
@@ -207,68 +248,6 @@ uMeanStd :: Floating a => Uncert a -> (a, a)
 --   uRange (x +/- dx) ≡ (x - dx, x + dx)
 --   </pre>
 uRange :: Floating a => Uncert a -> (a, a)
-
--- | Create an <a>Uncert</a> around a central value and a given "range" of
---   uncertainty. The range is interpreted as the standard deviation of the
---   underlying random variable. Might be preferrable over <a>:+/-</a>
---   because it is more general (doesn't require a <a>Floating</a>
---   constraint) and looks a bit nicer.
---   
---   See <a>uStd</a> for more details.
-(+/-) :: Num a => a -> a -> Uncert a
-
--- | Create an <a>Uncert</a> with an exact value and 0 uncertainty.
-exact :: Num a => a -> Uncert a
-
--- | Create an <a>Uncert</a> about a given approximate central value, with
---   the given number of <i>digits of precision</i> (in decimal notation).
---   
---   <pre>
---   5.21 <a>withPrecision</a> 3 ≡ 5.21 <a>+/-</a> 0.01
---   </pre>
-withPrecision :: (Floating a, RealFrac a) => a -> Int -> Uncert a
-
--- | Like <a>withPrecision</a>, except takes a number of "digits" of
---   precision in the desired numeric base. For example, in base 2, takes
---   the number of <i>bits</i> of precision.
---   
---   <pre>
---   <a>withPrecision</a> ≡ withPrecisionAtBase 10
---   </pre>
-withPrecisionAtBase :: (Floating a, RealFrac a) => Int -> a -> Int -> Uncert a
-
--- | Create an <a>Uncert</a> around a central value, specifying its
---   uncertainty with a given <i>variance</i>. The variance is taken to be
---   proportional to the square of the range of uncertainty. See
---   <a>uStd</a> for more details.
---   
---   "Negative variances" are treated as positive.
-withVar :: Num a => a -> a -> Uncert a
-
--- | Infer an <a>Uncert</a> from a given list of independent <i>samples</i>
---   of an underlying uncertain or random distribution.
-fromSamples :: Fractional a => [a] -> Uncert a
-
--- | Attempts to "normalize" an <a>Uncert</a>. Rounds the uncertainty (the
---   standard deviation) to one digit of precision, and rounds the central
---   moment up to the implied precision.
---   
---   For example, it makes no real sense to have <tt>542.185433 +/-
---   83.584</tt>, because the extra digits of <tt>542.185433</tt> past the
---   tens place has no meaning because of the overpowering uncertainty.
---   Normalizing this results in <tt>540 +/- 80</tt>.
---   
---   Note that the <a>Show</a> instance for <a>Uncert</a> normalizes values
---   before showing them.
-uNormalize :: (Floating a, RealFrac a) => Uncert a -> Uncert a
-
--- | Like <a>uNormalize</a>, but takes a numerical base to round with
---   respect to.
---   
---   <pre>
---   <a>uNormalize</a> ≡ uNormalizeAtBase 10
---   </pre>
-uNormalizeAtBase :: (Floating a, RealFrac a) => Int -> Uncert a -> Uncert a
 
 -- | Lifts a numeric function over an <a>Uncert</a>. Correctly propagates
 --   the uncertainty according to the second-order taylor expansion
@@ -319,6 +298,27 @@ liftU4 :: Fractional a => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s 
 -- | Lifts a five-argument (curried) function over five <a>Uncert</a>s. See
 --   <a>liftU2</a> and <a>liftUF</a> for more details.
 liftU5 :: Fractional a => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a)) -> Uncert a -> Uncert a -> Uncert a -> Uncert a -> Uncert a -> Uncert a
+
+-- | Attempts to "normalize" an <a>Uncert</a>. Rounds the uncertainty (the
+--   standard deviation) to one digit of precision, and rounds the central
+--   moment up to the implied precision.
+--   
+--   For example, it makes no real sense to have <tt>542.185433 +/-
+--   83.584</tt>, because the extra digits of <tt>542.185433</tt> past the
+--   tens place has no meaning because of the overpowering uncertainty.
+--   Normalizing this results in <tt>540 +/- 80</tt>.
+--   
+--   Note that the <a>Show</a> instance for <a>Uncert</a> normalizes values
+--   before showing them.
+uNormalize :: (Floating a, RealFrac a) => Uncert a -> Uncert a
+
+-- | Like <a>uNormalize</a>, but takes a numerical base to round with
+--   respect to.
+--   
+--   <pre>
+--   <a>uNormalize</a> ≡ uNormalizeAtBase 10
+--   </pre>
+uNormalizeAtBase :: (Floating a, RealFrac a) => Int -> Uncert a -> Uncert a
 
 -- | Like <a>show</a> for <a>Uncert</a>, but does not normalize the value
 --   (see <a>uNormalize</a>) before showing.
