@@ -155,28 +155,182 @@ module Data.Uncertain
 --   and won't show any mean/central point to a decimal precision smaller
 --   than the uncertainty, rounding off the excess.
 data Uncert a
+
+-- | Pattern match on an <a>Uncert</a> with its central value and its
+--   standard deviation (see <a>uStd</a> for clarification).
+--   
+--   Can also be used to <i>construct</i> an <a>Uncert</a>, identically as
+--   <a>+/-</a>.
+
+-- | Get the mean<i>central value</i>expected value of an <a>Uncert</a>.
 uMean :: Uncert a -> a
+
+-- | Get the <i>variance</i> of the uncertainty of an <a>Uncert</a>,
+--   proportional to the square of "how uncertain" a value is. Is the
+--   square of <a>uStd</a>.
 uVar :: Uncert a -> a
+
+-- | Get the <i>standard deviation</i> of the uncertainty of an
+--   <a>Uncert</a>, proportional to "how uncertain" a value is.
+--   
+--   Very informally, it can be thought of as the interval above and below
+--   the mean that about 68% of sampled values will fall under after
+--   repeated sampling, or as the range that one is 68% sure the true value
+--   is within.
+--   
+--   Is the square root of <a>uVar</a>.
 uStd :: Floating a => Uncert a -> a
+
+-- | Retrieve both the mean (central) value and the underlying variance of
+--   an <a>Uncert</a> together.
+--   
+--   <pre>
+--   uMeanVar ≡ <a>uMean</a> &amp;&amp;&amp; <a>uVar</a>
+--   </pre>
 uMeanVar :: Uncert a -> (a, a)
+
+-- | Retreve both the mean (central) value and the underlying standard
+--   deviation of an <a>Uncert</a> together. (See <a>uStd</a> for more
+--   details)
+--   
+--   <pre>
+--   uMeanStd ≡ <a>uMean</a> &amp;&amp;&amp; <a>uStd</a>
+--   </pre>
 uMeanStd :: Floating a => Uncert a -> (a, a)
+
+-- | Retrieve the "range" of the underlying distribution of an
+--   <a>Uncert</a>, derived from the standard deviation, where which
+--   approximly 68% of sampled values are expected to occur (or within
+--   which you are 68% certain the true value is).
+--   
+--   <pre>
+--   uRange (x +/- dx) ≡ (x - dx, x + dx)
+--   </pre>
 uRange :: Floating a => Uncert a -> (a, a)
+
+-- | Create an <a>Uncert</a> around a central value and a given "range" of
+--   uncertainty. The range is interpreted as the standard deviation of the
+--   underlying random variable. Might be preferrable over <a>:+/-</a>
+--   because it is more general (doesn't require a <a>Floating</a>
+--   constraint) and looks a bit nicer.
+--   
+--   See <a>uStd</a> for more details.
 (+/-) :: Num a => a -> a -> Uncert a
+
+-- | Create an <a>Uncert</a> with an exact value and 0 uncertainty.
 exact :: Num a => a -> Uncert a
-withPrecisionAtBase :: (Floating a, RealFrac a) => Int -> a -> Int -> Uncert a
+
+-- | Create an <a>Uncert</a> about a given approximate central value, with
+--   the given number of <i>digits of precision</i> (in decimal notation).
+--   
+--   <pre>
+--   5.21 <a>withPrecision</a> 3 ≡ 5.21 <a>+/-</a> 0.01
+--   </pre>
 withPrecision :: (Floating a, RealFrac a) => a -> Int -> Uncert a
+
+-- | Like <a>withPrecision</a>, except takes a number of "digits" of
+--   precision in the desired numeric base. For example, in base 2, takes
+--   the number of <i>bits</i> of precision.
+--   
+--   <pre>
+--   <a>withPrecision</a> ≡ withPrecisionAtBase 10
+--   </pre>
+withPrecisionAtBase :: (Floating a, RealFrac a) => Int -> a -> Int -> Uncert a
+
+-- | Create an <a>Uncert</a> around a central value, specifying its
+--   uncertainty with a given <i>variance</i>. The variance is taken to be
+--   proportional to the square of the range of uncertainty. See
+--   <a>uStd</a> for more details.
+--   
+--   "Negative variances" are treated as positive.
 withVar :: Num a => a -> a -> Uncert a
+
+-- | Infer an <a>Uncert</a> from a given list of independent <i>samples</i>
+--   of an underlying uncertain or random distribution.
 fromSamples :: Fractional a => [a] -> Uncert a
-uNormalizeAtBase :: (Floating a, RealFrac a) => Int -> Uncert a -> Uncert a
+
+-- | Attempts to "normalize" an <a>Uncert</a>. Rounds the uncertainty (the
+--   standard deviation) to one digit of precision, and rounds the central
+--   moment up to the implied precision.
+--   
+--   For example, it makes no real sense to have <tt>542.185433 +/-
+--   83.584</tt>, because the extra digits of <tt>542.185433</tt> past the
+--   tens place has no meaning because of the overpowering uncertainty.
+--   Normalizing this results in <tt>540 +/- 80</tt>.
+--   
+--   Note that the <a>Show</a> instance for <a>Uncert</a> normalizes values
+--   before showing them.
 uNormalize :: (Floating a, RealFrac a) => Uncert a -> Uncert a
-liftUF :: (Traversable f, Fractional a) => (forall s. f (AD s (Sparse a)) -> AD s (Sparse a)) -> f (Uncert a) -> Uncert a
+
+-- | Like <a>uNormalize</a>, but takes a numerical base to round with
+--   respect to.
+--   
+--   <pre>
+--   <a>uNormalize</a> ≡ uNormalizeAtBase 10
+--   </pre>
+uNormalizeAtBase :: (Floating a, RealFrac a) => Int -> Uncert a -> Uncert a
+
+-- | Lifts a numeric function over an <a>Uncert</a>. Correctly propagates
+--   the uncertainty according to the second-order taylor expansion
+--   expansion of the function.
+--   
+--   Should take any function sufficiently polymorphic over numeric types,
+--   so you can use things like <a>sqrt</a>, <a>sin</a>, <a>negate</a>,
+--   etc.
+--   
+--   <pre>
+--   ghci&gt; liftU (x -&gt; log x ^ 2) (12.2 +/- 0.5)
+--   6.3 +/- 0.2
+--   </pre>
 liftU :: Fractional a => (forall s. AD s (Tower a) -> AD s (Tower a)) -> Uncert a -> Uncert a
-liftU' :: Fractional a => (forall s. AD s (Sparse a) -> AD s (Sparse a)) -> Uncert a -> Uncert a
+
+-- | Lifts a multivariate function on a container (given as an <tt>f a
+--   -&gt; a</tt>) to work on a container of <a>Uncert</a>s. Correctly
+--   propagates the uncertainty according to the second-order
+--   (multivariate) taylor expansion of the function.
+--   
+--   Should take any function sufficiently polymorphic over numeric types,
+--   so you can use things like <a>*</a>, <a>sqrt</a>, <a>atan2</a>, etc.
+--   
+--   <pre>
+--   ghci&gt; liftUF ([x,y,z] -&gt; x*y+z) [12.2 +<i>- 0.5, 56 +</i>- 2, 0.12 +/- 0.08]
+--   680 +/- 40
+--   </pre>
+liftUF :: (Traversable f, Fractional a) => (forall s. f (AD s (Sparse a)) -> AD s (Sparse a)) -> f (Uncert a) -> Uncert a
+
+-- | Lifts a two-argument (curried) function over two <a>Uncert</a>s.
+--   Correctly propagates the uncertainty according to the second-order
+--   (multivariate) taylor expansion expansion of the function.
+--   
+--   <pre>
+--   ghci&gt; liftU2 (x y -&gt; x**y) (13.5 +<i>- 0.1) (1.64 +</i>- 0.08)
+--   70 +/- 10
+--   </pre>
 liftU2 :: Fractional a => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a)) -> Uncert a -> Uncert a -> Uncert a
+
+-- | Lifts a three-argument (curried) function over three <a>Uncert</a>s.
+--   See <a>liftU2</a> and <a>liftUF</a> for more details.
 liftU3 :: Fractional a => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a)) -> Uncert a -> Uncert a -> Uncert a -> Uncert a
+
+-- | Lifts a four-argument (curried) function over four <a>Uncert</a>s. See
+--   <a>liftU2</a> and <a>liftUF</a> for more details.
 liftU4 :: Fractional a => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a)) -> Uncert a -> Uncert a -> Uncert a -> Uncert a -> Uncert a
+
+-- | Lifts a five-argument (curried) function over five <a>Uncert</a>s. See
+--   <a>liftU2</a> and <a>liftUF</a> for more details.
 liftU5 :: Fractional a => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a)) -> Uncert a -> Uncert a -> Uncert a -> Uncert a -> Uncert a -> Uncert a
+
+-- | Like <a>show</a> for <a>Uncert</a>, but does not normalize the value
+--   (see <a>uNormalize</a>) before showing.
+--   
+--   <pre>
+--   <a>show</a> ≡ uShow . <a>uNormalize</a>
+--   </pre>
 uShow :: (Show a, Floating a) => Uncert a -> String
+
+-- | Like <a>showsPrec</a> for <a>Uncert</a>, but does not normalize the
+--   value (see <a>uNormalize</a>) before showing. See documentation for
+--   <a>showsPrec</a> for more information on how this is meant to be used.
 uShowsPrec :: (Show a, Floating a) => Int -> Uncert a -> ShowS
 instance GHC.Generics.Selector Data.Uncertain.S1_0_1Uncert
 instance GHC.Generics.Selector Data.Uncertain.S1_0_0Uncert
