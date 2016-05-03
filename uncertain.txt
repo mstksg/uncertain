@@ -296,6 +296,9 @@ liftUF :: (Traversable f, Fractional a) => (forall s. f (AD s (Sparse a)) -> AD 
 --   if the higher-degree taylor series terms are large with respect to the
 --   mean and variance, this approximation may be inaccurate.
 --   
+--   Should take any function sufficiently polymorphic over numeric types,
+--   so you can use things like <a>*</a>, <a>atan2</a>, <a>**</a>, etc.
+--   
 --   <pre>
 --   ghci&gt; liftU2 (x y -&gt; x**y) (13.5 +<i>- 0.1) (1.64 +</i>- 0.08)
 --   70 +/- 10
@@ -366,7 +369,7 @@ instance GHC.Float.RealFloat a => GHC.Float.RealFloat (Data.Uncertain.Uncert a)
 
 module Data.Uncertain.Correlated
 data CVar :: * -> * -> *
-type Corr s a = Free (CorrF s a)
+data Corr s a b
 runCorr :: Fractional a => Corr s a b -> b
 corrToState :: (Monad m, Fractional a) => Corr s a b -> StateT (Key, IntMap (Uncert a)) m b
 sampleUncert :: Uncert a -> Corr s a (CVar s a)
@@ -378,7 +381,11 @@ liftC2 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t 
 liftC3 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a -> CVar s a
 liftC4 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a
 liftC5 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a
+instance GHC.Base.Monad (Data.Uncertain.Correlated.Corr s a)
+instance GHC.Base.Applicative (Data.Uncertain.Correlated.Corr s a)
+instance GHC.Base.Functor (Data.Uncertain.Correlated.Corr s a)
 instance GHC.Base.Functor (Data.Uncertain.Correlated.CorrF s a)
+instance Control.Monad.Free.Class.MonadFree (Data.Uncertain.Correlated.CorrF s a) (Data.Uncertain.Correlated.Corr s a)
 instance GHC.Real.Fractional a => GHC.Num.Num (Data.Uncertain.Correlated.CVar s a)
 instance GHC.Real.Fractional a => GHC.Real.Fractional (Data.Uncertain.Correlated.CVar s a)
 instance GHC.Float.Floating a => GHC.Float.Floating (Data.Uncertain.Correlated.CVar s a)
