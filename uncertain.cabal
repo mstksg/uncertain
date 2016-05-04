@@ -73,7 +73,7 @@ library
   exposed-modules:     Data.Uncertain
                        Data.Uncertain.Correlated
                        Data.Uncertain.MonteCarlo
-                       -- Data.Uncertain.Interactive
+                       -- Data.Uncertain.Correlated.Interactive
   -- other-modules:       
   -- other-extensions:    
   build-depends:       base >=4.6 && < 5

@@ -2,7 +2,6 @@ module Data.Uncertain.Correlated
   ( CVar
   , Corr
   , runCorr
-  , corrToState
   , sampleUncert, sampleExact
   , resolveUncert
   , liftCF
