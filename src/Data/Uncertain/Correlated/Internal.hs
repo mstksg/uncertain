@@ -11,7 +11,8 @@
 module Data.Uncertain.Correlated.Internal
   ( CVar(..)
   , CorrF(..)
-  , Corr
+  , Corr(..)
+  , dephantom
   , corrToState
   , liftCF
   , liftC, liftC2, liftC3, liftC4, liftC5
@@ -33,6 +34,11 @@ data CVar :: * -> * -> * where
        => (forall t. f (AD t (Sparse a)) -> AD t (Sparse a))
        -> f (CVar s a)
        -> CVar s a
+
+dephantom :: CVar s a -> CVar t a
+dephantom = \case CK x    -> CK x
+                  CV k    -> CV k
+                  CF f xs -> CF f (dephantom <$> xs)
 
 data CorrF :: * -> * -> * -> * where
     Cer :: a -> (CVar s a -> b) -> CorrF s a b
