@@ -367,11 +367,40 @@ instance (GHC.Real.Fractional a, GHC.Real.Real a) => GHC.Real.Real (Data.Uncerta
 instance GHC.Real.RealFrac a => GHC.Real.RealFrac (Data.Uncertain.Uncert a)
 instance GHC.Float.RealFloat a => GHC.Float.RealFloat (Data.Uncertain.Uncert a)
 
+module Data.Uncertain.Correlated.Internal
+data CVar :: * -> * -> *
+CK :: a -> CVar s a
+CV :: Key -> CVar s a
+CF :: (forall t. f (AD t (Sparse a)) -> AD t (Sparse a)) -> f (CVar s a) -> CVar s a
+data CorrF :: * -> * -> * -> *
+Cer :: a -> (CVar s a -> b) -> CorrF s a b
+Gen :: Uncert a -> (CVar s a -> b) -> CorrF s a b
+Fun :: (forall t. f (AD t (Sparse a)) -> AD t (Sparse a)) -> f (CVar s a) -> (CVar s a -> b) -> CorrF s a b
+Rei :: CVar s a -> (Uncert a -> b) -> CorrF s a b
+newtype Corr s a b
+Corr :: Free (CorrF s a) b -> Corr s a b
+[corrFree] :: Corr s a b -> Free (CorrF s a) b
+dephantom :: CVar s a -> CVar t a
+corrToState :: (Monad m, Fractional a) => Corr s a b -> StateT (Key, IntMap (Uncert a)) m b
+liftCF :: (Functor f, Fractional a) => (forall t. f (AD t (Sparse a)) -> AD t (Sparse a)) -> f (CVar s a) -> CVar s a
+liftC :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a
+liftC2 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a
+liftC3 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a -> CVar s a
+liftC4 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a
+liftC5 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a
+instance GHC.Base.Monad (Data.Uncertain.Correlated.Internal.Corr s a)
+instance GHC.Base.Applicative (Data.Uncertain.Correlated.Internal.Corr s a)
+instance GHC.Base.Functor (Data.Uncertain.Correlated.Internal.Corr s a)
+instance GHC.Base.Functor (Data.Uncertain.Correlated.Internal.CorrF s a)
+instance Control.Monad.Free.Class.MonadFree (Data.Uncertain.Correlated.Internal.CorrF s a) (Data.Uncertain.Correlated.Internal.Corr s a)
+instance GHC.Real.Fractional a => GHC.Num.Num (Data.Uncertain.Correlated.Internal.CVar s a)
+instance GHC.Real.Fractional a => GHC.Real.Fractional (Data.Uncertain.Correlated.Internal.CVar s a)
+instance GHC.Float.Floating a => GHC.Float.Floating (Data.Uncertain.Correlated.Internal.CVar s a)
+
 module Data.Uncertain.Correlated
 data CVar :: * -> * -> *
 data Corr s a b
 runCorr :: Fractional a => Corr s a b -> b
-corrToState :: (Monad m, Fractional a) => Corr s a b -> StateT (Key, IntMap (Uncert a)) m b
 sampleUncert :: Uncert a -> Corr s a (CVar s a)
 sampleExact :: a -> Corr s a (CVar s a)
 resolveUncert :: CVar s a -> Corr s a (Uncert a)
@@ -381,14 +410,6 @@ liftC2 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t 
 liftC3 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a -> CVar s a
 liftC4 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a
 liftC5 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a
-instance GHC.Base.Monad (Data.Uncertain.Correlated.Corr s a)
-instance GHC.Base.Applicative (Data.Uncertain.Correlated.Corr s a)
-instance GHC.Base.Functor (Data.Uncertain.Correlated.Corr s a)
-instance GHC.Base.Functor (Data.Uncertain.Correlated.CorrF s a)
-instance Control.Monad.Free.Class.MonadFree (Data.Uncertain.Correlated.CorrF s a) (Data.Uncertain.Correlated.Corr s a)
-instance GHC.Real.Fractional a => GHC.Num.Num (Data.Uncertain.Correlated.CVar s a)
-instance GHC.Real.Fractional a => GHC.Real.Fractional (Data.Uncertain.Correlated.CVar s a)
-instance GHC.Float.Floating a => GHC.Float.Floating (Data.Uncertain.Correlated.CVar s a)
 
 module Data.Uncertain.MonteCarlo
 liftUF :: (Traversable f, PrimMonad m) => (f Double -> Double) -> f (Uncert Double) -> Gen (PrimState m) -> m (Uncert Double)
@@ -398,3 +419,9 @@ liftU3 :: PrimMonad m => (Double -> Double -> Double -> Double) -> Uncert Double
 liftU4 :: PrimMonad m => (Double -> Double -> Double -> Double -> Double) -> Uncert Double -> Uncert Double -> Uncert Double -> Uncert Double -> Gen (PrimState m) -> m (Uncert Double)
 liftU5 :: PrimMonad m => (Double -> Double -> Double -> Double -> Double -> Double) -> Uncert Double -> Uncert Double -> Uncert Double -> Uncert Double -> Uncert Double -> Gen (PrimState m) -> m (Uncert Double)
 sampleUncert :: PrimMonad m => Uncert Double -> Gen (PrimState m) -> m Double
+
+module Data.Uncertain.Correlated.Interactive
+data CVar
+sampleUncert :: Uncert Double -> IO CVar
+sampleExact :: Double -> IO CVar
+resolveUncert :: CVar -> IO (Uncert Double)
