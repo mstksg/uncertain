@@ -128,7 +128,7 @@ experimental and measurement data with their uncertainties, and apply
 functions to the data with the uncertainties and properly propagating the
 errors with sound statistical principles.
 
-[data-interval]: https://hackage.haskell.org/package/intervals
+[intervals]: https://hackage.haskell.org/package/intervals
 [rounding]: https://hackage.haskell.org/package/rounding
 
 For a clear example, take
