@@ -60,9 +60,10 @@ module Data.Uncertain
 --   
 --   Can be deconstructed with <a>:+/-</a>, the pattern
 --   synonym/pseudo-constructor which matches on the mean and a standard
---   deviation. You can also access properties with <a>uMean</a>,
---   <a>uStd</a>, <a>uVar</a>, <a>uMeanStd</a>, <a>uMeanVar</a>,
---   <a>uRange</a>, etc.
+--   deviation (supported on GHC 7.8+, with bidirectional constructor
+--   functionality supported on GHC 7.10+). You can also access properties
+--   with <a>uMean</a>, <a>uStd</a>, <a>uVar</a>, <a>uMeanStd</a>,
+--   <a>uMeanVar</a>, <a>uRange</a>, etc.
 --   
 --   It's important to remember that each "occurrence" represents a unique
 --   independent sample, so:
@@ -95,6 +96,10 @@ data Uncert a
 --   
 --   Can also be used to <i>construct</i> an <a>Uncert</a>, identically as
 --   <a>+/-</a>.
+--   
+--   <i>Note:</i> Only supported on GHC 7.8 and above. Bidirectional
+--   functionality (to allow use as a constructor) only supported on GHC
+--   7.10 and above.
 
 -- | Create an <a>Uncert</a> around a central value and a given "range" of
 --   uncertainty. The range is interpreted as the standard deviation of the
@@ -717,7 +722,7 @@ module Data.Uncertain.MonteCarlo
 --   <tt><a>Uncert</a> <a>Double</a></tt>. <tt>x <tt>+/-</tt> dx</tt> is
 --   treated as a random variable whose probability density is the normal
 --   distribution with mean <tt>x</tt> and standard deviation <tt>dx</tt>.
-sampleUncert :: PrimMonad m => Uncert Double -> Gen (PrimState m) -> m Double
+sampleUncert :: (PrimMonad m, Functor m) => Uncert Double -> Gen (PrimState m) -> m Double
 
 -- | Lifts a numeric function over an <a>Uncert</a> using a Monte Carlo
 --   simulation with 1000 samples.
