@@ -11,7 +11,7 @@
 -- Portability : non-portable
 --
 -- Provides an interface for computing and propagating uncertainty by using
--- <https://en.wikipedia.org/wiki/Monte_Carlo_method Monte Carlo Simulations>.
+-- <https://en.wikipedia.org/wiki/Monte_Carlo_method Monte Carlo simulations>.
 --
 -- Basically simulates sampling from the distribution represented by the given
 -- 'Uncert's, applying the function of interest, and aggregating the mean
@@ -35,9 +35,9 @@
 -- @
 -- ghci> import qualified Data.Uncertain.MonteCarlo as MC
 -- ghci> import System.Random.MWC
--- ghci> let x = 1.52 +/- 0.07
+-- ghci> let x = 1.52 '+/-' 0.07
 -- ghci> let y = 781.4 +/- 0.3
--- ghci> let z = 1.53e-1 `withPrecision` 3
+-- ghci> let z = 1.53e-1 `'withPrecision'` 3
 -- ghci> g <- 'create'
 -- ghci> cosh x
 -- 2.4 +/- 0.2
@@ -45,7 +45,7 @@
 -- 2.4 +/- 0.2
 -- ghci> exp x / z * sin (y ** z)
 -- 10.9 +/- 0.9
--- ghci> MC.liftU3 (\a b c -> exp a / c * sin (b**c) x y z g
+-- ghci> MC.liftU3 (\a b c -> exp a / c * sin (b**c)) x y z g
 -- 10.8 +/- 1.0
 -- ghci> pi + 3 * logBase x y
 -- 52 +/- 5

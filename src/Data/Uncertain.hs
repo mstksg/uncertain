@@ -53,9 +53,9 @@ import qualified Numeric.AD.Mode.Tower  as T
 -- polymorphic) functions with 'liftU', 'liftUF', 'liftU2' and family.
 --
 -- @
--- ghci> let x = 1.52 +/- 0.07
+-- ghci> let x = 1.52 '+/-' 0.07
 -- ghci> let y = 781.4 +/- 0.3
--- ghci> let z = 1.53e-1 `withPrecision` 3
+-- ghci> let z = 1.53e-1 `'withPrecision'` 3
 -- ghci> cosh x
 -- 2.4 +/- 0.2
 -- ghci> exp x / z * sin (y ** z)
@@ -73,7 +73,19 @@ import qualified Numeric.AD.Mode.Tower  as T
 -- Can be created with 'exact' to represent an "exact" measurement with no
 -- uncertainty, '+/-' and ':+/-' to specify a standard deviation as
 -- a range, 'withPrecision' to specify through decimal precision, and
--- 'withVar' to specify with a variance.
+-- 'withVar' to specify with a variance.  Can also be inferred from a list
+-- of samples with 'fromSamples'
+--
+-- @
+-- 7.13 '+/-' 0.05
+-- 91800 +/- 100
+-- 12.5 `'withVar'` 0.36
+-- 'exact' 7.9512
+-- 81.42 `'withPrecision'` 4
+-- 7    :: Uncertain Double
+-- 9.18 :: Uncertain Double
+-- 'fromSamples' [12.5, 12.7, 12.6, 12.6, 12.5]
+-- @
 --
 -- Can be deconstructed with ':+/-', the pattern synonym/pseudo-constructor
 -- which matches on the mean and a standard deviation.  You can also access

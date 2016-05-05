@@ -18,7 +18,8 @@
 --         x <- sampleUncert $ 12.5 +/- 0.8
 --         y <- sampleUncert $ 15.9 +/- 0.5
 --         z <- sampleUncert $ 1.52 +/- 0.07
---         resolveUncert $ (x+z)*logBase z (y**x)
+--         let k = y**x
+--         resolveUncert $ (x+z) * logBase z k
 -- 1200 +/- 200
 -- @
 --
@@ -28,7 +29,8 @@
 -- ghci> x <- 'sampleUncert' $ 12.5 +/- 0.8
 -- ghci> y <- sampleUncert $ 15.9 +/- 0.5
 -- ghci> z <- sampleUncert $ 1.52 +/- 0.07
--- ghci> 'resolveUncert' $ (x+z)*logBase z (y**x)
+-- ghci> let k = y**x
+-- ghci> 'resolveUncert' $ (x+z) * logBase z k
 -- 1200 +/- 200
 -- @
 --

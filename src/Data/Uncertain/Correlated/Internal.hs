@@ -77,7 +77,7 @@ deriving instance Functor (CorrF s a)
 -- For example, consider the difference between:
 --
 -- @
--- ghci> sum $ replicate 10 (12.5 +/- 0.8)
+-- ghci> sum $ replicate 10 (12.5 '+/-' 0.8)
 -- 125 +/- 3
 -- ghci> 10 * (12.5 +/- 0.8)
 -- 125 +/- 8
@@ -92,7 +92,7 @@ deriving instance Functor (CorrF s a)
 --
 -- @
 -- ghci> 'evalCorr' $ do
---         x  <- 'sampleUncert' $ 12.5 +/- 0.8
+--         x  <- 'sampleUncert' $ 12.5 '+/-' 0.8
 --         y1 <- 'resolveUncert' $ sum (replicate 10 x)
 --         y2 <- resolveUncert $ 10 * x
 --         return (y1, y2)
@@ -112,10 +112,11 @@ deriving instance Functor (CorrF s a)
 --
 -- @
 -- ghci> 'evalCorr' $ do
---         x <- 'sampleUncert' $ 12.5 +/- 0.8
+--         x <- 'sampleUncert' $ 12.5 '+/-' 0.8
 --         y <- sampleUncert $ 15.9 +/- 0.5
 --         z <- sampleUncert $ 1.52 +/- 0.07
---         'resolveUncert' $ (x+z)*logBase z (y**x)
+--         let k = y ** x
+--         'resolveUncert' $ (x+z) * logBase z k
 -- 1200 +/- 200
 -- @
 --
@@ -177,7 +178,7 @@ corrToState = iterM go . corrFree
 --         x <- sampleUncert $ 12.5 +/- 0.8
 --         y <- sampleUncert $ 15.9 +/- 0.5
 --         z <- sampleUncert $ 1.52 +/- 0.07
---         resolveUncert $ liftCF (\[a,b,c] -> (a+c)*logBase c (b**a)) x y z
+--         resolveUncert $ liftCF (\[a,b,c] -> (a+c) * logBase c (b**a)) x y z
 -- 1200 +/- 200
 -- @
 --
