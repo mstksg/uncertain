@@ -51,7 +51,7 @@
 --
 module Data.Uncertain.Correlated.Interactive
   ( -- * Uncertain and Correlated Values
-    CVarIO
+    CVar, CVarIO
     -- ** Sampling
   , sampleUncert, sampleExact, constC
     -- ** Resolving

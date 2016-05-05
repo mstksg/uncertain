@@ -1,6 +1,8 @@
 Uncertain
 =========
 
+[![Build Status](https://travis-ci.org/mstksg/uncertain.svg?branch=master)](https://travis-ci.org/mstksg/uncertain)
+
 Provides tools to manipulate numbers with inherent experimental/measurement
 uncertainty, and propagates them through functions based on principles from
 statistics.
