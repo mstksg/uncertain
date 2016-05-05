@@ -6,6 +6,10 @@
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
+#ifndef MIN_VERSION_ad
+#define MIN_VERSION_mtl(x,y,z) 1
+#endif
+
 #if __GLASGOW_HASKELL__ >= 708
 {-# LANGUAGE PatternSynonyms     #-}
 {-# LANGUAGE ViewPatterns        #-}
@@ -53,6 +57,12 @@ import qualified Numeric.AD.Mode.Tower  as T
 import           Data.Functor     ((<$>))
 import           Data.Traversable (Traversable)
 #endif
+
+#if !(MIN_VERSION_ad(4,0,0))
+import           Numeric.AD.Internal.Sparse
+import qualified Numeric.AD.Internal.Tower as T (Tower)
+#endif
+
 
 -- | Represents an independent experimental value centered around a mean
 -- value with "inherent" and independent uncertainty.
@@ -165,7 +175,9 @@ exact x = Un x 0
 {-# INLINE exact #-}
 
 infixl 6 +/-
+#if __GLASGOW_HASKELL__ >= 708
 infixl 6 :+/-
+#endif
 
 -- | Create an 'Uncert' around a central value and a given "range" of
 -- uncertainty.  The range is interpreted as the standard deviation of the
@@ -252,8 +264,7 @@ uMeanStd (Un x vx) = (x, sqrt vx)
 --
 -- @uRange (x +/- dx) ≡ (x - dx, x + dx)@
 uRange :: Floating a => Uncert a -> (a, a)
-uRange u = let x :+/- dx = u
-           in  (x - dx, x + dx)
+uRange (uMeanStd->(x, dx)) = (x - dx, x + dx)
 {-# INLINABLE uRange #-}
 
 -- | Like 'withPrecision', except takes a number of "digits" of precision in
@@ -301,9 +312,8 @@ uNormalizeAtBase
     => Int          -- ^ The base to normalize with respect to
     -> Uncert a
     -> Uncert a
-uNormalizeAtBase b u = x' +/- dx'
+uNormalizeAtBase b (uMeanStd->(x, dx)) = x' +/- dx'
   where
-    x :+/- dx = u
     uncert    :: Int
     uncert    = negate . floor . logBase (fromIntegral b) $ dx
     rounder   = fromIntegral b ** fromIntegral uncert
@@ -339,12 +349,10 @@ instance (Show a, Floating a, RealFrac a) => Show (Uncert a) where
 -- 'uNormalize') before showing.  See documentation for 'showsPrec' for
 -- more information on how this is meant to be used.
 uShowsPrec :: (Show a, Floating a) => Int -> Uncert a -> ShowS
-uShowsPrec d u = showParen (d > 5) $
-                     showsPrec 6 x
-                   . showString " +/- "
-                   . showsPrec 6 dx
-  where
-    x :+/- dx = u
+uShowsPrec d (uMeanStd->(x, dx)) = showParen (d > 5) $
+                                       showsPrec 6 x
+                                     . showString " +/- "
+                                     . showsPrec 6 dx
 {-# INLINABLE uShowsPrec #-}
 
 -- | Like 'show' for 'Uncert', but does not normalize the value (see
