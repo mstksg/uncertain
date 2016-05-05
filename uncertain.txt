@@ -232,22 +232,6 @@ uRange :: Floating a => Uncert a -> (a, a)
 --   </pre>
 liftU :: Fractional a => (forall s. AD s (Tower a) -> AD s (Tower a)) -> Uncert a -> Uncert a
 
--- | Lifts a multivariate numeric function on a container (given as an
---   <tt>f a -&gt; a</tt>) to work on a container of <a>Uncert</a>s.
---   Correctly propagates the uncertainty according to the second-order
---   (multivariate) taylor expansion of the function. Note that if the
---   higher-degree taylor series terms are large with respect to the means
---   and variances, this approximation may be inaccurate.
---   
---   Should take any function sufficiently polymorphic over numeric types,
---   so you can use things like <a>*</a>, <a>sqrt</a>, <a>atan2</a>, etc.
---   
---   <pre>
---   ghci&gt; liftUF ([x,y,z] -&gt; x*y+z) [12.2 +<i>- 0.5, 56 +</i>- 2, 0.12 +/- 0.08]
---   680 +/- 40
---   </pre>
-liftUF :: (Traversable f, Fractional a) => (forall s. f (AD s (Sparse a)) -> AD s (Sparse a)) -> f (Uncert a) -> Uncert a
-
 -- | Lifts a two-argument (curried) function over two <a>Uncert</a>s.
 --   Correctly propagates the uncertainty according to the second-order
 --   (multivariate) taylor expansion expansion of the function. Note that
@@ -274,6 +258,22 @@ liftU4 :: Fractional a => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s 
 -- | Lifts a five-argument (curried) function over five <a>Uncert</a>s. See
 --   <a>liftU2</a> and <a>liftUF</a> for more details.
 liftU5 :: Fractional a => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a)) -> Uncert a -> Uncert a -> Uncert a -> Uncert a -> Uncert a -> Uncert a
+
+-- | Lifts a multivariate numeric function on a container (given as an
+--   <tt>f a -&gt; a</tt>) to work on a container of <a>Uncert</a>s.
+--   Correctly propagates the uncertainty according to the second-order
+--   (multivariate) taylor expansion of the function. Note that if the
+--   higher-degree taylor series terms are large with respect to the means
+--   and variances, this approximation may be inaccurate.
+--   
+--   Should take any function sufficiently polymorphic over numeric types,
+--   so you can use things like <a>*</a>, <a>sqrt</a>, <a>atan2</a>, etc.
+--   
+--   <pre>
+--   ghci&gt; liftUF ([x,y,z] -&gt; x*y+z) [12.2 +<i>- 0.5, 56 +</i>- 2, 0.12 +/- 0.08]
+--   680 +/- 40
+--   </pre>
+liftUF :: (Traversable f, Fractional a) => (forall s. f (AD s (Sparse a)) -> AD s (Sparse a)) -> f (Uncert a) -> Uncert a
 
 -- | Attempts to "normalize" an <a>Uncert</a>. Rounds the uncertainty (the
 --   standard deviation) to one digit of precision, and rounds the central
@@ -377,6 +377,14 @@ module Data.Uncertain.Correlated
 --     resolveUncert $ (x+z)*logBase z (y**x)
 --     -- result: 1200 +/- 200
 --   </pre>
+--   
+--   The first parameter is a dummy phantom parameter used to prevent
+--   <a>CVar</a>s from leaking out of the computation (see
+--   <tt>evalCorr</tt>). The second parameter is the numeric type of all
+--   samples within the description (for example, if you ever sample an
+--   'Uncert Double', the second parameter wil be <a>Double</a>). The third
+--   parameter is the result type of the computation -- the value the
+--   <a>Corr</a> is describing.
 data Corr s a b
 
 -- | Evaluates the value described by a <a>Corr</a> monad, taking into
@@ -388,22 +396,52 @@ data Corr s a b
 --   you aren't allowed to ever use <a>evalCorr</a> to evaluate a
 --   <a>CVar</a>.
 evalCorr :: Fractional a => (forall s. Corr s a b) -> b
+
+-- | Represents a single sample (or a value calculated from samples) within
+--   the <a>Corr</a> monad. These can be created with
+--   <tt>sampleUncert</tt>, <tt>sampleExact</tt>, and <a>constC</a>, or
+--   made by combinining others with its numeric typeclass instances (like
+--   <a>Num</a>) or its functions lifting arbitrary numeric functions (like
+--   <a>liftC2</a>). These keep track of inter-correlations between
+--   sources, and if you add together two <a>CVar</a>s that are correlated,
+--   their results will reflect this.
+--   
+--   Can be "resolved" into the uncertain value they represent using
+--   <tt>resolveUncert</tt>.
+--   
+--   Note that these are parameterized by a dummy phantom parameter
+--   <tt>s</tt> so that they can't be "evaluated" out of the <a>Corr</a>
+--   they live in with <tt>evalCorr</tt>.
+--   
+--   Note that a <tt><a>CVar</a> s a</tt> can only ever meaningfully
+--   "exist" in a <tt><a>Corr</a> s a</tt>, meaning that the all samples
+--   within that <a>Corr</a> are of the same type.
 data CVar s a
 
--- | Generate a sample in <a>Corr</a> from an <a>Uncert</a> value.
+-- | Generate a sample in <a>Corr</a> from an <a>Uncert</a> value,
+--   independently from all other samples.
+--   
+--   Note that you can only sample <tt><a>Uncert</a> a</tt>s within a
+--   <tt><a>Corr</a> s a</tt>, meaning that all other "sampled" values are
+--   also <tt>a</tt>s.
 sampleUncert :: Uncert a -> Corr s a (CVar s a)
 
--- | Generate an exact sample in <a>Corr</a> with zero uncertainty.
+-- | Generate an exact sample in <a>Corr</a> with zero uncertainty,
+--   independently from all other samples.
 --   
 --   Not super useful, since you can do something equivalent with
 --   <a>constC</a> or the numeric instances:
 --   
 --   <pre>
---   sampleExact x  ≡ return (constC x)
+--   sampleExact x  ≡ return ('constC' x)
 --   sampleExact 10 ≡ return 10
 --   </pre>
 --   
 --   But is provided for completeness alongside <a>sampleUncert</a>.
+--   
+--   Note that you can exactly sample an <tt>a</tt> within a
+--   <tt><a>Corr</a> s a</tt>, meaning that all other "sampled" values are
+--   also <tt>a</tt>s.
 sampleExact :: a -> Corr s a (CVar s a)
 
 -- | <a>Resolve</a> an <a>Uncert</a> from a <a>CVar</a> using its potential
@@ -414,13 +452,33 @@ sampleExact :: a -> Corr s a (CVar s a)
 --   will be treated as something completely independent. Usually this
 --   should only be used as the "exit point" of a <a>Corr</a> description.
 resolveUncert :: CVar s a -> Corr s a (Uncert a)
-liftCF :: (Functor f, Fractional a) => (forall t. f (AD t (Sparse a)) -> AD t (Sparse a)) -> f (CVar s a) -> CVar s a
+
+-- | Creates a <a>CVar</a> representing a completely independent sample
+--   from all other <a>CVar</a>s containing the exact value given.
 constC :: a -> CVar s a
 liftC :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a
 liftC2 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a
 liftC3 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a -> CVar s a
 liftC4 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a
 liftC5 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a
+
+-- | Lifts a multivariate numeric function on a container (given as an
+--   <tt>f a -&gt; a</tt>) to work on a container of <a>CVar</a>s.
+--   Correctly propagates the uncertainty according to the second-order
+--   (multivariate) taylor expansion of the function, and properly takes
+--   into account and keeps track of all inter-correlations between the
+--   <a>CVar</a> samples. Note that if the higher-degree taylor series
+--   terms are large with respect to the means and variances, this
+--   approximation may be inaccurate.
+--   
+--   Should take any function sufficiently polymorphic over numeric types,
+--   so you can use things like <a>*</a>, <a>sqrt</a>, <a>atan2</a>, etc.
+--   
+--   <pre>
+--   evalCorr $ liftCF ([x,y,z] -&gt; x*y+z) [12.2 +<i>- 0.5, 56 +</i>- 2, 0.12 +/- 0.08]
+--   680 +/- 40
+--   </pre>
+liftCF :: (Functor f, Fractional a) => (forall t. f (AD t (Sparse a)) -> AD t (Sparse a)) -> f (CVar s a) -> CVar s a
 
 module Data.Uncertain.MonteCarlo
 liftUF :: (Traversable f, PrimMonad m) => (f Double -> Double) -> f (Uncert Double) -> Gen (PrimState m) -> m (Uncert Double)
@@ -432,14 +490,96 @@ liftU5 :: PrimMonad m => (Double -> Double -> Double -> Double -> Double -> Doub
 sampleUncert :: PrimMonad m => Uncert Double -> Gen (PrimState m) -> m Double
 
 module Data.Uncertain.Correlated.Interactive
+
+-- | The <a>Corr</a> monad allows us to keep track of correlated and
+--   non-independent samples:
+--   
+--   <pre>
+--   evalCorr $ do
+--     x &lt;- sampleUncert $ 12.5 +/- 0.8
+--     y1 &lt;- resolveUncert $ sum (replicate 10 x)
+--     y2 &lt;- resolveUncert $ 10 * x
+--     return (y1, y2)
+--     -- result: (125 +<i>- 8, 125 +</i>- 8)
+--   
+--   evalCorr $ do
+--     xs &lt;- replicateM 10 (sampleUncert (12.5 +/- 0.8))
+--     resolveUncert $ sum xs
+--     -- result: 125 +/- 3
+--   </pre>
+--   
+--   The first example samples once and describes operations on the single
+--   sample; the second example samples 10 times with <tt>replicateM</tt>
+--   and sums all of the results.
+--   
+--   Things are more interesting when you sample multiple variables:
+--   
+--   <pre>
+--   evalCorr $ do
+--     x &lt;- sampleUncert $ 12.5 +/- 0.8
+--     y &lt;- sampleUncert $ 15.9 +/- 0.5
+--     z &lt;- sampleUncert $ 1.52 +/- 0.07
+--     resolveUncert $ (x+z)*logBase z (y**x)
+--     -- result: 1200 +/- 200
+--   </pre>
+--   
+--   The first parameter is a dummy phantom parameter used to prevent
+--   <a>CVar</a>s from leaking out of the computation (see
+--   <tt>evalCorr</tt>). The second parameter is the numeric type of all
+--   samples within the description (for example, if you ever sample an
+--   'Uncert Double', the second parameter wil be <a>Double</a>). The third
+--   parameter is the result type of the computation -- the value the
+--   <a>Corr</a> is describing.
+data Corr s a b
+runCorrIO :: Corr RealWorld Double a -> IO a
+
+-- | Represents a single sample (or a value calculated from samples) within
+--   the <a>Corr</a> monad. These can be created with
+--   <tt>sampleUncert</tt>, <tt>sampleExact</tt>, and <a>constC</a>, or
+--   made by combinining others with its numeric typeclass instances (like
+--   <a>Num</a>) or its functions lifting arbitrary numeric functions (like
+--   <a>liftC2</a>). These keep track of inter-correlations between
+--   sources, and if you add together two <a>CVar</a>s that are correlated,
+--   their results will reflect this.
+--   
+--   Can be "resolved" into the uncertain value they represent using
+--   <tt>resolveUncert</tt>.
+--   
+--   Note that these are parameterized by a dummy phantom parameter
+--   <tt>s</tt> so that they can't be "evaluated" out of the <a>Corr</a>
+--   they live in with <tt>evalCorr</tt>.
+--   
+--   Note that a <tt><a>CVar</a> s a</tt> can only ever meaningfully
+--   "exist" in a <tt><a>Corr</a> s a</tt>, meaning that the all samples
+--   within that <a>Corr</a> are of the same type.
 data CVar s a
 sampleUncert :: Uncert Double -> IO CVarIO
 sampleExact :: Double -> IO CVarIO
 resolveUncert :: CVarIO -> IO (Uncert Double)
-liftCF :: (Functor f, Fractional a) => (forall t. f (AD t (Sparse a)) -> AD t (Sparse a)) -> f (CVar s a) -> CVar s a
+
+-- | Creates a <a>CVar</a> representing a completely independent sample
+--   from all other <a>CVar</a>s containing the exact value given.
 constC :: a -> CVar s a
 liftC :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a
 liftC2 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a
 liftC3 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a -> CVar s a
 liftC4 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a
 liftC5 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a
+
+-- | Lifts a multivariate numeric function on a container (given as an
+--   <tt>f a -&gt; a</tt>) to work on a container of <a>CVar</a>s.
+--   Correctly propagates the uncertainty according to the second-order
+--   (multivariate) taylor expansion of the function, and properly takes
+--   into account and keeps track of all inter-correlations between the
+--   <a>CVar</a> samples. Note that if the higher-degree taylor series
+--   terms are large with respect to the means and variances, this
+--   approximation may be inaccurate.
+--   
+--   Should take any function sufficiently polymorphic over numeric types,
+--   so you can use things like <a>*</a>, <a>sqrt</a>, <a>atan2</a>, etc.
+--   
+--   <pre>
+--   evalCorr $ liftCF ([x,y,z] -&gt; x*y+z) [12.2 +<i>- 0.5, 56 +</i>- 2, 0.12 +/- 0.08]
+--   680 +/- 40
+--   </pre>
+liftCF :: (Functor f, Fractional a) => (forall t. f (AD t (Sparse a)) -> AD t (Sparse a)) -> f (CVar s a) -> CVar s a
