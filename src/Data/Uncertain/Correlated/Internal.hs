@@ -33,9 +33,9 @@ module Data.Uncertain.Correlated.Internal
   )
   where
 
+import           Control.Arrow             ((***))
 import           Control.Monad.Free
 import           Control.Monad.Trans.State
-import           Data.Bifunctor
 import           Data.Hople
 import           Data.Uncertain
 import           Numeric.AD.Mode.Sparse
@@ -167,7 +167,7 @@ corrToState = iterM go . corrFree
     go = \case
             Gen u next    -> do
               i <- gets fst
-              modify $ bimap succ (M.insert i u)
+              modify $ succ *** M.insert i u
               next (CV i)
             Fun f us next ->
               next $ CF f us
