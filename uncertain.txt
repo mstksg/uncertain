@@ -6,7 +6,7 @@
 --   
 --   See <a>README.md</a>.
 --   
---   Documentation maintained at <a>http://mstksg.github.io/uncertain</a>
+--   Documentation maintained at <a>https://mstksg.github.io/uncertain</a>
 @package uncertain
 @version 0.2.0.0
 
