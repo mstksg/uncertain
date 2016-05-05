@@ -27,7 +27,7 @@ module Data.Uncertain
   , uMean, uVar, uStd, uMeanVar, uMeanStd, uRange
     -- * Applying functions and propagating uncertainty
   , liftU
-  , liftUF, liftU2, liftU3, liftU4, liftU5
+  , liftU2, liftU3, liftU4, liftU5, liftUF
     -- * Utility functions
   , uNormalize, uNormalizeAtBase
   , uShow, uShowsPrec
