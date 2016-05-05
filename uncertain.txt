@@ -80,6 +80,18 @@ module Data.Uncertain
 --   (sufficiently polymorphic) functions with <a>liftU</a>, <a>liftUF</a>,
 --   <a>liftU2</a> and family.
 --   
+--   <pre>
+--   ghci&gt; let x = 1.52 +/- 0.07
+--   ghci&gt; let y = 781.4 +/- 0.3
+--   ghci&gt; let z = 1.53e-1 <a>withPrecision</a> 3
+--   ghci&gt; cosh x
+--   2.4 +/- 0.2
+--   ghci&gt; exp x / z * sin (y ** z)
+--   10.9 +/- 0.9
+--   ghci&gt; pi + 3 * logBase x y
+--   52 +/- 5
+--   </pre>
+--   
 --   Uncertaintly is properly propagated according to the second-degree
 --   taylor series approximations of the applied functions. However, if the
 --   higher-degree terms are large with respect to to the means and
@@ -330,8 +342,14 @@ instance GHC.Float.RealFloat a => GHC.Float.RealFloat (Data.Uncertain.Uncert a)
 --   relationships between random variables and evaluate their propagated
 --   uncertainties <i>respecting</i> their inter-correlations.
 --   
---   Fixes a basic "failure" of the <a>Uncert</a> type, which can't
---   describe correlated samples.
+--   See the <a>Data.Uncertain.Correlated.Interactive</a> module for an
+--   "interactive" and exploratory interface for this module's
+--   functionality.
+module Data.Uncertain.Correlated
+
+-- | The <a>Corr</a> monad allows us to keep track of correlated and
+--   non-independent samples. It fixes a basic "failure" of the
+--   <a>Uncert</a> type, which can't describe correlated samples.
 --   
 --   For example, consider the difference between:
 --   
@@ -346,10 +364,8 @@ instance GHC.Float.RealFloat a => GHC.Float.RealFloat (Data.Uncertain.Uncert a)
 --   whose errors will in general cancel eachother out. The second one
 --   represents sampling once and multiplying it by ten, which will amplify
 --   any error by a full factor of 10.
-module Data.Uncertain.Correlated
-
--- | The <a>Corr</a> monad allows us to keep track of correlated and
---   non-independent samples:
+--   
+--   See how the <a>Corr</a> monad expresses the above computations:
 --   
 --   <pre>
 --   ghci&gt; <tt>evalCorr</tt> $ do
@@ -535,14 +551,125 @@ liftC5 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t 
 --   </pre>
 liftCF :: (Functor f, Fractional a) => (forall t. f (AD t (Sparse a)) -> AD t (Sparse a)) -> f (CVar s a) -> CVar s a
 
+
+-- | Provides an interface for computing and propagating uncertainty by
+--   using <a>Monte Carlo Simulations</a>.
+--   
+--   Basically simulates sampling from the distribution represented by the
+--   given <a>Uncert</a>s, applying the function of interest, and
+--   aggregating the mean and standard deviation of the results. <tt>x
+--   <tt>+/-</tt> dx</tt> is treated as a random variable whose probability
+--   density is the normal distribution with mean <tt>x</tt> and standard
+--   deviation <tt>dx</tt>.
+--   
+--   This module attempts to duplicate the API offered by
+--   <a>Data.Uncertain</a> and is meant to be imported qualified alongside
+--   <a>Data.Uncertain</a>
+--   
+--   <pre>
+--   import           Data.Uncertain
+--   import qualified Data.Uncertain.MonteCarlo as MC
+--   </pre>
+--   
+--   Actions are parameterized over all <a>PrimMonad</a> instances, so can
+--   be run under both <tt>ST</tt> and <a>IO</a>, making it suitable for
+--   exploratory purposes. All functions require a <a>Gen</a> from
+--   <a>System.Random.MWC</a> for random value generation purposes.
+--   
+--   <pre>
+--   ghci&gt; import qualified Data.Uncertain.MonteCarlo as MC
+--   ghci&gt; import System.Random.MWC
+--   ghci&gt; let x = 1.52 +/- 0.07
+--   ghci&gt; let y = 781.4 +/- 0.3
+--   ghci&gt; let z = 1.53e-1 <tt>withPrecision</tt> 3
+--   ghci&gt; g &lt;- <a>create</a>
+--   ghci&gt; cosh x
+--   2.4 +/- 0.2
+--   ghci&gt; MC.liftU cosh x g
+--   2.4 +/- 0.2
+--   ghci&gt; exp x / z * sin (y ** z)
+--   10.9 +/- 0.9
+--   ghci&gt; MC.liftU3 (a b c -&gt; exp a / c * sin (b**c) x y z g
+--   10.8 +/- 1.0
+--   ghci&gt; pi + 3 * logBase x y
+--   52 +/- 5
+--   ghci&gt; MC.liftU2 (a b -&gt; pi + 3 * logBase a b) x y g
+--   51 +/- 5
+--   </pre>
 module Data.Uncertain.MonteCarlo
-liftUF :: (Traversable f, PrimMonad m) => (f Double -> Double) -> f (Uncert Double) -> Gen (PrimState m) -> m (Uncert Double)
-liftU :: PrimMonad m => (Double -> Double) -> Uncert Double -> Gen (PrimState m) -> m (Uncert Double)
-liftU2 :: PrimMonad m => (Double -> Double -> Double) -> Uncert Double -> Uncert Double -> Gen (PrimState m) -> m (Uncert Double)
-liftU3 :: PrimMonad m => (Double -> Double -> Double -> Double) -> Uncert Double -> Uncert Double -> Uncert Double -> Gen (PrimState m) -> m (Uncert Double)
-liftU4 :: PrimMonad m => (Double -> Double -> Double -> Double -> Double) -> Uncert Double -> Uncert Double -> Uncert Double -> Uncert Double -> Gen (PrimState m) -> m (Uncert Double)
-liftU5 :: PrimMonad m => (Double -> Double -> Double -> Double -> Double -> Double) -> Uncert Double -> Uncert Double -> Uncert Double -> Uncert Double -> Uncert Double -> Gen (PrimState m) -> m (Uncert Double)
+
+-- | Sample a random <a>Double</a> from the distribution specified by an
+--   <tt><a>Uncert</a> <a>Double</a></tt>. <tt>x <tt>+/-</tt> dx</tt> is
+--   treated as a random variable whose probability density is the normal
+--   distribution with mean <tt>x</tt> and standard deviation <tt>dx</tt>.
 sampleUncert :: PrimMonad m => Uncert Double -> Gen (PrimState m) -> m Double
+
+-- | Lifts a numeric function over an <a>Uncert</a> using a Monte Carlo
+--   simulation with 1000 samples.
+--   
+--   <pre>
+--   ghci&gt; g &lt;- <a>create</a>
+--   ghci&gt; MC.liftU (x -&gt; log x ^ 2) (12.2 +/- 0.5) g
+--   6.3 +/- 0.2
+--   </pre>
+liftU :: PrimMonad m => (Double -> Double) -> Uncert Double -> Gen (PrimState m) -> m (Uncert Double)
+
+-- | Lifts a two-argument (curried) function over two <a>Uncert</a>s using
+--   a Monte Carlo simulation with 1000 samples.
+--   
+--   <pre>
+--   ghci&gt; g &lt;- <a>create</a>
+--   ghci&gt; MC.liftU2 (x y -&gt; x**y) (13.5 +<i>- 0.1) (1.64 +</i>- 0.08)
+--   70 +/- 20
+--   </pre>
+liftU2 :: PrimMonad m => (Double -> Double -> Double) -> Uncert Double -> Uncert Double -> Gen (PrimState m) -> m (Uncert Double)
+
+-- | Lifts a three-argument (curried) function over three <a>Uncert</a>s.
+--   See <a>liftU2</a> and <a>liftUF</a> for more details.
+liftU3 :: PrimMonad m => (Double -> Double -> Double -> Double) -> Uncert Double -> Uncert Double -> Uncert Double -> Gen (PrimState m) -> m (Uncert Double)
+
+-- | Lifts a four-argument (curried) function over four <a>Uncert</a>s. See
+--   <a>liftU2</a> and <a>liftUF</a> for more details.
+liftU4 :: PrimMonad m => (Double -> Double -> Double -> Double -> Double) -> Uncert Double -> Uncert Double -> Uncert Double -> Uncert Double -> Gen (PrimState m) -> m (Uncert Double)
+
+-- | Lifts a five-argument (curried) function over five <a>Uncert</a>s. See
+--   <a>liftU2</a> and <a>liftUF</a> for more details.
+liftU5 :: PrimMonad m => (Double -> Double -> Double -> Double -> Double -> Double) -> Uncert Double -> Uncert Double -> Uncert Double -> Uncert Double -> Uncert Double -> Gen (PrimState m) -> m (Uncert Double)
+
+-- | Lifts a multivariate numeric function on a container (given as an
+--   <tt>f a -&gt; a</tt>) to work on a container of <a>Uncert</a>s using a
+--   Monte Carlo simulation with 1000 samples.
+--   
+--   <pre>
+--   ghci&gt; g &lt;- <a>create</a>
+--   ghci&gt; M.liftUF ([x,y,z] -&gt; x*y+z) [12.2 +<i>- 0.5, 56 +</i>- 2, 0.12 +/- 0.08] g
+--   680 +/- 40
+--   </pre>
+liftUF :: (Traversable f, PrimMonad m) => (f Double -> Double) -> f (Uncert Double) -> Gen (PrimState m) -> m (Uncert Double)
+
+-- | Like <a>liftU</a>, but allows you to specify the number of samples to
+--   run the Monte Carlo simulation with.
+liftU' :: PrimMonad m => Int -> (Double -> Double) -> Uncert Double -> Gen (PrimState m) -> m (Uncert Double)
+
+-- | Like <a>liftU2</a>, but allows you to specify the number of samples to
+--   run the Monte Carlo simulation with.
+liftU2' :: PrimMonad m => Int -> (Double -> Double -> Double) -> Uncert Double -> Uncert Double -> Gen (PrimState m) -> m (Uncert Double)
+
+-- | Like <a>liftU3</a>, but allows you to specify the number of samples to
+--   run the Monte Carlo simulation with.
+liftU3' :: PrimMonad m => Int -> (Double -> Double -> Double -> Double) -> Uncert Double -> Uncert Double -> Uncert Double -> Gen (PrimState m) -> m (Uncert Double)
+
+-- | Like <a>liftU4</a>, but allows you to specify the number of samples to
+--   run the Monte Carlo simulation with.
+liftU4' :: PrimMonad m => Int -> (Double -> Double -> Double -> Double -> Double) -> Uncert Double -> Uncert Double -> Uncert Double -> Uncert Double -> Gen (PrimState m) -> m (Uncert Double)
+
+-- | Like <a>liftU5</a>, but allows you to specify the number of samples to
+--   run the Monte Carlo simulation with.
+liftU5' :: PrimMonad m => Int -> (Double -> Double -> Double -> Double -> Double -> Double) -> Uncert Double -> Uncert Double -> Uncert Double -> Uncert Double -> Uncert Double -> Gen (PrimState m) -> m (Uncert Double)
+
+-- | Like <a>liftUF</a>, but allows you to specify the number of samples to
+--   run the Monte Carlo simulation with.
+liftUF' :: (Traversable f, PrimMonad m) => Int -> (f Double -> Double) -> f (Uncert Double) -> Gen (PrimState m) -> m (Uncert Double)
 
 
 -- | Exports all of the interface of <a>Data.Uncertain.Correlated</a>,
