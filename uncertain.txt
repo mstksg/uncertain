@@ -67,48 +67,6 @@
 @package uncertain
 @version 0.1.0.0
 
-module Data.Hople
-data H1 a
-H1 :: !a -> H1 a
-data H2 a
-H2 :: !a -> !a -> H2 a
-data H3 a
-H3 :: !a -> !a -> !a -> H3 a
-data H4 a
-H4 :: !a -> !a -> !a -> !a -> H4 a
-data H5 a
-H5 :: !a -> !a -> !a -> !a -> !a -> H5 a
-curryH1 :: (H1 a -> a) -> a -> a
-curryH2 :: (H2 a -> a) -> a -> a -> a
-curryH3 :: (H3 a -> a) -> a -> a -> a -> a
-curryH4 :: (H4 a -> a) -> a -> a -> a -> a -> a
-curryH5 :: (H5 a -> a) -> a -> a -> a -> a -> a -> a
-uncurryH1 :: (a -> a) -> H1 a -> a
-uncurryH2 :: (a -> a -> a) -> H2 a -> a
-uncurryH3 :: (a -> a -> a -> a) -> H3 a -> a
-uncurryH4 :: (a -> a -> a -> a -> a) -> H4 a -> a
-uncurryH5 :: (a -> a -> a -> a -> a -> a) -> H5 a -> a
-instance GHC.Show.Show a => GHC.Show.Show (Data.Hople.H5 a)
-instance Data.Traversable.Traversable Data.Hople.H5
-instance Data.Foldable.Foldable Data.Hople.H5
-instance GHC.Base.Functor Data.Hople.H5
-instance GHC.Show.Show a => GHC.Show.Show (Data.Hople.H4 a)
-instance Data.Traversable.Traversable Data.Hople.H4
-instance Data.Foldable.Foldable Data.Hople.H4
-instance GHC.Base.Functor Data.Hople.H4
-instance GHC.Show.Show a => GHC.Show.Show (Data.Hople.H3 a)
-instance Data.Traversable.Traversable Data.Hople.H3
-instance Data.Foldable.Foldable Data.Hople.H3
-instance GHC.Base.Functor Data.Hople.H3
-instance GHC.Show.Show a => GHC.Show.Show (Data.Hople.H2 a)
-instance Data.Traversable.Traversable Data.Hople.H2
-instance Data.Foldable.Foldable Data.Hople.H2
-instance GHC.Base.Functor Data.Hople.H2
-instance GHC.Show.Show a => GHC.Show.Show (Data.Hople.H1 a)
-instance Data.Traversable.Traversable Data.Hople.H1
-instance Data.Foldable.Foldable Data.Hople.H1
-instance GHC.Base.Functor Data.Hople.H1
-
 
 module Data.Uncertain
 
@@ -367,36 +325,6 @@ instance (GHC.Real.Fractional a, GHC.Real.Real a) => GHC.Real.Real (Data.Uncerta
 instance GHC.Real.RealFrac a => GHC.Real.RealFrac (Data.Uncertain.Uncert a)
 instance GHC.Float.RealFloat a => GHC.Float.RealFloat (Data.Uncertain.Uncert a)
 
-module Data.Uncertain.Correlated.Internal
-data CVar :: * -> * -> *
-CK :: a -> CVar s a
-CV :: Key -> CVar s a
-CF :: (forall t. f (AD t (Sparse a)) -> AD t (Sparse a)) -> f (CVar s a) -> CVar s a
-dephantom :: CVar s a -> CVar t a
-data CorrF :: * -> * -> * -> *
-Gen :: Uncert a -> (CVar s a -> b) -> CorrF s a b
-Fun :: (forall t. f (AD t (Sparse a)) -> AD t (Sparse a)) -> f (CVar s a) -> (CVar s a -> b) -> CorrF s a b
-Rei :: CVar s a -> (Uncert a -> b) -> CorrF s a b
-newtype Corr s a b
-Corr :: Free (CorrF s a) b -> Corr s a b
-[corrFree] :: Corr s a b -> Free (CorrF s a) b
-liftCF :: (Functor f, Fractional a) => (forall t. f (AD t (Sparse a)) -> AD t (Sparse a)) -> f (CVar s a) -> CVar s a
-constC :: a -> CVar s a
-liftC :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a
-liftC2 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a
-liftC3 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a -> CVar s a
-liftC4 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a
-liftC5 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a
-corrToState :: (Monad m, Fractional a) => Corr s a b -> StateT (Key, IntMap (Uncert a)) m b
-instance GHC.Base.Monad (Data.Uncertain.Correlated.Internal.Corr s a)
-instance GHC.Base.Applicative (Data.Uncertain.Correlated.Internal.Corr s a)
-instance GHC.Base.Functor (Data.Uncertain.Correlated.Internal.Corr s a)
-instance GHC.Base.Functor (Data.Uncertain.Correlated.Internal.CorrF s a)
-instance Control.Monad.Free.Class.MonadFree (Data.Uncertain.Correlated.Internal.CorrF s a) (Data.Uncertain.Correlated.Internal.Corr s a)
-instance GHC.Real.Fractional a => GHC.Num.Num (Data.Uncertain.Correlated.Internal.CVar s a)
-instance GHC.Real.Fractional a => GHC.Real.Fractional (Data.Uncertain.Correlated.Internal.CVar s a)
-instance GHC.Float.Floating a => GHC.Float.Floating (Data.Uncertain.Correlated.Internal.CVar s a)
-
 
 -- | Provides the <a>Corr</a> monad, which allows one to describe complex
 --   relationships between random variables and evaluate their propagated
@@ -417,6 +345,38 @@ instance GHC.Float.Floating a => GHC.Float.Floating (Data.Uncertain.Correlated.I
 --   represents sampling once and multiplying it by ten, which will amplify
 --   any error by a full factor of 10.
 module Data.Uncertain.Correlated
+
+-- | The <a>Corr</a> monad allows us to keep track of correlated and
+--   non-independent samples:
+--   
+--   <pre>
+--   evalCorr $ do
+--     x &lt;- sampleUncert $ 12.5 +/- 0.8
+--     y1 &lt;- resolveUncert $ sum (replicate 10 x)
+--     y2 &lt;- resolveUncert $ 10 * x
+--    return (y1, y2)
+--    -- result: (125 +<i>- 8, 125 +</i>- 8)
+--   
+--   evalCorr $ do
+--     xs &lt;- replicateM 10 (sampleUncert (12.5 +/- 0.8))
+--     resolveUncert $ sum xs
+--     -- result: 125 +/- 3
+--   </pre>
+--   
+--   The first example samples once and describes operations on the single
+--   sample; the second example samples 10 times with <tt>replicateM</tt>
+--   and sums all of the results.
+--   
+--   Things are more interesting when you sample multiple variables:
+--   
+--   <pre>
+--   evalCorr $ do
+--     x &lt;- sampleUncert $ 12.5 +/- 0.8
+--     y &lt;- sampleUncert $ 15.9 +/- 0.5
+--     z &lt;- sampleUncert $ 1.52 +/- 0.07
+--     resolveUncert $ (x+z)*logBase z (y**x)
+--     -- result: 1200 +/- 200
+--   </pre>
 data Corr s a b
 
 -- | Evaluates the value described by a <a>Corr</a> monad, taking into
