@@ -7,10 +7,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns        #-}
 
-#ifndef MIN_VERSION_ad
-#define MIN_VERSION_mtl(x,y,z) 1
-#endif
-
 #if __GLASGOW_HASKELL__ >= 708
 {-# LANGUAGE PatternSynonyms     #-}
 #endif
@@ -56,12 +52,6 @@ import qualified Numeric.AD.Mode.Tower  as T
 #if __GLASGOW_HASKELL__ < 710
 import           Data.Functor     ((<$>))
 import           Data.Traversable (Traversable)
-#endif
-
-#if !(MIN_VERSION_ad(4,0,0))
-import           Numeric.AD.Internal.Sparse     (Sparse)
-import           Numeric.AD.Types               (AD)
-import qualified Numeric.AD.Internal.Tower as T (Tower)
 #endif
 
 
