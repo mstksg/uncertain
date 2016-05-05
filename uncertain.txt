@@ -354,8 +354,8 @@ module Data.Uncertain.Correlated
 --     x &lt;- sampleUncert $ 12.5 +/- 0.8
 --     y1 &lt;- resolveUncert $ sum (replicate 10 x)
 --     y2 &lt;- resolveUncert $ 10 * x
---    return (y1, y2)
---    -- result: (125 +<i>- 8, 125 +</i>- 8)
+--     return (y1, y2)
+--     -- result: (125 +<i>- 8, 125 +</i>- 8)
 --   
 --   evalCorr $ do
 --     xs &lt;- replicateM 10 (sampleUncert (12.5 +/- 0.8))
@@ -388,7 +388,7 @@ data Corr s a b
 --   you aren't allowed to ever use <a>evalCorr</a> to evaluate a
 --   <a>CVar</a>.
 evalCorr :: Fractional a => (forall s. Corr s a b) -> b
-data CVar :: * -> * -> *
+data CVar s a
 
 -- | Generate a sample in <a>Corr</a> from an <a>Uncert</a> value.
 sampleUncert :: Uncert a -> Corr s a (CVar s a)
@@ -432,7 +432,7 @@ liftU5 :: PrimMonad m => (Double -> Double -> Double -> Double -> Double -> Doub
 sampleUncert :: PrimMonad m => Uncert Double -> Gen (PrimState m) -> m Double
 
 module Data.Uncertain.Correlated.Interactive
-data CVar :: * -> * -> *
+data CVar s a
 sampleUncert :: Uncert Double -> IO CVarIO
 sampleExact :: Double -> IO CVarIO
 resolveUncert :: CVarIO -> IO (Uncert Double)
