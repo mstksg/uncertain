@@ -57,66 +57,65 @@
 <a name="line-48"></a><span class='hs-comment'>-- situations/applications.</span>
 <a name="line-49"></a><span class='hs-comment'>--</span>
 <a name="line-50"></a><span class='hs-keyword'>module</span> <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>Uncertain</span><span class='hs-varop'>.</span><span class='hs-conid'>Correlated</span><span class='hs-varop'>.</span><span class='hs-conid'>Interactive</span>
-<a name="line-51"></a>  <span class='hs-layout'>(</span> <span class='hs-conid'>Corr</span><span class='hs-layout'>,</span> <span class='hs-varid'>runCorrIO</span>
-<a name="line-52"></a>  <span class='hs-layout'>,</span> <span class='hs-conid'>CVar</span><span class='hs-layout'>,</span> <span class='hs-conid'>CVarIO</span>
-<a name="line-53"></a>  <span class='hs-layout'>,</span> <span class='hs-varid'>sampleUncert</span>
-<a name="line-54"></a>  <span class='hs-layout'>,</span> <span class='hs-varid'>sampleExact</span>
-<a name="line-55"></a>  <span class='hs-layout'>,</span> <span class='hs-varid'>resolveUncert</span>
-<a name="line-56"></a>  <span class='hs-layout'>,</span> <span class='hs-varid'>constC</span><span class='hs-layout'>,</span> <span class='hs-varid'>liftC</span><span class='hs-layout'>,</span> <span class='hs-varid'>liftC2</span><span class='hs-layout'>,</span> <span class='hs-varid'>liftC3</span><span class='hs-layout'>,</span> <span class='hs-varid'>liftC4</span><span class='hs-layout'>,</span> <span class='hs-varid'>liftC5</span><span class='hs-layout'>,</span> <span class='hs-varid'>liftCF</span>
-<a name="line-57"></a>  <span class='hs-layout'>)</span>
-<a name="line-58"></a>  <span class='hs-keyword'>where</span>
-<a name="line-59"></a>
-<a name="line-60"></a><span class='hs-keyword'>import</span>           <span class='hs-conid'>Control</span><span class='hs-varop'>.</span><span class='hs-conid'>Monad</span><span class='hs-varop'>.</span><span class='hs-conid'>ST</span>
-<a name="line-61"></a><span class='hs-keyword'>import</span>           <span class='hs-conid'>Control</span><span class='hs-varop'>.</span><span class='hs-conid'>Monad</span><span class='hs-varop'>.</span><span class='hs-conid'>Trans</span><span class='hs-varop'>.</span><span class='hs-conid'>State</span>
-<a name="line-62"></a><span class='hs-keyword'>import</span>           <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>IORef</span>
-<a name="line-63"></a><span class='hs-keyword'>import</span>           <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>Tuple</span>
-<a name="line-64"></a><span class='hs-keyword'>import</span>           <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>Uncertain</span>
-<a name="line-65"></a><span class='hs-keyword'>import</span>           <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>Uncertain</span><span class='hs-varop'>.</span><span class='hs-conid'>Correlated</span><span class='hs-varop'>.</span><span class='hs-conid'>Internal</span>
-<a name="line-66"></a><span class='hs-keyword'>import</span>           <span class='hs-conid'>System</span><span class='hs-varop'>.</span><span class='hs-conid'>IO</span><span class='hs-varop'>.</span><span class='hs-conid'>Unsafe</span>                   <span class='hs-layout'>(</span><span class='hs-varid'>unsafePerformIO</span><span class='hs-layout'>)</span>
-<a name="line-67"></a><span class='hs-keyword'>import</span> <span class='hs-keyword'>qualified</span> <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>IntMap</span><span class='hs-varop'>.</span><span class='hs-conid'>Strict</span>                 <span class='hs-keyword'>as</span> <span class='hs-conid'>M</span>
-<a name="line-68"></a><span class='hs-keyword'>import</span> <span class='hs-keyword'>qualified</span> <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>Uncertain</span><span class='hs-varop'>.</span><span class='hs-conid'>Correlated</span>          <span class='hs-keyword'>as</span> <span class='hs-conid'>C</span>
-<a name="line-69"></a>
-<a name="line-70"></a><a name="CVarIO"></a><span class='hs-comment'>-- | A 'CVar' specialized to work in an "interactive" context, in /ghci/ or</span>
-<a name="line-71"></a><a name="CVarIO"></a><span class='hs-comment'>-- 'IO'.</span>
-<a name="line-72"></a><a name="CVarIO"></a><span class='hs-keyword'>type</span> <span class='hs-conid'>CVarIO</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>CVar</span> <span class='hs-conid'>RealWorld</span> <span class='hs-conid'>Double</span>
-<a name="line-73"></a>
-<a name="line-74"></a><a name="globalCorrMap"></a><span class='hs-comment'>-- ssh, don't tell anyone we're using 'unsafePerformIO'</span>
-<a name="line-75"></a><span class='hs-definition'>globalCorrMap</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>IORef</span> <span class='hs-layout'>(</span><span class='hs-conid'>M</span><span class='hs-varop'>.</span><span class='hs-conid'>Key</span><span class='hs-layout'>,</span> <span class='hs-conid'>M</span><span class='hs-varop'>.</span><span class='hs-conid'>IntMap</span> <span class='hs-layout'>(</span><span class='hs-conid'>Uncert</span> <span class='hs-conid'>Double</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span>
-<a name="line-76"></a><span class='hs-comment'>{-# NOINLINE globalCorrMap #-}</span>
-<a name="line-77"></a><span class='hs-definition'>globalCorrMap</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>unsafePerformIO</span> <span class='hs-varop'>$</span> <span class='hs-varid'>newIORef</span> <span class='hs-layout'>(</span><span class='hs-num'>0</span><span class='hs-layout'>,</span> <span class='hs-conid'>M</span><span class='hs-varop'>.</span><span class='hs-varid'>empty</span><span class='hs-layout'>)</span>
-<a name="line-78"></a>
-<a name="line-79"></a><a name="runCorrIO"></a><span class='hs-definition'>runCorrIO</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Corr</span> <span class='hs-conid'>RealWorld</span> <span class='hs-conid'>Double</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>IO</span> <span class='hs-varid'>a</span>
-<a name="line-80"></a><span class='hs-definition'>runCorrIO</span> <span class='hs-varid'>c</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>atomicModifyIORef'</span> <span class='hs-varid'>globalCorrMap</span>
-<a name="line-81"></a>                                 <span class='hs-layout'>(</span><span class='hs-varid'>swap</span> <span class='hs-varop'>.</span> <span class='hs-varid'>runState</span> <span class='hs-layout'>(</span><span class='hs-varid'>corrToState</span> <span class='hs-varid'>c</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span>
-<a name="line-82"></a>
-<a name="line-83"></a><a name="sampleUncert"></a><span class='hs-comment'>-- | Generate a sample in 'IO' from an @'Uncert' 'Double'@ value,</span>
-<a name="line-84"></a><span class='hs-comment'>-- independently from all other samples.</span>
-<a name="line-85"></a><span class='hs-definition'>sampleUncert</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Uncert</span> <span class='hs-conid'>Double</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>IO</span> <span class='hs-conid'>CVarIO</span>
-<a name="line-86"></a><span class='hs-definition'>sampleUncert</span> <span class='hs-varid'>u</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>runCorrIO</span> <span class='hs-varop'>$</span> <span class='hs-conid'>C</span><span class='hs-varop'>.</span><span class='hs-varid'>sampleUncert</span> <span class='hs-varid'>u</span>
-<a name="line-87"></a>
-<a name="line-88"></a><a name="sampleExact"></a><span class='hs-comment'>-- | Generate an exact sample in 'IO' with zero uncertainty,</span>
-<a name="line-89"></a><span class='hs-comment'>-- independently from all other samples.</span>
-<a name="line-90"></a><span class='hs-comment'>--</span>
-<a name="line-91"></a><span class='hs-comment'>-- Not super useful, since you can do something equivalent with 'constC'</span>
-<a name="line-92"></a><span class='hs-comment'>-- or the numeric instances:</span>
-<a name="line-93"></a><span class='hs-comment'>--</span>
-<a name="line-94"></a><span class='hs-comment'>-- @</span>
-<a name="line-95"></a><span class='hs-comment'>-- sampleExact x  ≡ return ('constC' x)</span>
-<a name="line-96"></a><span class='hs-comment'>-- sampleExact 10 ≡ return 10</span>
-<a name="line-97"></a><span class='hs-comment'>-- @</span>
-<a name="line-98"></a><span class='hs-comment'>--</span>
-<a name="line-99"></a><span class='hs-comment'>-- But is provided for completeness alongside 'sampleUncert'.</span>
-<a name="line-100"></a><span class='hs-definition'>sampleExact</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Double</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>IO</span> <span class='hs-conid'>CVarIO</span>
-<a name="line-101"></a><span class='hs-definition'>sampleExact</span> <span class='hs-varid'>d</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>runCorrIO</span> <span class='hs-varop'>$</span> <span class='hs-conid'>C</span><span class='hs-varop'>.</span><span class='hs-varid'>sampleExact</span> <span class='hs-varid'>d</span>
-<a name="line-102"></a>
-<a name="line-103"></a><a name="resolveUncert"></a><span class='hs-comment'>-- | "Resolve" an 'Uncert' from a 'CVarIO' using its potential multiple</span>
-<a name="line-104"></a><span class='hs-comment'>-- samples and sample sources, taking into account inter-correlations</span>
-<a name="line-105"></a><span class='hs-comment'>-- between 'CVarIO's and samples.</span>
-<a name="line-106"></a><span class='hs-comment'>--</span>
-<a name="line-107"></a><span class='hs-comment'>-- Note that if you use 'sampleUncert' on the result, the new sample will</span>
-<a name="line-108"></a><span class='hs-comment'>-- be treated as something completely independent.  Usually this should</span>
-<a name="line-109"></a><span class='hs-comment'>-- only be used as the "final value" of your computation or exploration.</span>
-<a name="line-110"></a><span class='hs-definition'>resolveUncert</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>CVarIO</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>IO</span> <span class='hs-layout'>(</span><span class='hs-conid'>Uncert</span> <span class='hs-conid'>Double</span><span class='hs-layout'>)</span>
-<a name="line-111"></a><span class='hs-definition'>resolveUncert</span> <span class='hs-varid'>v</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>runCorrIO</span> <span class='hs-varop'>$</span> <span class='hs-conid'>C</span><span class='hs-varop'>.</span><span class='hs-varid'>resolveUncert</span> <span class='hs-varid'>v</span>
+<a name="line-51"></a>  <span class='hs-layout'>(</span> <span class='hs-conid'>CVar</span><span class='hs-layout'>,</span> <span class='hs-conid'>CVarIO</span>
+<a name="line-52"></a>  <span class='hs-layout'>,</span> <span class='hs-varid'>sampleUncert</span>
+<a name="line-53"></a>  <span class='hs-layout'>,</span> <span class='hs-varid'>sampleExact</span>
+<a name="line-54"></a>  <span class='hs-layout'>,</span> <span class='hs-varid'>resolveUncert</span>
+<a name="line-55"></a>  <span class='hs-layout'>,</span> <span class='hs-varid'>constC</span><span class='hs-layout'>,</span> <span class='hs-varid'>liftC</span><span class='hs-layout'>,</span> <span class='hs-varid'>liftC2</span><span class='hs-layout'>,</span> <span class='hs-varid'>liftC3</span><span class='hs-layout'>,</span> <span class='hs-varid'>liftC4</span><span class='hs-layout'>,</span> <span class='hs-varid'>liftC5</span><span class='hs-layout'>,</span> <span class='hs-varid'>liftCF</span>
+<a name="line-56"></a>  <span class='hs-layout'>)</span>
+<a name="line-57"></a>  <span class='hs-keyword'>where</span>
+<a name="line-58"></a>
+<a name="line-59"></a><span class='hs-keyword'>import</span>           <span class='hs-conid'>Control</span><span class='hs-varop'>.</span><span class='hs-conid'>Monad</span><span class='hs-varop'>.</span><span class='hs-conid'>ST</span>
+<a name="line-60"></a><span class='hs-keyword'>import</span>           <span class='hs-conid'>Control</span><span class='hs-varop'>.</span><span class='hs-conid'>Monad</span><span class='hs-varop'>.</span><span class='hs-conid'>Trans</span><span class='hs-varop'>.</span><span class='hs-conid'>State</span>
+<a name="line-61"></a><span class='hs-keyword'>import</span>           <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>IORef</span>
+<a name="line-62"></a><span class='hs-keyword'>import</span>           <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>Tuple</span>
+<a name="line-63"></a><span class='hs-keyword'>import</span>           <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>Uncertain</span>
+<a name="line-64"></a><span class='hs-keyword'>import</span>           <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>Uncertain</span><span class='hs-varop'>.</span><span class='hs-conid'>Correlated</span><span class='hs-varop'>.</span><span class='hs-conid'>Internal</span>
+<a name="line-65"></a><span class='hs-keyword'>import</span>           <span class='hs-conid'>System</span><span class='hs-varop'>.</span><span class='hs-conid'>IO</span><span class='hs-varop'>.</span><span class='hs-conid'>Unsafe</span>                   <span class='hs-layout'>(</span><span class='hs-varid'>unsafePerformIO</span><span class='hs-layout'>)</span>
+<a name="line-66"></a><span class='hs-keyword'>import</span> <span class='hs-keyword'>qualified</span> <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>IntMap</span><span class='hs-varop'>.</span><span class='hs-conid'>Strict</span>                 <span class='hs-keyword'>as</span> <span class='hs-conid'>M</span>
+<a name="line-67"></a><span class='hs-keyword'>import</span> <span class='hs-keyword'>qualified</span> <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>Uncertain</span><span class='hs-varop'>.</span><span class='hs-conid'>Correlated</span>          <span class='hs-keyword'>as</span> <span class='hs-conid'>C</span>
+<a name="line-68"></a>
+<a name="line-69"></a><a name="CVarIO"></a><span class='hs-comment'>-- | A 'CVar' specialized to work in an "interactive" context, in /ghci/ or</span>
+<a name="line-70"></a><a name="CVarIO"></a><span class='hs-comment'>-- 'IO'.</span>
+<a name="line-71"></a><a name="CVarIO"></a><span class='hs-keyword'>type</span> <span class='hs-conid'>CVarIO</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>CVar</span> <span class='hs-conid'>RealWorld</span> <span class='hs-conid'>Double</span>
+<a name="line-72"></a>
+<a name="line-73"></a><a name="globalCorrMap"></a><span class='hs-comment'>-- ssh, don't tell anyone we're using 'unsafePerformIO'</span>
+<a name="line-74"></a><span class='hs-definition'>globalCorrMap</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>IORef</span> <span class='hs-layout'>(</span><span class='hs-conid'>M</span><span class='hs-varop'>.</span><span class='hs-conid'>Key</span><span class='hs-layout'>,</span> <span class='hs-conid'>M</span><span class='hs-varop'>.</span><span class='hs-conid'>IntMap</span> <span class='hs-layout'>(</span><span class='hs-conid'>Uncert</span> <span class='hs-conid'>Double</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span>
+<a name="line-75"></a><span class='hs-comment'>{-# NOINLINE globalCorrMap #-}</span>
+<a name="line-76"></a><span class='hs-definition'>globalCorrMap</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>unsafePerformIO</span> <span class='hs-varop'>$</span> <span class='hs-varid'>newIORef</span> <span class='hs-layout'>(</span><span class='hs-num'>0</span><span class='hs-layout'>,</span> <span class='hs-conid'>M</span><span class='hs-varop'>.</span><span class='hs-varid'>empty</span><span class='hs-layout'>)</span>
+<a name="line-77"></a>
+<a name="line-78"></a><a name="runCorrIO"></a><span class='hs-definition'>runCorrIO</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Corr</span> <span class='hs-conid'>RealWorld</span> <span class='hs-conid'>Double</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>IO</span> <span class='hs-varid'>a</span>
+<a name="line-79"></a><span class='hs-definition'>runCorrIO</span> <span class='hs-varid'>c</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>atomicModifyIORef'</span> <span class='hs-varid'>globalCorrMap</span>
+<a name="line-80"></a>                                 <span class='hs-layout'>(</span><span class='hs-varid'>swap</span> <span class='hs-varop'>.</span> <span class='hs-varid'>runState</span> <span class='hs-layout'>(</span><span class='hs-varid'>corrToState</span> <span class='hs-varid'>c</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span>
+<a name="line-81"></a>
+<a name="line-82"></a><a name="sampleUncert"></a><span class='hs-comment'>-- | Generate a sample in 'IO' from an @'Uncert' 'Double'@ value,</span>
+<a name="line-83"></a><span class='hs-comment'>-- independently from all other samples.</span>
+<a name="line-84"></a><span class='hs-definition'>sampleUncert</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Uncert</span> <span class='hs-conid'>Double</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>IO</span> <span class='hs-conid'>CVarIO</span>
+<a name="line-85"></a><span class='hs-definition'>sampleUncert</span> <span class='hs-varid'>u</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>runCorrIO</span> <span class='hs-varop'>$</span> <span class='hs-conid'>C</span><span class='hs-varop'>.</span><span class='hs-varid'>sampleUncert</span> <span class='hs-varid'>u</span>
+<a name="line-86"></a>
+<a name="line-87"></a><a name="sampleExact"></a><span class='hs-comment'>-- | Generate an exact sample in 'IO' with zero uncertainty,</span>
+<a name="line-88"></a><span class='hs-comment'>-- independently from all other samples.</span>
+<a name="line-89"></a><span class='hs-comment'>--</span>
+<a name="line-90"></a><span class='hs-comment'>-- Not super useful, since you can do something equivalent with 'constC'</span>
+<a name="line-91"></a><span class='hs-comment'>-- or the numeric instances:</span>
+<a name="line-92"></a><span class='hs-comment'>--</span>
+<a name="line-93"></a><span class='hs-comment'>-- @</span>
+<a name="line-94"></a><span class='hs-comment'>-- sampleExact x  ≡ return ('constC' x)</span>
+<a name="line-95"></a><span class='hs-comment'>-- sampleExact 10 ≡ return 10</span>
+<a name="line-96"></a><span class='hs-comment'>-- @</span>
+<a name="line-97"></a><span class='hs-comment'>--</span>
+<a name="line-98"></a><span class='hs-comment'>-- But is provided for completeness alongside 'sampleUncert'.</span>
+<a name="line-99"></a><span class='hs-definition'>sampleExact</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Double</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>IO</span> <span class='hs-conid'>CVarIO</span>
+<a name="line-100"></a><span class='hs-definition'>sampleExact</span> <span class='hs-varid'>d</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>runCorrIO</span> <span class='hs-varop'>$</span> <span class='hs-conid'>C</span><span class='hs-varop'>.</span><span class='hs-varid'>sampleExact</span> <span class='hs-varid'>d</span>
+<a name="line-101"></a>
+<a name="line-102"></a><a name="resolveUncert"></a><span class='hs-comment'>-- | "Resolve" an 'Uncert' from a 'CVarIO' using its potential multiple</span>
+<a name="line-103"></a><span class='hs-comment'>-- samples and sample sources, taking into account inter-correlations</span>
+<a name="line-104"></a><span class='hs-comment'>-- between 'CVarIO's and samples.</span>
+<a name="line-105"></a><span class='hs-comment'>--</span>
+<a name="line-106"></a><span class='hs-comment'>-- Note that if you use 'sampleUncert' on the result, the new sample will</span>
+<a name="line-107"></a><span class='hs-comment'>-- be treated as something completely independent.  Usually this should</span>
+<a name="line-108"></a><span class='hs-comment'>-- only be used as the "final value" of your computation or exploration.</span>
+<a name="line-109"></a><span class='hs-definition'>resolveUncert</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>CVarIO</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>IO</span> <span class='hs-layout'>(</span><span class='hs-conid'>Uncert</span> <span class='hs-conid'>Double</span><span class='hs-layout'>)</span>
+<a name="line-110"></a><span class='hs-definition'>resolveUncert</span> <span class='hs-varid'>v</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>runCorrIO</span> <span class='hs-varop'>$</span> <span class='hs-conid'>C</span><span class='hs-varop'>.</span><span class='hs-varid'>resolveUncert</span> <span class='hs-varid'>v</span>
 </pre></body>
 </html>
