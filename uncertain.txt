@@ -374,7 +374,6 @@ CV :: Key -> CVar s a
 CF :: (forall t. f (AD t (Sparse a)) -> AD t (Sparse a)) -> f (CVar s a) -> CVar s a
 dephantom :: CVar s a -> CVar t a
 data CorrF :: * -> * -> * -> *
-Cer :: a -> (CVar s a -> b) -> CorrF s a b
 Gen :: Uncert a -> (CVar s a -> b) -> CorrF s a b
 Fun :: (forall t. f (AD t (Sparse a)) -> AD t (Sparse a)) -> f (CVar s a) -> (CVar s a -> b) -> CorrF s a b
 Rei :: CVar s a -> (Uncert a -> b) -> CorrF s a b
@@ -398,12 +397,62 @@ instance GHC.Real.Fractional a => GHC.Num.Num (Data.Uncertain.Correlated.Interna
 instance GHC.Real.Fractional a => GHC.Real.Fractional (Data.Uncertain.Correlated.Internal.CVar s a)
 instance GHC.Float.Floating a => GHC.Float.Floating (Data.Uncertain.Correlated.Internal.CVar s a)
 
+
+-- | Provides the <a>Corr</a> monad, which allows one to describe complex
+--   relationships between random variables and evaluate their propagated
+--   uncertainties <i>respecting</i> their inter-correlations.
+--   
+--   Fixes a basic "failure" of the <a>Uncert</a> type, which can't
+--   describe correlated samples.
+--   
+--   For example, consider the difference between:
+--   
+--   <pre>
+--   sum $ replicate 10 (12.5 +/- 0.8)   -- 125 +/- 3
+--   10 * (12.5 +/- 0.8)                 -- 125 +/- 8
+--   </pre>
+--   
+--   The first one represents the addition of ten independent samples,
+--   whose errors will in general cancel eachother out. The second one
+--   represents sampling once and multiplying it by ten, which will amplify
+--   any error by a full factor of 10.
 module Data.Uncertain.Correlated
-data CVar :: * -> * -> *
 data Corr s a b
-runCorr :: Fractional a => Corr s a b -> b
+
+-- | Evaluates the value described by a <a>Corr</a> monad, taking into
+--   account inter-correlations between samples.
+--   
+--   Takes a universally qualified <a>Corr</a>, which should not affect
+--   usage. See the examples in the documentation for <a>Corr</a>. The
+--   univeral qualification is mostly a type system trick to ensure that
+--   you aren't allowed to ever use <a>evalCorr</a> to evaluate a
+--   <a>CVar</a>.
+evalCorr :: Fractional a => (forall s. Corr s a b) -> b
+data CVar :: * -> * -> *
+
+-- | Generate a sample in <a>Corr</a> from an <a>Uncert</a> value.
 sampleUncert :: Uncert a -> Corr s a (CVar s a)
+
+-- | Generate an exact sample in <a>Corr</a> with zero uncertainty.
+--   
+--   Not super useful, since you can do something equivalent with
+--   <a>constC</a> or the numeric instances:
+--   
+--   <pre>
+--   sampleExact x  ≡ return (constC x)
+--   sampleExact 10 ≡ return 10
+--   </pre>
+--   
+--   But is provided for completeness alongside <a>sampleUncert</a>.
 sampleExact :: a -> Corr s a (CVar s a)
+
+-- | <a>Resolve</a> an <a>Uncert</a> from a <a>CVar</a> using its potential
+--   multiple samples and sample sources, taking into account
+--   inter-correlations between <a>CVar</a>s and samples.
+--   
+--   Note that if you use <a>sampleUncert</a> on the result, the new sample
+--   will be treated as something completely independent. Usually this
+--   should only be used as the "exit point" of a <a>Corr</a> description.
 resolveUncert :: CVar s a -> Corr s a (Uncert a)
 liftCF :: (Functor f, Fractional a) => (forall t. f (AD t (Sparse a)) -> AD t (Sparse a)) -> f (CVar s a) -> CVar s a
 constC :: a -> CVar s a
@@ -423,16 +472,14 @@ liftU5 :: PrimMonad m => (Double -> Double -> Double -> Double -> Double -> Doub
 sampleUncert :: PrimMonad m => Uncert Double -> Gen (PrimState m) -> m Double
 
 module Data.Uncertain.Correlated.Interactive
-data CVar
-sampleUncert :: Uncert Double -> IO CVar
-sampleExact :: Double -> IO CVar
-resolveUncert :: CVar -> IO (Uncert Double)
-liftCF :: Functor f => (forall s. f (CVar s Double) -> CVar s Double) -> f CVar -> CVar
-liftC :: (forall s. CVar s Double -> CVar s Double) -> CVar -> CVar
-liftC2 :: (forall s. CVar s Double -> CVar s Double -> CVar s Double) -> CVar -> CVar -> CVar
-liftC3 :: (forall s. CVar s Double -> CVar s Double -> CVar s Double -> CVar s Double) -> CVar -> CVar -> CVar -> CVar
-liftC4 :: (forall s. CVar s Double -> CVar s Double -> CVar s Double -> CVar s Double -> CVar s Double) -> CVar -> CVar -> CVar -> CVar -> CVar
-liftC5 :: (forall s. CVar s Double -> CVar s Double -> CVar s Double -> CVar s Double -> CVar s Double -> CVar s Double) -> CVar -> CVar -> CVar -> CVar -> CVar -> CVar
-instance GHC.Num.Num Data.Uncertain.Correlated.Interactive.CVar
-instance GHC.Real.Fractional Data.Uncertain.Correlated.Interactive.CVar
-instance GHC.Float.Floating Data.Uncertain.Correlated.Interactive.CVar
+data CVar :: * -> * -> *
+sampleUncert :: Uncert Double -> IO CVarIO
+sampleExact :: Double -> IO CVarIO
+resolveUncert :: CVarIO -> IO (Uncert Double)
+liftCF :: (Functor f, Fractional a) => (forall t. f (AD t (Sparse a)) -> AD t (Sparse a)) -> f (CVar s a) -> CVar s a
+constC :: a -> CVar s a
+liftC :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a
+liftC2 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a
+liftC3 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a -> CVar s a
+liftC4 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a
+liftC5 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a
