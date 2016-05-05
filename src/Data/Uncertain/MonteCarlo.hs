@@ -94,6 +94,7 @@ sampleUncert
     -> Gen (PrimState m)
     -> m Double
 sampleUncert (uMeanStd->(x, dx)) g = normal x dx g
+{-# INLINABLE sampleUncert #-}
 
 -- | Lifts a numeric function over an 'Uncert' using a Monte Carlo
 -- simulation with 1000 samples.
@@ -115,6 +116,7 @@ liftU
     -> Gen (PrimState m)
     -> m (Uncert Double)
 liftU = liftU' 1000
+{-# INLINE liftU #-}
 
 -- | Lifts a multivariate numeric function on a container (given as an @f
 -- a -> a@) to work on a container of 'Uncert's using a Monte Carlo
@@ -137,6 +139,7 @@ liftUF
     -> Gen (PrimState m)
     -> m (Uncert Double)
 liftUF = liftUF' 1000
+{-# INLINE liftUF #-}
 
 -- | Lifts a two-argument (curried) function over two 'Uncert's using
 -- a Monte Carlo simulation with 1000 samples.
@@ -159,6 +162,7 @@ liftU2
     -> Gen (PrimState m)
     -> m (Uncert Double)
 liftU2 = liftU2' 1000
+{-# INLINE liftU2 #-}
 
 -- | Lifts a three-argument (curried) function over three 'Uncert's.  See
 -- 'liftU2' and 'liftUF' for more details.
@@ -175,6 +179,7 @@ liftU3
     -> Gen (PrimState m)
     -> m (Uncert Double)
 liftU3 = liftU3' 1000
+{-# INLINE liftU3 #-}
 
 -- | Lifts a four-argument (curried) function over four 'Uncert's.  See
 -- 'liftU2' and 'liftUF' for more details.
@@ -192,6 +197,7 @@ liftU4
     -> Gen (PrimState m)
     -> m (Uncert Double)
 liftU4 = liftU4' 1000
+{-# INLINE liftU4 #-}
 
 -- | Lifts a five-argument (curried) function over five 'Uncert's.  See
 -- 'liftU2' and 'liftUF' for more details.
@@ -210,6 +216,7 @@ liftU5
     -> Gen (PrimState m)
     -> m (Uncert Double)
 liftU5 = liftU5' 1000
+{-# INLINE liftU5 #-}
 
 -- | Like 'liftU', but allows you to specify the number of samples to run
 -- the Monte Carlo simulation with.
@@ -227,6 +234,7 @@ liftU'
 liftU' n f u g = fromSamples <$> replicateM n samp
   where
     samp = f <$> sampleUncert u g
+{-# INLINABLE liftU' #-}
 
 -- | Like 'liftUF', but allows you to specify the number of samples to run
 -- the Monte Carlo simulation with.
@@ -244,6 +252,7 @@ liftUF'
 liftUF' n f us g = fromSamples <$> replicateM n samp
   where
     samp = f <$> traverse (flip sampleUncert g) us
+{-# INLINABLE liftUF' #-}
 
 -- | Like 'liftU2', but allows you to specify the number of samples to run
 -- the Monte Carlo simulation with.
@@ -260,6 +269,7 @@ liftU2'
     -> Gen (PrimState m)
     -> m (Uncert Double)
 liftU2' n f x y = liftUF' n (uncurryH2 f) (H2 x y)
+{-# INLINABLE liftU2' #-}
 
 -- | Like 'liftU3', but allows you to specify the number of samples to run
 -- the Monte Carlo simulation with.
@@ -277,6 +287,7 @@ liftU3'
     -> Gen (PrimState m)
     -> m (Uncert Double)
 liftU3' n f x y z = liftUF' n (uncurryH3 f) (H3 x y z)
+{-# INLINABLE liftU3' #-}
 
 -- | Like 'liftU4', but allows you to specify the number of samples to run
 -- the Monte Carlo simulation with.
@@ -295,6 +306,7 @@ liftU4'
     -> Gen (PrimState m)
     -> m (Uncert Double)
 liftU4' n f x y z a = liftUF' n (uncurryH4 f) (H4 x y z a)
+{-# INLINABLE liftU4' #-}
 
 -- | Like 'liftU5', but allows you to specify the number of samples to run
 -- the Monte Carlo simulation with.
@@ -314,3 +326,4 @@ liftU5'
     -> Gen (PrimState m)
     -> m (Uncert Double)
 liftU5' n f x y z a b = liftUF' n (uncurryH5 f) (H5 x y z a b)
+{-# INLINEABLE liftU5' #-}

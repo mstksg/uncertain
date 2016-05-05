@@ -187,6 +187,7 @@ corrToState = iterM go . corrFree
         cVarToF (CK x)    _  = auto x
         cVarToF (CV k)    us = us M.! k
         cVarToF (CF f cs) us = f (flip cVarToF us <$> cs)
+{-# INLINABLE corrToState #-}
 
 -- | Lifts a multivariate numeric function on a container (given as an @f
 -- a -> a@) to work on a container of 'CVar's.  Correctly propagates the
@@ -214,11 +215,13 @@ liftCF
     -> f (CVar s a)     -- ^ Container of 'CVar' samples to apply the function to
     -> CVar s a
 liftCF f cs = CF f cs
+{-# INLINE liftCF #-}
 
 -- | Creates a 'CVar' representing a completely independent sample from all
 -- other 'CVar's containing the exact value given.
 constC :: a -> CVar s a
 constC = CK
+{-# INLINE constC #-}
 
 -- | Lifts a numeric function over the sample represented by a 'CVar'.
 -- Correctly propagates the uncertainty according to the second-order
@@ -243,6 +246,7 @@ liftC
     -> CVar s a         -- ^ 'CVar' sample to apply the function to
     -> CVar s a
 liftC f = curryH1 $ liftCF (uncurryH1 f)
+{-# INLINABLE liftC #-}
 
 -- | Lifts a two-argument (curried) function over the samples represented
 -- by two 'CVar's.  Correctly propagates the uncertainty according to the
@@ -270,6 +274,7 @@ liftC2
     -> CVar s a
     -> CVar s a
 liftC2 f = curryH2 $ liftCF (uncurryH2 f)
+{-# INLINABLE liftC2 #-}
 
 -- | Lifts a three-argument (curried) function over the samples represented
 -- by three 'CVar's.  See 'liftC2' and 'liftCF' for more details.
@@ -281,6 +286,7 @@ liftC3
     -> CVar s a
     -> CVar s a
 liftC3 f = curryH3 $ liftCF (uncurryH3 f)
+{-# INLINABLE liftC3 #-}
 
 -- | Lifts a four-argument (curried) function over the samples represented
 -- by four 'CVar's.  See 'liftC2' and 'liftCF' for more details.
@@ -293,6 +299,7 @@ liftC4
     -> CVar s a
     -> CVar s a
 liftC4 f = curryH4 $ liftCF (uncurryH4 f)
+{-# INLINABLE liftC4 #-}
 
 -- | Lifts a five-argument (curried) function over the samples represented
 -- by five 'CVar's.  See 'liftC2' and 'liftCF' for more details.
@@ -306,35 +313,62 @@ liftC5
     -> CVar s a
     -> CVar s a
 liftC5 f = curryH5 $ liftCF (uncurryH5 f)
+{-# INLINABLE liftC5 #-}
 
 instance Fractional a => Num (CVar s a) where
     (+)    = liftC2 (+)
+    {-# INLINE (+) #-}
     (*)    = liftC2 (*)
+    {-# INLINE (*) #-}
     (-)    = liftC2 (-)
+    {-# INLINE (-) #-}
     negate = liftC negate
+    {-# INLINE negate #-}
     abs    = liftC abs
+    {-# INLINE abs #-}
     signum = liftC signum
+    {-# INLINE signum #-}
     fromInteger = constC . fromInteger
+    {-# INLINE fromInteger #-}
 
 instance Fractional a => Fractional (CVar s a) where
     recip = liftC recip
+    {-# INLINE recip #-}
     (/)   = liftC2 (/)
+    {-# INLINE (/) #-}
     fromRational = constC . fromRational
+    {-# INLINE fromRational #-}
 
 instance Floating a => Floating (CVar s a) where
     pi      = constC pi
+    {-# INLINE pi #-}
     exp     = liftC exp
+    {-# INLINE exp #-}
     log     = liftC log
+    {-# INLINE log #-}
     sqrt    = liftC sqrt
+    {-# INLINE sqrt #-}
     (**)    = liftC2 (**)
+    {-# INLINE (**) #-}
     logBase = liftC2 logBase
+    {-# INLINE logBase #-}
     sin     = liftC sin
+    {-# INLINE sin #-}
     cos     = liftC cos
+    {-# INLINE cos #-}
     asin    = liftC asin
+    {-# INLINE asin #-}
     acos    = liftC acos
+    {-# INLINE acos #-}
     atan    = liftC atan
+    {-# INLINE atan #-}
     sinh    = liftC sinh
+    {-# INLINE sinh #-}
     cosh    = liftC cosh
+    {-# INLINE cosh #-}
     asinh   = liftC asinh
+    {-# INLINE asinh #-}
     acosh   = liftC acosh
+    {-# INLINE acosh #-}
     atanh   = liftC atanh
+    {-# INLINE atanh #-}

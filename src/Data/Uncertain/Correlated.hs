@@ -46,6 +46,7 @@ import qualified Data.IntMap.Strict                 as M
 -- allowed to ever use 'evalCorr' to evaluate a 'CVar'.
 evalCorr :: Fractional a => (forall s. Corr s a b) -> b
 evalCorr c = evalState (corrToState c) (0, M.empty)
+{-# INLINABLE evalCorr #-}
 
 -- | Generate a sample in 'Corr' from an 'Uncert' value, independently from
 -- all other samples.
@@ -54,6 +55,7 @@ evalCorr c = evalState (corrToState c) (0, M.empty)
 -- that all other "sampled" values are also @a@s.
 sampleUncert :: Uncert a -> Corr s a (CVar s a)
 sampleUncert u = liftF $ Gen u id
+{-# INLINE sampleUncert #-}
 
 -- | Generate an exact sample in 'Corr' with zero uncertainty,
 -- independently from all other samples.
@@ -73,6 +75,7 @@ sampleUncert u = liftF $ Gen u id
 --
 sampleExact :: a -> Corr s a (CVar s a)
 sampleExact = return . constC
+{-# INLINE sampleExact #-}
 
 -- | "Resolve" an 'Uncert' from a 'CVar' using its potential multiple
 -- samples and sample sources, taking into account inter-correlations
@@ -83,4 +86,5 @@ sampleExact = return . constC
 -- only be used as the "exit point" of a 'Corr' description.
 resolveUncert :: CVar s a -> Corr s a (Uncert a)
 resolveUncert v = liftF $ Rei v id
+{-# INLINE resolveUncert #-}
 

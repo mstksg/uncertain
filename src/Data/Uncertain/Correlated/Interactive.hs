@@ -83,11 +83,13 @@ globalCorrMap = unsafePerformIO $ newIORef (0, M.empty)
 runCorrIO :: Corr RealWorld Double a -> IO a
 runCorrIO c = atomicModifyIORef' globalCorrMap
                                  (swap . runState (corrToState c))
+{-# INLINE runCorrIO #-}
 
 -- | Generate a sample in 'IO' from an @'Uncert' 'Double'@ value,
 -- independently from all other samples.
 sampleUncert :: Uncert Double -> IO CVarIO
 sampleUncert u = runCorrIO $ C.sampleUncert u
+{-# INLINABLE sampleUncert #-}
 
 -- | Generate an exact sample in 'IO' with zero uncertainty,
 -- independently from all other samples.
@@ -103,6 +105,7 @@ sampleUncert u = runCorrIO $ C.sampleUncert u
 -- But is provided for completeness alongside 'sampleUncert'.
 sampleExact :: Double -> IO CVarIO
 sampleExact d = runCorrIO $ C.sampleExact d
+{-# INLINABLE sampleExact #-}
 
 -- | "Resolve" an 'Uncert' from a 'CVarIO' using its potential multiple
 -- samples and sample sources, taking into account inter-correlations
@@ -113,3 +116,4 @@ sampleExact d = runCorrIO $ C.sampleExact d
 -- only be used as the "final value" of your computation or exploration.
 resolveUncert :: CVarIO -> IO (Uncert Double)
 resolveUncert v = runCorrIO $ C.resolveUncert v
+{-# INLINABLE resolveUncert #-}
