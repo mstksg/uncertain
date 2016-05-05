@@ -9,13 +9,11 @@
 {-# LANGUAGE StandaloneDeriving         #-}
 
 module Data.Uncertain.Correlated.Internal
-  ( CVar(..)
-  , CorrF(..)
-  , Corr(..)
-  , dephantom
-  , corrToState
+  ( CVar(..), dephantom
+  , CorrF(..), Corr(..)
   , liftCF
-  , liftC, liftC2, liftC3, liftC4, liftC5
+  , constC, liftC, liftC2, liftC3, liftC4, liftC5
+  , corrToState
   )
   where
 
@@ -99,6 +97,9 @@ liftCF
     -> CVar s a
 liftCF f cs = CF f cs
 
+constC :: a -> CVar s a
+constC = CK
+
 liftC
     :: Fractional a
     => (forall t. AD t (Sparse a) -> AD t (Sparse a))
@@ -151,15 +152,15 @@ instance Fractional a => Num (CVar s a) where
     negate = liftC negate
     abs    = liftC abs
     signum = liftC signum
-    fromInteger = CK . fromInteger
+    fromInteger = constC . fromInteger
 
 instance Fractional a => Fractional (CVar s a) where
     recip = liftC recip
     (/)   = liftC2 (/)
-    fromRational = CK . fromRational
+    fromRational = constC . fromRational
 
 instance Floating a => Floating (CVar s a) where
-    pi      = CK pi
+    pi      = constC pi
     exp     = liftC exp
     log     = liftC log
     sqrt    = liftC sqrt
