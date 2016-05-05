@@ -1,6 +1,6 @@
 {-# LANGUAGE CPP             #-}
-{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ImplicitParams  #-}
+{-# LANGUAGE ViewPatterns    #-}
 
 -- |
 -- Module      : Data.Uncertain.MonteCarlo
@@ -69,7 +69,7 @@ module Data.Uncertain.MonteCarlo
 import Control.Monad
 import Control.Monad.Primitive
 import Data.Hople
-import Data.Uncertain (Uncert, pattern (:+/-), fromSamples)
+import Data.Uncertain (Uncert, fromSamples, uMeanStd)
 import System.Random.MWC
 import System.Random.MWC.Distributions
 
@@ -93,9 +93,7 @@ sampleUncert
     => Uncert Double
     -> Gen (PrimState m)
     -> m Double
-sampleUncert u g = normal x dx g
-  where
-    x :+/- dx = u
+sampleUncert (uMeanStd->(x, dx)) g = normal x dx g
 
 -- | Lifts a numeric function over an 'Uncert' using a Monte Carlo
 -- simulation with 1000 samples.
