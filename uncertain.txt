@@ -589,27 +589,6 @@ sampleUncert :: PrimMonad m => Uncert Double -> Gen (PrimState m) -> m Double
 --   situations/applications.
 module Data.Uncertain.Correlated.Interactive
 
--- | Represents a single sample (or a value calculated from samples) within
---   the <a>Corr</a> monad. These can be created with
---   <tt>sampleUncert</tt>, <tt>sampleExact</tt>, and <a>constC</a>, or
---   made by combinining others with its numeric typeclass instances (like
---   <a>Num</a>) or its functions lifting arbitrary numeric functions (like
---   <a>liftC2</a>). These keep track of inter-correlations between
---   sources, and if you add together two <a>CVar</a>s that are correlated,
---   their results will reflect this.
---   
---   Can be "resolved" into the uncertain value they represent using
---   <tt>resolveUncert</tt>.
---   
---   Note that these are parameterized by a dummy phantom parameter
---   <tt>s</tt> so that they can't be "evaluated" out of the <a>Corr</a>
---   they live in with <tt>evalCorr</tt>.
---   
---   Note that a <tt><a>CVar</a> s a</tt> can only ever meaningfully
---   "exist" in a <tt><a>Corr</a> s a</tt>, meaning that the all samples
---   within that <a>Corr</a> are of the same type.
-data CVar s a
-
 -- | A <a>CVar</a> specialized to work in an "interactive" context, in
 --   <i>ghci</i> or <a>IO</a>.
 type CVarIO = CVar RealWorld Double
@@ -632,6 +611,10 @@ sampleUncert :: Uncert Double -> IO CVarIO
 --   But is provided for completeness alongside <a>sampleUncert</a>.
 sampleExact :: Double -> IO CVarIO
 
+-- | Creates a <a>CVar</a> representing a completely independent sample
+--   from all other <a>CVar</a>s containing the exact value given.
+constC :: a -> CVar s a
+
 -- | <a>Resolve</a> an <a>Uncert</a> from a <a>CVarIO</a> using its
 --   potential multiple samples and sample sources, taking into account
 --   inter-correlations between <a>CVarIO</a>s and samples.
@@ -641,10 +624,6 @@ sampleExact :: Double -> IO CVarIO
 --   should only be used as the "final value" of your computation or
 --   exploration.
 resolveUncert :: CVarIO -> IO (Uncert Double)
-
--- | Creates a <a>CVar</a> representing a completely independent sample
---   from all other <a>CVar</a>s containing the exact value given.
-constC :: a -> CVar s a
 
 -- | Lifts a numeric function over the sample represented by a <a>CVar</a>.
 --   Correctly propagates the uncertainty according to the second-order
