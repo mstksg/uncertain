@@ -5,6 +5,7 @@
 {-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ViewPatterns        #-}
 
 #ifndef MIN_VERSION_ad
 #define MIN_VERSION_mtl(x,y,z) 1
@@ -12,7 +13,6 @@
 
 #if __GLASGOW_HASKELL__ >= 708
 {-# LANGUAGE PatternSynonyms     #-}
-{-# LANGUAGE ViewPatterns        #-}
 #endif
 
 -- |
@@ -59,8 +59,8 @@ import           Data.Traversable (Traversable)
 #endif
 
 #if !(MIN_VERSION_ad(4,0,0))
-import           Numeric.AD.Internal.Sparse
-import           Numeric.AD.Types
+import           Numeric.AD.Internal.Sparse     (Sparse)
+import           Numeric.AD.Types               (AD)
 import qualified Numeric.AD.Internal.Tower as T (Tower)
 #endif
 
