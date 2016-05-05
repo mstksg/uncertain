@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE DeriveDataTypeable  #-}
 {-# LANGUAGE DeriveGeneric       #-}
 {-# LANGUAGE FlexibleContexts    #-}
@@ -5,7 +6,9 @@
 {-# LANGUAGE PatternSynonyms     #-}
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+#if __GLASGOW_HASKELL__ >= 708
 {-# LANGUAGE ViewPatterns        #-}
+#endif
 
 -- |
 -- Module      : Data.Uncertain
@@ -20,7 +23,9 @@
 module Data.Uncertain
   ( -- * 'Uncert'
     Uncert
+#if __GLASGOW_HASKELL__ >= 708
   , pattern (:+/-)
+#endif
     -- ** Creating 'Uncert' values
   , (+/-), exact, withPrecision, withPrecisionAtBase, withVar, fromSamples
     -- ** Inspecting properties
@@ -177,14 +182,19 @@ withVar
     -> Uncert a
 withVar x vx = Un x (abs vx)
 
+#if __GLASGOW_HASKELL__ >= 708
 -- | Pattern match on an 'Uncert' with its central value and its standard
 -- deviation (see 'uStd' for clarification).
 --
 -- Can also be used to /construct/ an 'Uncert', identically as '+/-'.
+--
+-- /Note:/ Only supported on GHC 7.8 and above.
+--
 pattern (:+/-) :: () => Floating a => a -> a -> Uncert a
 pattern x :+/- dx <- Un x (sqrt->dx)
   where
     x :+/- dx = Un x (dx*dx)
+#endif
 
 -- | Infer an 'Uncert' from a given list of independent /samples/ of an
 -- underlying uncertain or random distribution.

@@ -29,7 +29,8 @@ library
                        Data.Uncertain.Correlated
                        Data.Uncertain.Correlated.Interactive
                        Data.Uncertain.MonteCarlo
-  -- other-modules:       
+  other-modules:       Data.Hople
+                       Data.Uncertain.Correlated.Internal
   -- other-extensions:    
   if impl(ghc >= 7.10)
     build-depends:       base >=4.8 && < 5
