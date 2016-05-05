@@ -26,6 +26,9 @@ import Data.Uncertain
 fromSamples [12.5, 12.7, 12.6, 12.6, 12.5]
 ```
 
+Can be descontructed/analyzed with `:+/-` (pattern synonym/pseudo-constructor
+matching on the mean and standard deviation), `uMean`, `uStd`, `uVar`, etc.
+
 ### Manipulate with error propagation
 
 ```haskell
@@ -45,7 +48,7 @@ functions, computed using the *[ad][]* library.
 
 [ad]: https://hackage.haskell.org/package/ad
 
-### Apply arbitrary numeric functions
+#### Arbitrary numeric functions
 
 ```haskell
 ghci> liftUF (\[x,y,z] -> x*y+z)

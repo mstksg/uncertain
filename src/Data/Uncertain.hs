@@ -99,7 +99,8 @@ import           Data.Traversable (Traversable)
 --
 -- Can be deconstructed with ':+/-', the pattern synonym/pseudo-constructor
 -- which matches on the mean and a standard deviation (supported on GHC
--- 7.8+).  You can also access properties with 'uMean', 'uStd', 'uVar',
+-- 7.8+, with bidirectional constructor functionality supported on GHC
+-- 7.10+).  You can also access properties with 'uMean', 'uStd', 'uVar',
 -- 'uMeanStd', 'uMeanVar', 'uRange', etc.
 --
 -- It's important to remember that each "occurrence" represents a unique
@@ -193,7 +194,9 @@ withVar x vx = Un x (abs vx)
 --
 -- Can also be used to /construct/ an 'Uncert', identically as '+/-'.
 --
--- /Note:/ Only supported on GHC 7.8 and above.
+-- /Note:/ Only supported on GHC 7.8 and above.  Bidirectional
+-- functionality (to allow use as a constructor) only supported on GHC
+-- 7.10 and above.
 --
 #if __GLASGOW_HASKELL__ >= 710
 pattern (:+/-) :: () => Floating a => a -> a -> Uncert a
