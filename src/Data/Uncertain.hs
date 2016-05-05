@@ -25,7 +25,7 @@ module Data.Uncertain
   , (+/-), exact, withPrecision, withPrecisionAtBase, withVar, fromSamples
     -- ** Inspecting properties
   , uMean, uVar, uStd, uMeanVar, uMeanStd, uRange
-    -- * Applying functions and propagating uncertainty
+    -- * Applying arbitrary functions
   , liftU
   , liftU2, liftU3, liftU4, liftU5, liftUF
     -- * Utility functions
@@ -52,6 +52,18 @@ import qualified Numeric.AD.Mode.Tower  as T
 -- propagate appropriately.  You can also lift arbitrary (sufficiently
 -- polymorphic) functions with 'liftU', 'liftUF', 'liftU2' and family.
 --
+-- @
+-- ghci> let x = 1.52 +/- 0.07
+-- ghci> let y = 781.4 +/- 0.3
+-- ghci> let z = 1.53e-1 `withPrecision` 3
+-- ghci> cosh x
+-- 2.4 +/- 0.2
+-- ghci> exp x / z * sin (y ** z)
+-- 10.9 +/- 0.9
+-- ghci> pi + 3 * logBase x y
+-- 52 +/- 5
+-- @
+--
 -- Uncertaintly is properly propagated according to the second-degree
 -- taylor series approximations of the applied functions.  However, if the
 -- higher-degree terms are large with respect to to the means and
@@ -71,11 +83,13 @@ import qualified Numeric.AD.Mode.Tower  as T
 -- It's important to remember that each "occurrence" represents a unique
 -- independent sample, so:
 --
--- > > let x = 15 +/- 2 in x + x
--- > 30 +/- 3
--- >
--- > > let x = 15 +/- 2 in x*2
--- > 30 +/- 4
+-- @
+-- ghci> let x = 15 '+/-' 2 in x + x
+-- 30 +/- 3
+--
+-- ghci> let x = 15 +/- 2 in x*2
+-- 30 +/- 4
+-- @
 --
 -- @x + x@ does not represent adding the same sample to itself twice, it
 -- represents /independently/ sampling two values within the range @15 +/- 2@

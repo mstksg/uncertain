@@ -71,20 +71,37 @@ data CorrF :: * -> * -> * -> * where
 deriving instance Functor (CorrF s a)
 
 -- | The 'Corr' monad allows us to keep track of correlated and
--- non-independent samples:
+-- non-independent samples.  It fixes a basic "failure" of the 'Uncert'
+-- type, which can't describe correlated samples.
+--
+-- For example, consider the difference between:
 --
 -- @
--- evalCorr $ do
---   x <- sampleUncert $ 12.5 +/- 0.8
---   y1 <- resolveUncert $ sum (replicate 10 x)
---   y2 <- resolveUncert $ 10 * x
---   return (y1, y2)
---   -- result: (125 +/- 8, 125 +/- 8)
+-- ghci> sum $ replicate 10 (12.5 +/- 0.8)
+-- 125 +/- 3
+-- ghci> 10 * (12.5 +/- 0.8)
+-- 125 +/- 8
+-- @
+--
+-- The first one represents the addition of ten independent samples, whose
+-- errors will in general cancel eachother out.   The second one represents
+-- sampling once and multiplying it by ten, which will amplify any error by
+-- a full factor of 10.
+--
+-- See how the 'Corr' monad expresses the above computations:
+--
+-- @
+-- ghci> 'evalCorr' $ do
+--         x  <- 'sampleUncert' $ 12.5 +/- 0.8
+--         y1 <- 'resolveUncert' $ sum (replicate 10 x)
+--         y2 <- resolveUncert $ 10 * x
+--         return (y1, y2)
+-- (125 +/- 8, 125 +/- 8)
 -- 
--- evalCorr $ do
---   xs <- replicateM 10 (sampleUncert (12.5 +/- 0.8))
---   resolveUncert $ sum xs
---   -- result: 125 +/- 3
+-- ghci> 'evalCorr' $ do
+--         xs <- replicateM 10 ('sampleUncert' (12.5 +/- 0.8))
+--         'resolveUncert' $ sum xs
+-- 125 +/- 3
 -- @
 --
 -- The first example samples once and describes operations on the single
@@ -94,12 +111,12 @@ deriving instance Functor (CorrF s a)
 -- Things are more interesting when you sample multiple variables:
 --
 -- @
--- evalCorr $ do
---   x <- sampleUncert $ 12.5 +/- 0.8
---   y <- sampleUncert $ 15.9 +/- 0.5
---   z <- sampleUncert $ 1.52 +/- 0.07
---   resolveUncert $ (x+z)*logBase z (y**x)
---   -- result: 1200 +/- 200
+-- ghci> 'evalCorr' $ do
+--         x <- 'sampleUncert' $ 12.5 +/- 0.8
+--         y <- sampleUncert $ 15.9 +/- 0.5
+--         z <- sampleUncert $ 1.52 +/- 0.07
+--         'resolveUncert' $ (x+z)*logBase z (y**x)
+-- 1200 +/- 200
 -- @
 --
 -- The first parameter is a dummy phantom parameter used to prevent 'CVar's
@@ -156,14 +173,18 @@ corrToState = iterM go . corrFree
 -- you can use things like '*', 'sqrt', 'atan2', etc.
 --
 -- @
--- evalCorr $ liftCF (\[x,y,z] -> x*y+z) [12.2 +/- 0.5, 56 +/- 2, 0.12 +/- 0.08]
--- 680 +/- 40
+-- ghci> evalCorr $ do
+--         x <- sampleUncert $ 12.5 +/- 0.8
+--         y <- sampleUncert $ 15.9 +/- 0.5
+--         z <- sampleUncert $ 1.52 +/- 0.07
+--         resolveUncert $ liftCF (\[a,b,c] -> (a+c)*logBase c (b**a)) x y z
+-- 1200 +/- 200
 -- @
 --
 liftCF
     :: (Functor f, Fractional a)
-    => (forall t. f (AD t (Sparse a)) -> AD t (Sparse a))
-    -> f (CVar s a)
+    => (forall t. f (AD t (Sparse a)) -> AD t (Sparse a)) -- ^ Function on container of values to lift
+    -> f (CVar s a)     -- ^ Container of 'CVar' samples to apply the function to
     -> CVar s a
 liftCF f cs = CF f cs
 
@@ -172,13 +193,49 @@ liftCF f cs = CF f cs
 constC :: a -> CVar s a
 constC = CK
 
+-- | Lifts a numeric function over the sample represented by a 'CVar'.
+-- Correctly propagates the uncertainty according to the second-order
+-- taylor expansion expansion of the function.  Note that if the
+-- higher-degree taylor series terms are large with respect to the mean and
+-- variance, this approximation may be inaccurate.
+--
+-- Should take any function sufficiently polymorphic over numeric types, so
+-- you can use things like 'sqrt', 'sin', 'negate', etc.
+--
+-- @
+-- ghci> evalCorr $ do
+--         x <- sampleUncert $ 12.5 +/- 0.8
+--         y <- sampleUncert $ 15.9 +/- 0.5
+--         resolveUncert $ liftC (\z -> log z ^ 2) (x + y)
+-- 11.2 +/- 0.2
+-- @
+--
 liftC
     :: Fractional a
-    => (forall t. AD t (Sparse a) -> AD t (Sparse a))
-    -> CVar s a
+    => (forall t. AD t (Sparse a) -> AD t (Sparse a)) -- ^ Function on values to lift
+    -> CVar s a         -- ^ 'CVar' sample to apply the function to
     -> CVar s a
 liftC f = curryH1 $ liftCF (uncurryH1 f)
 
+-- | Lifts a two-argument (curried) function over the samples represented
+-- by two 'CVar's.  Correctly propagates the uncertainty according to the
+-- second-order (multivariate) taylor expansion expansion of the function,
+-- and properly takes into account and keeps track of all
+-- inter-correlations between the 'CVar' samples.  Note that if the
+-- higher-degree taylor series terms are large with respect to the mean and
+-- variance, this approximation may be inaccurate.
+--
+-- Should take any function sufficiently polymorphic over numeric types, so
+-- you can use things like '*', 'atan2', '**', etc.
+--
+-- @
+-- ghci> evalCorr $ do
+--         x <- sampleUncert $ 12.5 +/- 0.8
+--         y <- sampleUncert $ 15.9 +/- 0.5
+--         resolveUncert $ liftC2 (\a b -> log (a + b) ^ 2) x y
+-- 11.2 +/- 0.2
+-- @
+--
 liftC2
     :: Fractional a
     => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a))
@@ -187,6 +244,8 @@ liftC2
     -> CVar s a
 liftC2 f = curryH2 $ liftCF (uncurryH2 f)
 
+-- | Lifts a three-argument (curried) function over the samples represented
+-- by three 'CVar's.  See 'liftC2' and 'liftCF' for more details.
 liftC3
     :: Fractional a
     => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a))
@@ -196,6 +255,8 @@ liftC3
     -> CVar s a
 liftC3 f = curryH3 $ liftCF (uncurryH3 f)
 
+-- | Lifts a four-argument (curried) function over the samples represented
+-- by four 'CVar's.  See 'liftC2' and 'liftCF' for more details.
 liftC4
     :: Fractional a
     => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a))
@@ -206,6 +267,8 @@ liftC4
     -> CVar s a
 liftC4 f = curryH4 $ liftCF (uncurryH4 f)
 
+-- | Lifts a five-argument (curried) function over the samples represented
+-- by five 'CVar's.  See 'liftC2' and 'liftCF' for more details.
 liftC5
     :: Fractional a
     => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a))

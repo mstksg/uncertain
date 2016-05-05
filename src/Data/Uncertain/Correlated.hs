@@ -13,26 +13,21 @@
 -- relationships between random variables and evaluate their propagated
 -- uncertainties /respecting/ their inter-correlations.
 --
--- Fixes a basic "failure" of the 'Uncert' type, which can't describe
--- correlated samples.
---
--- For example, consider the difference between:
---
--- > sum $ replicate 10 (12.5 +/- 0.8)   -- 125 +/- 3
--- > 10 * (12.5 +/- 0.8)                 -- 125 +/- 8
---
--- The first one represents the addition of ten independent samples, whose
--- errors will in general cancel eachother out.   The second one represents
--- sampling once and multiplying it by ten, which will amplify any error by
--- a full factor of 10.
+-- See the "Data.Uncertain.Correlated.Interactive" module for an
+-- "interactive" and exploratory interface for this module's functionality.
 --
 
 module Data.Uncertain.Correlated
-  ( Corr, evalCorr
+  ( -- * 'Corr'
+    Corr, evalCorr
+    -- * Uncertain and Correlated Values
   , CVar
-  , sampleUncert, sampleExact
+    -- ** Sampling
+  , sampleUncert, sampleExact, constC
+    -- ** Resolving
   , resolveUncert
-  , constC, liftC, liftC2, liftC3, liftC4, liftC5, liftCF
+    -- * Applying arbitrary functions
+  , liftC, liftC2, liftC3, liftC4, liftC5, liftCF
   )
   where
 
@@ -66,8 +61,10 @@ sampleUncert u = liftF $ Gen u id
 -- Not super useful, since you can do something equivalent with 'constC'
 -- or the numeric instances:
 --
--- > sampleExact x  ≡ return ('constC' x)
--- > sampleExact 10 ≡ return 10
+-- @
+-- sampleExact x  ≡ return ('constC' x)
+-- sampleExact 10 ≡ return 10
+-- @
 --
 -- But is provided for completeness alongside 'sampleUncert'.
 --

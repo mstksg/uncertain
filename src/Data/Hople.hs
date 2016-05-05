@@ -3,6 +3,17 @@
 {-# LANGUAGE DeriveTraversable #-}
 {-# OPTIONS_HADDOCK hide       #-}
 
+-- |
+-- Module      : Data.Hople
+-- Copyright   : (c) Justin Le 2016
+-- License     : BSD3
+--
+-- Maintainer  : justin@jle.im
+-- Stability   : experimental
+-- Portability : non-portable
+--
+-- Homogeneous strict tuples used for implementing 'liftU2', etc.
+
 module Data.Hople
   ( H1(..)
   , H2(..)
