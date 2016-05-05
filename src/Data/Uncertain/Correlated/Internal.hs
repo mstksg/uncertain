@@ -9,6 +9,20 @@
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# OPTIONS_HADDOCK hide                #-}
+{-# OPTIONS_HADDOCK prune               #-}
+
+-- |
+-- Module      : Data.Uncertain.Correlated.Internal
+-- Copyright   : (c) Justin Le 2016
+-- License     : BSD3
+--
+-- Maintainer  : justin@jle.im
+-- Stability   : experimental
+-- Portability : non-portable
+--
+-- Internal utility functions for functionality shared by
+-- "Data.Uncertain.Correlated" and "Data.Uncertain.Correlated.Interactive".
+--
 
 module Data.Uncertain.Correlated.Internal
   ( CVar, dephantom
@@ -58,6 +72,8 @@ data CVar s a where
        -> f (CVar s a)
        -> CVar s a
 
+-- | Unsafe function to bypass the universal qualification guard for
+-- returning 'CVar's from 'Corr's.
 dephantom :: CVar s a -> CVar t a
 dephantom = \case CK x    -> CK x
                   CV k    -> CV k
@@ -107,7 +123,7 @@ instance Functor (CorrF s a) where
 --         y2 <- resolveUncert $ 10 * x
 --         return (y1, y2)
 -- (125 +/- 8, 125 +/- 8)
--- 
+--
 -- ghci> 'evalCorr' $ do
 --         xs <- replicateM 10 ('sampleUncert' (12.5 +/- 0.8))
 --         'resolveUncert' $ sum xs

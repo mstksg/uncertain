@@ -3,6 +3,7 @@
 {-# LANGUAGE DeriveFunctor     #-}
 {-# LANGUAGE DeriveTraversable #-}
 {-# OPTIONS_HADDOCK hide       #-}
+{-# OPTIONS_HADDOCK prune      #-}
 
 -- |
 -- Module      : Data.Hople
