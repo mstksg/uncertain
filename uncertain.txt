@@ -4,7 +4,7 @@
 
 -- | Manipulating numbers with inherent experimental/measurement uncertainty
 --   
---   See <a>README.md</a>
+--   See <a>README.md</a>.
 --   
 --   Documentation maintained at <a>http://mstksg.github.io/uncertain</a>
 @package uncertain
