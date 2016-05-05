@@ -9,7 +9,7 @@ module Data.Uncertain.Correlated.Interactive
   , sampleExact
   , resolveUncert
   , liftCF
-  , liftC, liftC2, liftC3, liftC4, liftC5
+  , constC, liftC, liftC2, liftC3, liftC4, liftC5
   )
   where
 
