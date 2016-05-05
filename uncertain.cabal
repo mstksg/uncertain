@@ -42,8 +42,8 @@ library
                        , transformers
   else
     -- bifunctors package is necessary before GHC 7.10
-    build-depends:       base >=4.6 && < 5
-                       , ad
+    build-depends:       base >=4.6 && < 4.8
+                       , ad >= 4
                        , bifunctors
                        , containers
                        , free
