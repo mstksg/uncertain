@@ -1,36 +1,4 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>uncertain-0.1.0.0: Manipulating numbers with inherent experimental/measurement uncertainty.</title><link href="ocean.css" rel="stylesheet" type="text/css" title="Ocean" /><script src="haddock-util.js" type="text/javascript"></script><script type="text/javascript">//<![CDATA[
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>uncertain-0.2.0.0: Manipulating numbers with inherent experimental/measurement uncertainty</title><link href="ocean.css" rel="stylesheet" type="text/css" title="Ocean" /><script src="haddock-util.js" type="text/javascript"></script><script type="text/javascript">//<![CDATA[
 window.onload = function () {pageLoad();};
 //]]>
-</script></head><body><div id="package-header"><ul class="links" id="page-menu"><li><a href="index.html">Contents</a></li><li><a href="doc-index.html">Index</a></li></ul><p class="caption">uncertain-0.1.0.0: Manipulating numbers with inherent experimental/measurement uncertainty.</p></div><div id="content"><div id="description"><h1>uncertain-0.1.0.0: Manipulating numbers with inherent experimental/measurement uncertainty.</h1><div class="doc"><p>Provides tools to manipulate numbers tagged with inherent
-experimental/measurement uncertainty, and propagates them
-through functions based on principles from statistics.</p><p>Create numbers:</p><pre>7.13 +/- 0.05
-91800 +/- 100
-certain 7.9512
-81.42 `withPrecision` 4
-7    :: Uncertain Double
-9.18 :: Uncertain Double</pre><p>Apply functions and have the errors propagate properly:</p><pre>&gt; let x = 1.52 +/- 0.07
-&gt; let y = 781.4 +/- 0.3
-&gt; let z = 1.53e-1 `withPrecision` 3
-&gt; cosh x
-2.4 +/- 0.2
-&gt; exp x / z * sin (y ** z)
-10.8 +/- 0.9
-&gt; pi + 3 * logBase x y
-50.87 +/- 2.e-2</pre><p>Apply arbitrary numeric functions:</p><pre>&gt; let f :: Double -&gt; Double -&gt; Double -&gt; Double;
-          f a b c = b ** exp (c / (2 * a))
-&gt; y ** (exp z / (x * 2))
-13.0 +/- 2.
-&gt; uMap3 f x y z
-13.0 +/- 2.</pre><p>Note that this is very different from other libraries
-with similar data types (like <code>interval</code> and <code>rounded</code>);
-these do not attempt to maintain intervals or simply
-digit precisions; they instead are intended to model
-actual experimental and measurement data with their
-uncertainties, and apply functions to the data with the
-uncertainties and properly propagating the errors with
-sound statistical principles.</p><p>As a clear example, take</p><pre>&gt; (7 +/- 2) + (4 +/- 1)
-11 +/- 2</pre><p>In a library like <code>interval</code>, this would result in <code>11
-+/- 3</code> (that is, a lower bound of 5 + 3 and an upper
-bound of 9 + 5).  However, with experimental data, two
-points of uncertainty 2 and 1 will add to create a new
-point of uncertainty 2 as well. (technically, 2.2)</p></div></div><div id="module-list"><p class="caption">Modules</p><ul><li><span id="control.n.1" class="module collapser" onclick="toggleSection('n.1')">Data</span><ul id="section.n.1" class="show"><li><span class="module"><span id="control.n.1.1" class="collapser" onclick="toggleSection('n.1.1')">&nbsp;</span><a href="Data-Uncertain.html">Data.Uncertain</a></span><ul id="section.n.1.1" class="show"><li><span class="module"><span id="control.n.1.1.1" class="collapser" onclick="toggleSection('n.1.1.1')">&nbsp;</span><a href="Data-Uncertain-Correlated.html">Data.Uncertain.Correlated</a></span><ul id="section.n.1.1.1" class="show"><li><span class="module"><a href="Data-Uncertain-Correlated-Interactive.html">Data.Uncertain.Correlated.Interactive</a></span></li></ul></li><li><span class="module"><a href="Data-Uncertain-MonteCarlo.html">Data.Uncertain.MonteCarlo</a></span></li></ul></li></ul></li></ul></div></div><div id="footer"><p>Produced by <a href="http://www.haskell.org/haddock/">Haddock</a> version 2.16.1</p></div></body></html>
+</script></head><body><div id="package-header"><ul class="links" id="page-menu"><li><a href="index.html">Contents</a></li><li><a href="doc-index.html">Index</a></li></ul><p class="caption">uncertain-0.2.0.0: Manipulating numbers with inherent experimental/measurement uncertainty</p></div><div id="content"><div id="description"><h1>uncertain-0.2.0.0: Manipulating numbers with inherent experimental/measurement uncertainty</h1><div class="doc"><p>See <a href="https://github.com/mstksg/uncertain/blob/master/README.md">README.md</a></p><p>Documentation maintained at <a href="http://mstksg.github.io/uncertain">http://mstksg.github.io/uncertain</a></p></div></div><div id="module-list"><p class="caption">Modules</p><ul><li><span id="control.n.1" class="module collapser" onclick="toggleSection('n.1')">Data</span><ul id="section.n.1" class="show"><li><span class="module"><span id="control.n.1.1" class="collapser" onclick="toggleSection('n.1.1')">&nbsp;</span><a href="Data-Uncertain.html">Data.Uncertain</a></span><ul id="section.n.1.1" class="show"><li><span class="module"><span id="control.n.1.1.1" class="collapser" onclick="toggleSection('n.1.1.1')">&nbsp;</span><a href="Data-Uncertain-Correlated.html">Data.Uncertain.Correlated</a></span><ul id="section.n.1.1.1" class="show"><li><span class="module"><a href="Data-Uncertain-Correlated-Interactive.html">Data.Uncertain.Correlated.Interactive</a></span></li></ul></li><li><span class="module"><a href="Data-Uncertain-MonteCarlo.html">Data.Uncertain.MonteCarlo</a></span></li></ul></li></ul></li></ul></div></div><div id="footer"><p>Produced by <a href="http://www.haskell.org/haddock/">Haddock</a> version 2.16.1</p></div></body></html>

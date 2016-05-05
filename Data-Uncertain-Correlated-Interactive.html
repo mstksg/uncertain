@@ -1,18 +1,20 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Data.Uncertain.Correlated.Interactive</title><link href="ocean.css" rel="stylesheet" type="text/css" title="Ocean" /><script src="haddock-util.js" type="text/javascript"></script><script type="text/javascript">//<![CDATA[
 window.onload = function () {pageLoad();setSynopsis("mini_Data-Uncertain-Correlated-Interactive.html");};
 //]]>
-</script></head><body><div id="package-header"><ul class="links" id="page-menu"><li><a href="src/Data-Uncertain-Correlated-Interactive.html">Source</a></li><li><a href="index.html">Contents</a></li><li><a href="doc-index.html">Index</a></li></ul><p class="caption">uncertain-0.1.0.0: Manipulating numbers with inherent experimental/measurement uncertainty.</p></div><div id="content"><div id="module-header"><table class="info"><tr><th>Copyright</th><td>(c) Justin Le 2016</td></tr><tr><th>License</th><td>BSD3</td></tr><tr><th>Maintainer</th><td>justin@jle.im</td></tr><tr><th>Stability</th><td>experimental</td></tr><tr><th>Portability</th><td>non-portable</td></tr><tr><th>Safe Haskell</th><td>None</td></tr><tr><th>Language</th><td>Haskell2010</td></tr></table><p class="caption">Data.Uncertain.Correlated.Interactive</p></div><div id="table-of-contents"><p class="caption">Contents</p><ul><li><a href="#g:1">Uncertain and Correlated Values</a><ul><li><a href="#g:2">Sampling</a></li><li><a href="#g:3">Resolving</a></li></ul></li><li><a href="#g:4">Applying arbitrary functions</a></li></ul></div><div id="description"><p class="caption">Description</p><div class="doc"><p>Exports all of the interface of <a href="Data-Uncertain-Correlated.html">Data.Uncertain.Correlated</a>, except
+</script></head><body><div id="package-header"><ul class="links" id="page-menu"><li><a href="src/Data-Uncertain-Correlated-Interactive.html">Source</a></li><li><a href="index.html">Contents</a></li><li><a href="doc-index.html">Index</a></li></ul><p class="caption">uncertain-0.2.0.0: Manipulating numbers with inherent experimental/measurement uncertainty</p></div><div id="content"><div id="module-header"><table class="info"><tr><th>Copyright</th><td>(c) Justin Le 2016</td></tr><tr><th>License</th><td>BSD3</td></tr><tr><th>Maintainer</th><td>justin@jle.im</td></tr><tr><th>Stability</th><td>experimental</td></tr><tr><th>Portability</th><td>non-portable</td></tr><tr><th>Safe Haskell</th><td>None</td></tr><tr><th>Language</th><td>Haskell2010</td></tr></table><p class="caption">Data.Uncertain.Correlated.Interactive</p></div><div id="table-of-contents"><p class="caption">Contents</p><ul><li><a href="#g:1">Uncertain and Correlated Values</a><ul><li><a href="#g:2">Sampling</a></li><li><a href="#g:3">Resolving</a></li></ul></li><li><a href="#g:4">Applying arbitrary functions</a></li></ul></div><div id="description"><p class="caption">Description</p><div class="doc"><p>Exports all of the interface of <a href="Data-Uncertain-Correlated.html">Data.Uncertain.Correlated</a>, except
  meant to be run in a <em>ghci</em> session &quot;interactively&quot; for exploratory
  purposes, or in a plain <code><a href="../base-4.8.2.0/System-IO.html#t:IO">IO</a></code> action (instead of inside a <code><a href="Data-Uncertain-Correlated.html#t:Corr">Corr</a></code> monad).</p><p>For example, with the <a href="Data-Uncertain-Correlated.html">Data.Uncertain.Correlated</a> interface:</p><pre>ghci&gt; evalCorr $ do
         x &lt;- sampleUncert $ 12.5 +/- 0.8
         y &lt;- sampleUncert $ 15.9 +/- 0.5
         z &lt;- sampleUncert $ 1.52 +/- 0.07
-        resolveUncert $ (x+z)*logBase z (y**x)
+        let k = y**x
+        resolveUncert $ (x+z) * logBase z k
 1200 +/- 200
 </pre><p>And with the interface from this &quot;interactive&quot; module:</p><pre>ghci&gt; x &lt;- <code><a href="Data-Uncertain-Correlated-Interactive.html#v:sampleUncert">sampleUncert</a></code> $ 12.5 +/- 0.8
 ghci&gt; y &lt;- sampleUncert $ 15.9 +/- 0.5
 ghci&gt; z &lt;- sampleUncert $ 1.52 +/- 0.07
-ghci&gt; <code><a href="Data-Uncertain-Correlated-Interactive.html#v:resolveUncert">resolveUncert</a></code> $ (x+z)*logBase z (y**x)
+ghci&gt; let k = y**x
+ghci&gt; <code><a href="Data-Uncertain-Correlated-Interactive.html#v:resolveUncert">resolveUncert</a></code> $ (x+z) * logBase z k
 1200 +/- 200
 </pre><p>The main purpose of this module is to allow one to use <em>ghci</em> as a fancy
  &quot;calculator&quot; for computing and exploring propagated uncertainties of
@@ -68,6 +70,6 @@ sampleExact 10 &#8801; return 10
         x &lt;- sampleUncert $ 12.5 +/- 0.8
         y &lt;- sampleUncert $ 15.9 +/- 0.5
         z &lt;- sampleUncert $ 1.52 +/- 0.07
-        resolveUncert $ liftCF ([a,b,c] -&gt; (a+c)*logBase c (b**a)) x y z
+        resolveUncert $ liftCF ([a,b,c] -&gt; (a+c) * logBase c (b**a)) x y z
 1200 +/- 200
 </pre></div></div></div></div><div id="footer"><p>Produced by <a href="http://www.haskell.org/haddock/">Haddock</a> version 2.16.1</p></div></body></html>

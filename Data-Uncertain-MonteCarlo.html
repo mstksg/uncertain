@@ -1,8 +1,8 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Data.Uncertain.MonteCarlo</title><link href="ocean.css" rel="stylesheet" type="text/css" title="Ocean" /><script src="haddock-util.js" type="text/javascript"></script><script type="text/javascript">//<![CDATA[
 window.onload = function () {pageLoad();setSynopsis("mini_Data-Uncertain-MonteCarlo.html");};
 //]]>
-</script></head><body><div id="package-header"><ul class="links" id="page-menu"><li><a href="src/Data-Uncertain-MonteCarlo.html">Source</a></li><li><a href="index.html">Contents</a></li><li><a href="doc-index.html">Index</a></li></ul><p class="caption">uncertain-0.1.0.0: Manipulating numbers with inherent experimental/measurement uncertainty.</p></div><div id="content"><div id="module-header"><table class="info"><tr><th>Copyright</th><td>(c) Justin Le 2016</td></tr><tr><th>License</th><td>BSD3</td></tr><tr><th>Maintainer</th><td>justin@jle.im</td></tr><tr><th>Stability</th><td>experimental</td></tr><tr><th>Portability</th><td>non-portable</td></tr><tr><th>Safe Haskell</th><td>None</td></tr><tr><th>Language</th><td>Haskell2010</td></tr></table><p class="caption">Data.Uncertain.MonteCarlo</p></div><div id="table-of-contents"><p class="caption">Contents</p><ul><li><a href="#g:1">Sampling from an <code>Uncert</code></a></li><li><a href="#g:2">Lifting functions via Monte Carlo simulation</a><ul><li><a href="#g:3">Fixed iterations</a></li><li><a href="#g:4">Variable iterations</a></li></ul></li></ul></div><div id="description"><p class="caption">Description</p><div class="doc"><p>Provides an interface for computing and propagating uncertainty by using
- <a href="https://en.wikipedia.org/wiki/Monte_Carlo_method">Monte Carlo Simulations</a>.</p><p>Basically simulates sampling from the distribution represented by the given
+</script></head><body><div id="package-header"><ul class="links" id="page-menu"><li><a href="src/Data-Uncertain-MonteCarlo.html">Source</a></li><li><a href="index.html">Contents</a></li><li><a href="doc-index.html">Index</a></li></ul><p class="caption">uncertain-0.2.0.0: Manipulating numbers with inherent experimental/measurement uncertainty</p></div><div id="content"><div id="module-header"><table class="info"><tr><th>Copyright</th><td>(c) Justin Le 2016</td></tr><tr><th>License</th><td>BSD3</td></tr><tr><th>Maintainer</th><td>justin@jle.im</td></tr><tr><th>Stability</th><td>experimental</td></tr><tr><th>Portability</th><td>non-portable</td></tr><tr><th>Safe Haskell</th><td>None</td></tr><tr><th>Language</th><td>Haskell2010</td></tr></table><p class="caption">Data.Uncertain.MonteCarlo</p></div><div id="table-of-contents"><p class="caption">Contents</p><ul><li><a href="#g:1">Sampling from an <code>Uncert</code></a></li><li><a href="#g:2">Lifting functions via Monte Carlo simulation</a><ul><li><a href="#g:3">Fixed iterations</a></li><li><a href="#g:4">Variable iterations</a></li></ul></li></ul></div><div id="description"><p class="caption">Description</p><div class="doc"><p>Provides an interface for computing and propagating uncertainty by using
+ <a href="https://en.wikipedia.org/wiki/Monte_Carlo_method">Monte Carlo simulations</a>.</p><p>Basically simulates sampling from the distribution represented by the given
  <code><a href="Data-Uncertain.html#t:Uncert">Uncert</a></code>s, applying the function of interest, and aggregating the mean
  and standard deviation of the results.  <code>x <code>+/-</code> dx</code> is treated as
  a random variable whose probability density is the normal distribution
@@ -14,9 +14,9 @@ import qualified Data.Uncertain.MonteCarlo as MC
  All functions require a <code><a href="../mwc-random-0.13.4.0/System-Random-MWC.html#t:Gen">Gen</a></code> from <a href="../mwc-random-0.13.4.0/System-Random-MWC.html">System.Random.MWC</a> for random value
  generation purposes.</p><pre>ghci&gt; import qualified Data.Uncertain.MonteCarlo as MC
 ghci&gt; import System.Random.MWC
-ghci&gt; let x = 1.52 +/- 0.07
+ghci&gt; let x = 1.52 <code>+/-</code> 0.07
 ghci&gt; let y = 781.4 +/- 0.3
-ghci&gt; let z = 1.53e-1 <code>withPrecision</code> 3
+ghci&gt; let z = 1.53e-1 `<code>withPrecision'</code> 3
 ghci&gt; g &lt;- <code><a href="../mwc-random-0.13.4.0/System-Random-MWC.html#v:create">create</a></code>
 ghci&gt; cosh x
 2.4 +/- 0.2
@@ -24,7 +24,7 @@ ghci&gt; MC.liftU cosh x g
 2.4 +/- 0.2
 ghci&gt; exp x / z * sin (y ** z)
 10.9 +/- 0.9
-ghci&gt; MC.liftU3 (a b c -&gt; exp a / c * sin (b**c) x y z g
+ghci&gt; MC.liftU3 (a b c -&gt; exp a / c * sin (b**c)) x y z g
 10.8 +/- 1.0
 ghci&gt; pi + 3 * logBase x y
 52 +/- 5
