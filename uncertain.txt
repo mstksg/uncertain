@@ -456,10 +456,59 @@ resolveUncert :: CVar s a -> Corr s a (Uncert a)
 -- | Creates a <a>CVar</a> representing a completely independent sample
 --   from all other <a>CVar</a>s containing the exact value given.
 constC :: a -> CVar s a
+
+-- | Lifts a numeric function over the sample represented by a <a>CVar</a>.
+--   Correctly propagates the uncertainty according to the second-order
+--   taylor expansion expansion of the function. Note that if the
+--   higher-degree taylor series terms are large with respect to the mean
+--   and variance, this approximation may be inaccurate.
+--   
+--   Should take any function sufficiently polymorphic over numeric types,
+--   so you can use things like <a>sqrt</a>, <a>sin</a>, <a>negate</a>,
+--   etc.
+--   
+--   <pre>
+--   ghci&gt; evalCorr $ do
+--           x &lt;- sampleUncert $ 12.5 +/- 0.8
+--           y &lt;- sampleUncert $ 15.9 +/- 0.5
+--           resolveUncert $ liftC (z -&gt; log z ^ 2) (x + y)
+--   11.2 +/- 0.2
+--   </pre>
 liftC :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a
+
+-- | Lifts a two-argument (curried) function over the samples represented
+--   by two <a>CVar</a>s. Correctly propagates the uncertainty according to
+--   the second-order (multivariate) taylor expansion expansion of the
+--   function, and properly takes into account and keeps track of all
+--   inter-correlations between the <a>CVar</a> samples. Note that if the
+--   higher-degree taylor series terms are large with respect to the mean
+--   and variance, this approximation may be inaccurate.
+--   
+--   Should take any function sufficiently polymorphic over numeric types,
+--   so you can use things like <a>*</a>, <a>atan2</a>, <a>**</a>, etc.
+--   
+--   <pre>
+--   ghci&gt; evalCorr $ do
+--           x &lt;- sampleUncert $ 12.5 +/- 0.8
+--           y &lt;- sampleUncert $ 15.9 +/- 0.5
+--           resolveUncert $ liftC2 (a b -&gt; log (a + b) ^ 2) x y
+--   11.2 +/- 0.2
+--   </pre>
 liftC2 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a
+
+-- | Lifts a three-argument (curried) function over the samples represented
+--   by three <a>CVar</a>s. See <a>liftC2</a> and <a>liftCF</a> for more
+--   details.
 liftC3 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a -> CVar s a
+
+-- | Lifts a four-argument (curried) function over the samples represented
+--   by four <a>CVar</a>s. See <a>liftC2</a> and <a>liftCF</a> for more
+--   details.
 liftC4 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a
+
+-- | Lifts a five-argument (curried) function over the samples represented
+--   by five <a>CVar</a>s. See <a>liftC2</a> and <a>liftCF</a> for more
+--   details.
 liftC5 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a
 
 -- | Lifts a multivariate numeric function on a container (given as an
@@ -475,8 +524,12 @@ liftC5 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t 
 --   so you can use things like <a>*</a>, <a>sqrt</a>, <a>atan2</a>, etc.
 --   
 --   <pre>
---   evalCorr $ liftCF ([x,y,z] -&gt; x*y+z) [12.2 +<i>- 0.5, 56 +</i>- 2, 0.12 +/- 0.08]
---   680 +/- 40
+--   ghci&gt; evalCorr $ do
+--           x &lt;- sampleUncert $ 12.5 +/- 0.8
+--           y &lt;- sampleUncert $ 15.9 +/- 0.5
+--           z &lt;- sampleUncert $ 1.52 +/- 0.07
+--           resolveUncert $ liftCF ([a,b,c] -&gt; (a+c)*logBase c (b**a)) x y z
+--   1200 +/- 200
 --   </pre>
 liftCF :: (Functor f, Fractional a) => (forall t. f (AD t (Sparse a)) -> AD t (Sparse a)) -> f (CVar s a) -> CVar s a
 
@@ -560,10 +613,59 @@ resolveUncert :: CVarIO -> IO (Uncert Double)
 -- | Creates a <a>CVar</a> representing a completely independent sample
 --   from all other <a>CVar</a>s containing the exact value given.
 constC :: a -> CVar s a
+
+-- | Lifts a numeric function over the sample represented by a <a>CVar</a>.
+--   Correctly propagates the uncertainty according to the second-order
+--   taylor expansion expansion of the function. Note that if the
+--   higher-degree taylor series terms are large with respect to the mean
+--   and variance, this approximation may be inaccurate.
+--   
+--   Should take any function sufficiently polymorphic over numeric types,
+--   so you can use things like <a>sqrt</a>, <a>sin</a>, <a>negate</a>,
+--   etc.
+--   
+--   <pre>
+--   ghci&gt; evalCorr $ do
+--           x &lt;- sampleUncert $ 12.5 +/- 0.8
+--           y &lt;- sampleUncert $ 15.9 +/- 0.5
+--           resolveUncert $ liftC (z -&gt; log z ^ 2) (x + y)
+--   11.2 +/- 0.2
+--   </pre>
 liftC :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a
+
+-- | Lifts a two-argument (curried) function over the samples represented
+--   by two <a>CVar</a>s. Correctly propagates the uncertainty according to
+--   the second-order (multivariate) taylor expansion expansion of the
+--   function, and properly takes into account and keeps track of all
+--   inter-correlations between the <a>CVar</a> samples. Note that if the
+--   higher-degree taylor series terms are large with respect to the mean
+--   and variance, this approximation may be inaccurate.
+--   
+--   Should take any function sufficiently polymorphic over numeric types,
+--   so you can use things like <a>*</a>, <a>atan2</a>, <a>**</a>, etc.
+--   
+--   <pre>
+--   ghci&gt; evalCorr $ do
+--           x &lt;- sampleUncert $ 12.5 +/- 0.8
+--           y &lt;- sampleUncert $ 15.9 +/- 0.5
+--           resolveUncert $ liftC2 (a b -&gt; log (a + b) ^ 2) x y
+--   11.2 +/- 0.2
+--   </pre>
 liftC2 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a
+
+-- | Lifts a three-argument (curried) function over the samples represented
+--   by three <a>CVar</a>s. See <a>liftC2</a> and <a>liftCF</a> for more
+--   details.
 liftC3 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a -> CVar s a
+
+-- | Lifts a four-argument (curried) function over the samples represented
+--   by four <a>CVar</a>s. See <a>liftC2</a> and <a>liftCF</a> for more
+--   details.
 liftC4 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a
+
+-- | Lifts a five-argument (curried) function over the samples represented
+--   by five <a>CVar</a>s. See <a>liftC2</a> and <a>liftCF</a> for more
+--   details.
 liftC5 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a
 
 -- | Lifts a multivariate numeric function on a container (given as an
@@ -579,7 +681,11 @@ liftC5 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t 
 --   so you can use things like <a>*</a>, <a>sqrt</a>, <a>atan2</a>, etc.
 --   
 --   <pre>
---   evalCorr $ liftCF ([x,y,z] -&gt; x*y+z) [12.2 +<i>- 0.5, 56 +</i>- 2, 0.12 +/- 0.08]
---   680 +/- 40
+--   ghci&gt; evalCorr $ do
+--           x &lt;- sampleUncert $ 12.5 +/- 0.8
+--           y &lt;- sampleUncert $ 15.9 +/- 0.5
+--           z &lt;- sampleUncert $ 1.52 +/- 0.07
+--           resolveUncert $ liftCF ([a,b,c] -&gt; (a+c)*logBase c (b**a)) x y z
+--   1200 +/- 200
 --   </pre>
 liftCF :: (Functor f, Fractional a) => (forall t. f (AD t (Sparse a)) -> AD t (Sparse a)) -> f (CVar s a) -> CVar s a
