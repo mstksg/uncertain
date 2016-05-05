@@ -101,10 +101,10 @@ module Data.Uncertain
 --   independent sample, so:
 --   
 --   <pre>
---   &gt; let x = 15 +/- 2 in x + x
+--   ghci&gt; let x = 15 <a>+/-</a> 2 in x + x
 --   30 +/- 3
 --   
---   &gt; let x = 15 +/- 2 in x*2
+--   ghci&gt; let x = 15 +/- 2 in x*2
 --   30 +/- 4
 --   </pre>
 --   
@@ -336,8 +336,10 @@ instance GHC.Float.RealFloat a => GHC.Float.RealFloat (Data.Uncertain.Uncert a)
 --   For example, consider the difference between:
 --   
 --   <pre>
---   sum $ replicate 10 (12.5 +/- 0.8)   -- 125 +/- 3
---   10 * (12.5 +/- 0.8)                 -- 125 +/- 8
+--   ghci&gt; sum $ replicate 10 (12.5 +/- 0.8)
+--   125 +/- 3
+--   ghci&gt; 10 * (12.5 +/- 0.8)
+--   125 +/- 8
 --   </pre>
 --   
 --   The first one represents the addition of ten independent samples,
@@ -350,17 +352,17 @@ module Data.Uncertain.Correlated
 --   non-independent samples:
 --   
 --   <pre>
---   evalCorr $ do
---     x &lt;- sampleUncert $ 12.5 +/- 0.8
---     y1 &lt;- resolveUncert $ sum (replicate 10 x)
---     y2 &lt;- resolveUncert $ 10 * x
---     return (y1, y2)
---     -- result: (125 +<i>- 8, 125 +</i>- 8)
+--   ghci&gt; <tt>evalCorr</tt> $ do
+--           x  &lt;- <tt>sampleUncert</tt> $ 12.5 +/- 0.8
+--           y1 &lt;- <tt>resolveUncert</tt> $ sum (replicate 10 x)
+--           y2 &lt;- resolveUncert $ 10 * x
+--           return (y1, y2)
+--   (125 +<i>- 8, 125 +</i>- 8)
 --   
---   evalCorr $ do
---     xs &lt;- replicateM 10 (sampleUncert (12.5 +/- 0.8))
---     resolveUncert $ sum xs
---     -- result: 125 +/- 3
+--   ghci&gt; <tt>evalCorr</tt> $ do
+--           xs &lt;- replicateM 10 (<tt>sampleUncert</tt> (12.5 +/- 0.8))
+--           <tt>resolveUncert</tt> $ sum xs
+--   125 +/- 3
 --   </pre>
 --   
 --   The first example samples once and describes operations on the single
@@ -370,12 +372,12 @@ module Data.Uncertain.Correlated
 --   Things are more interesting when you sample multiple variables:
 --   
 --   <pre>
---   evalCorr $ do
---     x &lt;- sampleUncert $ 12.5 +/- 0.8
---     y &lt;- sampleUncert $ 15.9 +/- 0.5
---     z &lt;- sampleUncert $ 1.52 +/- 0.07
---     resolveUncert $ (x+z)*logBase z (y**x)
---     -- result: 1200 +/- 200
+--   ghci&gt; <tt>evalCorr</tt> $ do
+--           x &lt;- <tt>sampleUncert</tt> $ 12.5 +/- 0.8
+--           y &lt;- sampleUncert $ 15.9 +/- 0.5
+--           z &lt;- sampleUncert $ 1.52 +/- 0.07
+--           <tt>resolveUncert</tt> $ (x+z)*logBase z (y**x)
+--   1200 +/- 200
 --   </pre>
 --   
 --   The first parameter is a dummy phantom parameter used to prevent
@@ -433,7 +435,7 @@ sampleUncert :: Uncert a -> Corr s a (CVar s a)
 --   <a>constC</a> or the numeric instances:
 --   
 --   <pre>
---   sampleExact x  ≡ return ('constC' x)
+--   sampleExact x  ≡ return (<a>constC</a> x)
 --   sampleExact 10 ≡ return 10
 --   </pre>
 --   
@@ -444,6 +446,10 @@ sampleUncert :: Uncert a -> Corr s a (CVar s a)
 --   also <tt>a</tt>s.
 sampleExact :: a -> Corr s a (CVar s a)
 
+-- | Creates a <a>CVar</a> representing a completely independent sample
+--   from all other <a>CVar</a>s containing the exact value given.
+constC :: a -> CVar s a
+
 -- | <a>Resolve</a> an <a>Uncert</a> from a <a>CVar</a> using its potential
 --   multiple samples and sample sources, taking into account
 --   inter-correlations between <a>CVar</a>s and samples.
@@ -452,10 +458,6 @@ sampleExact :: a -> Corr s a (CVar s a)
 --   will be treated as something completely independent. Usually this
 --   should only be used as the "exit point" of a <a>Corr</a> description.
 resolveUncert :: CVar s a -> Corr s a (Uncert a)
-
--- | Creates a <a>CVar</a> representing a completely independent sample
---   from all other <a>CVar</a>s containing the exact value given.
-constC :: a -> CVar s a
 
 -- | Lifts a numeric function over the sample represented by a <a>CVar</a>.
 --   Correctly propagates the uncertainty according to the second-order
@@ -542,23 +544,66 @@ liftU4 :: PrimMonad m => (Double -> Double -> Double -> Double -> Double) -> Unc
 liftU5 :: PrimMonad m => (Double -> Double -> Double -> Double -> Double -> Double) -> Uncert Double -> Uncert Double -> Uncert Double -> Uncert Double -> Uncert Double -> Gen (PrimState m) -> m (Uncert Double)
 sampleUncert :: PrimMonad m => Uncert Double -> Gen (PrimState m) -> m Double
 
+
+-- | Exports all of the interface of <a>Data.Uncertain.Correlated</a>,
+--   except meant to be run in a <i>ghci</i> session "interactively" for
+--   exploratory purposes, or in a plain <a>IO</a> action (instead of
+--   inside a <a>Corr</a> monad).
+--   
+--   For example, with the <a>Data.Uncertain.Correlated</a> interface:
+--   
+--   <pre>
+--   ghci&gt; evalCorr $ do
+--           x &lt;- sampleUncert $ 12.5 +/- 0.8
+--           y &lt;- sampleUncert $ 15.9 +/- 0.5
+--           z &lt;- sampleUncert $ 1.52 +/- 0.07
+--           resolveUncert $ (x+z)*logBase z (y**x)
+--   1200 +/- 200
+--   </pre>
+--   
+--   And with the interface from this "interactive" module:
+--   
+--   <pre>
+--   ghci&gt; x &lt;- <a>sampleUncert</a> $ 12.5 +/- 0.8
+--   ghci&gt; y &lt;- sampleUncert $ 15.9 +/- 0.5
+--   ghci&gt; z &lt;- sampleUncert $ 1.52 +/- 0.07
+--   ghci&gt; <a>resolveUncert</a> $ (x+z)*logBase z (y**x)
+--   1200 +/- 200
+--   </pre>
+--   
+--   The main purpose of this module is to allow one to use <i>ghci</i> as
+--   a fancy "calculator" for computing and exploring propagated
+--   uncertainties of complex and potentially correlated samples with
+--   uncertainty.
+--   
+--   Because many of the names overlap with the names from the
+--   <a>Data.Uncertain.Correlated</a> module, it is recommended that you
+--   never have both imported at the same time in <i>ghci</i> or in a file,
+--   or import them qualified if you must.
+--   
+--   Also note that all of these methods only work with
+--   <tt><tt>Uncertain</tt> <a>Double</a></tt>s, and are not polymorphic
+--   over different numeric types.
+--   
+--   Be aware that this module is not robustly tested in heavily concurrent
+--   situations/applications.
 module Data.Uncertain.Correlated.Interactive
 
 -- | The <a>Corr</a> monad allows us to keep track of correlated and
 --   non-independent samples:
 --   
 --   <pre>
---   evalCorr $ do
---     x &lt;- sampleUncert $ 12.5 +/- 0.8
---     y1 &lt;- resolveUncert $ sum (replicate 10 x)
---     y2 &lt;- resolveUncert $ 10 * x
---     return (y1, y2)
---     -- result: (125 +<i>- 8, 125 +</i>- 8)
+--   ghci&gt; <tt>evalCorr</tt> $ do
+--           x  &lt;- <tt>sampleUncert</tt> $ 12.5 +/- 0.8
+--           y1 &lt;- <tt>resolveUncert</tt> $ sum (replicate 10 x)
+--           y2 &lt;- resolveUncert $ 10 * x
+--           return (y1, y2)
+--   (125 +<i>- 8, 125 +</i>- 8)
 --   
---   evalCorr $ do
---     xs &lt;- replicateM 10 (sampleUncert (12.5 +/- 0.8))
---     resolveUncert $ sum xs
---     -- result: 125 +/- 3
+--   ghci&gt; <tt>evalCorr</tt> $ do
+--           xs &lt;- replicateM 10 (<tt>sampleUncert</tt> (12.5 +/- 0.8))
+--           <tt>resolveUncert</tt> $ sum xs
+--   125 +/- 3
 --   </pre>
 --   
 --   The first example samples once and describes operations on the single
@@ -568,12 +613,12 @@ module Data.Uncertain.Correlated.Interactive
 --   Things are more interesting when you sample multiple variables:
 --   
 --   <pre>
---   evalCorr $ do
---     x &lt;- sampleUncert $ 12.5 +/- 0.8
---     y &lt;- sampleUncert $ 15.9 +/- 0.5
---     z &lt;- sampleUncert $ 1.52 +/- 0.07
---     resolveUncert $ (x+z)*logBase z (y**x)
---     -- result: 1200 +/- 200
+--   ghci&gt; <tt>evalCorr</tt> $ do
+--           x &lt;- <tt>sampleUncert</tt> $ 12.5 +/- 0.8
+--           y &lt;- sampleUncert $ 15.9 +/- 0.5
+--           z &lt;- sampleUncert $ 1.52 +/- 0.07
+--           <tt>resolveUncert</tt> $ (x+z)*logBase z (y**x)
+--   1200 +/- 200
 --   </pre>
 --   
 --   The first parameter is a dummy phantom parameter used to prevent
@@ -606,8 +651,37 @@ runCorrIO :: Corr RealWorld Double a -> IO a
 --   "exist" in a <tt><a>Corr</a> s a</tt>, meaning that the all samples
 --   within that <a>Corr</a> are of the same type.
 data CVar s a
+
+-- | A <a>CVar</a> specialized to work in an "interactive" context, in
+--   <i>ghci</i> or <a>IO</a>.
+type CVarIO = CVar RealWorld Double
+
+-- | Generate a sample in <a>IO</a> from an <tt><a>Uncert</a>
+--   <a>Double</a></tt> value, independently from all other samples.
 sampleUncert :: Uncert Double -> IO CVarIO
+
+-- | Generate an exact sample in <a>IO</a> with zero uncertainty,
+--   independently from all other samples.
+--   
+--   Not super useful, since you can do something equivalent with
+--   <a>constC</a> or the numeric instances:
+--   
+--   <pre>
+--   sampleExact x  ≡ return (<a>constC</a> x)
+--   sampleExact 10 ≡ return 10
+--   </pre>
+--   
+--   But is provided for completeness alongside <a>sampleUncert</a>.
 sampleExact :: Double -> IO CVarIO
+
+-- | <a>Resolve</a> an <a>Uncert</a> from a <a>CVarIO</a> using its
+--   potential multiple samples and sample sources, taking into account
+--   inter-correlations between <a>CVarIO</a>s and samples.
+--   
+--   Note that if you use <a>sampleUncert</a> on the result, the new sample
+--   will be treated as something completely independent. Usually this
+--   should only be used as the "final value" of your computation or
+--   exploration.
 resolveUncert :: CVarIO -> IO (Uncert Double)
 
 -- | Creates a <a>CVar</a> representing a completely independent sample
