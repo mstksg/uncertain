@@ -60,6 +60,7 @@ import           Data.Traversable (Traversable)
 
 #if !(MIN_VERSION_ad(4,0,0))
 import           Numeric.AD.Internal.Sparse
+import           Numeric.AD.Types
 import qualified Numeric.AD.Internal.Tower as T (Tower)
 #endif
 
