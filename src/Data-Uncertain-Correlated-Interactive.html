@@ -92,35 +92,39 @@
 <a name="line-83"></a><a name="runCorrIO"></a><span class='hs-definition'>runCorrIO</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Corr</span> <span class='hs-conid'>RealWorld</span> <span class='hs-conid'>Double</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>IO</span> <span class='hs-varid'>a</span>
 <a name="line-84"></a><span class='hs-definition'>runCorrIO</span> <span class='hs-varid'>c</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>atomicModifyIORef'</span> <span class='hs-varid'>globalCorrMap</span>
 <a name="line-85"></a>                                 <span class='hs-layout'>(</span><span class='hs-varid'>swap</span> <span class='hs-varop'>.</span> <span class='hs-varid'>runState</span> <span class='hs-layout'>(</span><span class='hs-varid'>corrToState</span> <span class='hs-varid'>c</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span>
-<a name="line-86"></a>
-<a name="line-87"></a><a name="sampleUncert"></a><span class='hs-comment'>-- | Generate a sample in 'IO' from an @'Uncert' 'Double'@ value,</span>
-<a name="line-88"></a><span class='hs-comment'>-- independently from all other samples.</span>
-<a name="line-89"></a><span class='hs-definition'>sampleUncert</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Uncert</span> <span class='hs-conid'>Double</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>IO</span> <span class='hs-conid'>CVarIO</span>
-<a name="line-90"></a><span class='hs-definition'>sampleUncert</span> <span class='hs-varid'>u</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>runCorrIO</span> <span class='hs-varop'>$</span> <span class='hs-conid'>C</span><span class='hs-varop'>.</span><span class='hs-varid'>sampleUncert</span> <span class='hs-varid'>u</span>
-<a name="line-91"></a>
-<a name="line-92"></a><a name="sampleExact"></a><span class='hs-comment'>-- | Generate an exact sample in 'IO' with zero uncertainty,</span>
-<a name="line-93"></a><span class='hs-comment'>-- independently from all other samples.</span>
-<a name="line-94"></a><span class='hs-comment'>--</span>
-<a name="line-95"></a><span class='hs-comment'>-- Not super useful, since you can do something equivalent with 'constC'</span>
-<a name="line-96"></a><span class='hs-comment'>-- or the numeric instances:</span>
-<a name="line-97"></a><span class='hs-comment'>--</span>
-<a name="line-98"></a><span class='hs-comment'>-- @</span>
-<a name="line-99"></a><span class='hs-comment'>-- sampleExact x  ≡ return ('constC' x)</span>
-<a name="line-100"></a><span class='hs-comment'>-- sampleExact 10 ≡ return 10</span>
-<a name="line-101"></a><span class='hs-comment'>-- @</span>
-<a name="line-102"></a><span class='hs-comment'>--</span>
-<a name="line-103"></a><span class='hs-comment'>-- But is provided for completeness alongside 'sampleUncert'.</span>
-<a name="line-104"></a><span class='hs-definition'>sampleExact</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Double</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>IO</span> <span class='hs-conid'>CVarIO</span>
-<a name="line-105"></a><span class='hs-definition'>sampleExact</span> <span class='hs-varid'>d</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>runCorrIO</span> <span class='hs-varop'>$</span> <span class='hs-conid'>C</span><span class='hs-varop'>.</span><span class='hs-varid'>sampleExact</span> <span class='hs-varid'>d</span>
-<a name="line-106"></a>
-<a name="line-107"></a><a name="resolveUncert"></a><span class='hs-comment'>-- | "Resolve" an 'Uncert' from a 'CVarIO' using its potential multiple</span>
-<a name="line-108"></a><span class='hs-comment'>-- samples and sample sources, taking into account inter-correlations</span>
-<a name="line-109"></a><span class='hs-comment'>-- between 'CVarIO's and samples.</span>
-<a name="line-110"></a><span class='hs-comment'>--</span>
-<a name="line-111"></a><span class='hs-comment'>-- Note that if you use 'sampleUncert' on the result, the new sample will</span>
-<a name="line-112"></a><span class='hs-comment'>-- be treated as something completely independent.  Usually this should</span>
-<a name="line-113"></a><span class='hs-comment'>-- only be used as the "final value" of your computation or exploration.</span>
-<a name="line-114"></a><span class='hs-definition'>resolveUncert</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>CVarIO</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>IO</span> <span class='hs-layout'>(</span><span class='hs-conid'>Uncert</span> <span class='hs-conid'>Double</span><span class='hs-layout'>)</span>
-<a name="line-115"></a><span class='hs-definition'>resolveUncert</span> <span class='hs-varid'>v</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>runCorrIO</span> <span class='hs-varop'>$</span> <span class='hs-conid'>C</span><span class='hs-varop'>.</span><span class='hs-varid'>resolveUncert</span> <span class='hs-varid'>v</span>
+<a name="line-86"></a><span class='hs-comment'>{-# INLINE runCorrIO #-}</span>
+<a name="line-87"></a>
+<a name="line-88"></a><a name="sampleUncert"></a><span class='hs-comment'>-- | Generate a sample in 'IO' from an @'Uncert' 'Double'@ value,</span>
+<a name="line-89"></a><span class='hs-comment'>-- independently from all other samples.</span>
+<a name="line-90"></a><span class='hs-definition'>sampleUncert</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Uncert</span> <span class='hs-conid'>Double</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>IO</span> <span class='hs-conid'>CVarIO</span>
+<a name="line-91"></a><span class='hs-definition'>sampleUncert</span> <span class='hs-varid'>u</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>runCorrIO</span> <span class='hs-varop'>$</span> <span class='hs-conid'>C</span><span class='hs-varop'>.</span><span class='hs-varid'>sampleUncert</span> <span class='hs-varid'>u</span>
+<a name="line-92"></a><span class='hs-comment'>{-# INLINABLE sampleUncert #-}</span>
+<a name="line-93"></a>
+<a name="line-94"></a><a name="sampleExact"></a><span class='hs-comment'>-- | Generate an exact sample in 'IO' with zero uncertainty,</span>
+<a name="line-95"></a><span class='hs-comment'>-- independently from all other samples.</span>
+<a name="line-96"></a><span class='hs-comment'>--</span>
+<a name="line-97"></a><span class='hs-comment'>-- Not super useful, since you can do something equivalent with 'constC'</span>
+<a name="line-98"></a><span class='hs-comment'>-- or the numeric instances:</span>
+<a name="line-99"></a><span class='hs-comment'>--</span>
+<a name="line-100"></a><span class='hs-comment'>-- @</span>
+<a name="line-101"></a><span class='hs-comment'>-- sampleExact x  ≡ return ('constC' x)</span>
+<a name="line-102"></a><span class='hs-comment'>-- sampleExact 10 ≡ return 10</span>
+<a name="line-103"></a><span class='hs-comment'>-- @</span>
+<a name="line-104"></a><span class='hs-comment'>--</span>
+<a name="line-105"></a><span class='hs-comment'>-- But is provided for completeness alongside 'sampleUncert'.</span>
+<a name="line-106"></a><span class='hs-definition'>sampleExact</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Double</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>IO</span> <span class='hs-conid'>CVarIO</span>
+<a name="line-107"></a><span class='hs-definition'>sampleExact</span> <span class='hs-varid'>d</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>runCorrIO</span> <span class='hs-varop'>$</span> <span class='hs-conid'>C</span><span class='hs-varop'>.</span><span class='hs-varid'>sampleExact</span> <span class='hs-varid'>d</span>
+<a name="line-108"></a><span class='hs-comment'>{-# INLINABLE sampleExact #-}</span>
+<a name="line-109"></a>
+<a name="line-110"></a><a name="resolveUncert"></a><span class='hs-comment'>-- | "Resolve" an 'Uncert' from a 'CVarIO' using its potential multiple</span>
+<a name="line-111"></a><span class='hs-comment'>-- samples and sample sources, taking into account inter-correlations</span>
+<a name="line-112"></a><span class='hs-comment'>-- between 'CVarIO's and samples.</span>
+<a name="line-113"></a><span class='hs-comment'>--</span>
+<a name="line-114"></a><span class='hs-comment'>-- Note that if you use 'sampleUncert' on the result, the new sample will</span>
+<a name="line-115"></a><span class='hs-comment'>-- be treated as something completely independent.  Usually this should</span>
+<a name="line-116"></a><span class='hs-comment'>-- only be used as the "final value" of your computation or exploration.</span>
+<a name="line-117"></a><span class='hs-definition'>resolveUncert</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>CVarIO</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>IO</span> <span class='hs-layout'>(</span><span class='hs-conid'>Uncert</span> <span class='hs-conid'>Double</span><span class='hs-layout'>)</span>
+<a name="line-118"></a><span class='hs-definition'>resolveUncert</span> <span class='hs-varid'>v</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>runCorrIO</span> <span class='hs-varop'>$</span> <span class='hs-conid'>C</span><span class='hs-varop'>.</span><span class='hs-varid'>resolveUncert</span> <span class='hs-varid'>v</span>
+<a name="line-119"></a><span class='hs-comment'>{-# INLINABLE resolveUncert #-}</span>
 </pre></body>
 </html>

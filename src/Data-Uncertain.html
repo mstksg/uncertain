@@ -12,533 +12,613 @@
 <a name="line-3"></a><span class='hs-comment'>{-# LANGUAGE DeriveGeneric       #-}</span>
 <a name="line-4"></a><span class='hs-comment'>{-# LANGUAGE FlexibleContexts    #-}</span>
 <a name="line-5"></a><span class='hs-comment'>{-# LANGUAGE LambdaCase          #-}</span>
-<a name="line-6"></a><span class='hs-comment'>{-# LANGUAGE PatternSynonyms     #-}</span>
-<a name="line-7"></a><span class='hs-comment'>{-# LANGUAGE RankNTypes          #-}</span>
-<a name="line-8"></a><span class='hs-comment'>{-# LANGUAGE ScopedTypeVariables #-}</span>
-<a name="line-9"></a><span class='hs-cpp'>#if __GLASGOW_HASKELL__ &gt;= 708</span>
-<a name="line-10"></a><span class='hs-comment'>{-# LANGUAGE ViewPatterns        #-}</span>
-<a name="line-11"></a><span class='hs-cpp'>#endif</span>
-<a name="line-12"></a>
-<a name="line-13"></a><span class='hs-comment'>-- |</span>
-<a name="line-14"></a><span class='hs-comment'>-- Module      : Data.Uncertain</span>
-<a name="line-15"></a><span class='hs-comment'>-- Copyright   : (c) Justin Le 2016</span>
-<a name="line-16"></a><span class='hs-comment'>-- License     : BSD3</span>
-<a name="line-17"></a><span class='hs-comment'>--</span>
-<a name="line-18"></a><span class='hs-comment'>-- Maintainer  : justin@jle.im</span>
-<a name="line-19"></a><span class='hs-comment'>-- Stability   : experimental</span>
-<a name="line-20"></a><span class='hs-comment'>-- Portability : non-portable</span>
-<a name="line-21"></a><span class='hs-comment'>--</span>
-<a name="line-22"></a>
-<a name="line-23"></a><span class='hs-keyword'>module</span> <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>Uncertain</span>
-<a name="line-24"></a>  <span class='hs-layout'>(</span> <span class='hs-comment'>-- * 'Uncert'</span>
-<a name="line-25"></a>    <span class='hs-conid'>Uncert</span>
-<a name="line-26"></a><span class='hs-cpp'>#if __GLASGOW_HASKELL__ &gt;= 708</span>
-<a name="line-27"></a>  <span class='hs-layout'>,</span> <span class='hs-varid'>pattern</span> <span class='hs-layout'>(</span><span class='hs-conop'>:+/-</span><span class='hs-layout'>)</span>
-<a name="line-28"></a><span class='hs-cpp'>#endif</span>
-<a name="line-29"></a>    <span class='hs-comment'>-- ** Creating 'Uncert' values</span>
-<a name="line-30"></a>  <span class='hs-layout'>,</span> <span class='hs-layout'>(</span><span class='hs-varop'>+/-</span><span class='hs-layout'>)</span><span class='hs-layout'>,</span> <span class='hs-varid'>exact</span><span class='hs-layout'>,</span> <span class='hs-varid'>withPrecision</span><span class='hs-layout'>,</span> <span class='hs-varid'>withPrecisionAtBase</span><span class='hs-layout'>,</span> <span class='hs-varid'>withVar</span><span class='hs-layout'>,</span> <span class='hs-varid'>fromSamples</span>
-<a name="line-31"></a>    <span class='hs-comment'>-- ** Inspecting properties</span>
-<a name="line-32"></a>  <span class='hs-layout'>,</span> <span class='hs-varid'>uMean</span><span class='hs-layout'>,</span> <span class='hs-varid'>uVar</span><span class='hs-layout'>,</span> <span class='hs-varid'>uStd</span><span class='hs-layout'>,</span> <span class='hs-varid'>uMeanVar</span><span class='hs-layout'>,</span> <span class='hs-varid'>uMeanStd</span><span class='hs-layout'>,</span> <span class='hs-varid'>uRange</span>
-<a name="line-33"></a>    <span class='hs-comment'>-- * Applying arbitrary functions</span>
-<a name="line-34"></a>  <span class='hs-layout'>,</span> <span class='hs-varid'>liftU</span>
-<a name="line-35"></a>  <span class='hs-layout'>,</span> <span class='hs-varid'>liftU2</span><span class='hs-layout'>,</span> <span class='hs-varid'>liftU3</span><span class='hs-layout'>,</span> <span class='hs-varid'>liftU4</span><span class='hs-layout'>,</span> <span class='hs-varid'>liftU5</span><span class='hs-layout'>,</span> <span class='hs-varid'>liftUF</span>
-<a name="line-36"></a>    <span class='hs-comment'>-- * Utility functions</span>
-<a name="line-37"></a>  <span class='hs-layout'>,</span> <span class='hs-varid'>uNormalize</span><span class='hs-layout'>,</span> <span class='hs-varid'>uNormalizeAtBase</span>
-<a name="line-38"></a>  <span class='hs-layout'>,</span> <span class='hs-varid'>uShow</span><span class='hs-layout'>,</span> <span class='hs-varid'>uShowsPrec</span>
-<a name="line-39"></a>  <span class='hs-layout'>)</span>
-<a name="line-40"></a>  <span class='hs-keyword'>where</span>
-<a name="line-41"></a>
-<a name="line-42"></a><span class='hs-keyword'>import</span>           <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>Data</span>
-<a name="line-43"></a><span class='hs-keyword'>import</span>           <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>Foldable</span>          <span class='hs-layout'>(</span><span class='hs-varid'>toList</span><span class='hs-layout'>,</span> <span class='hs-varid'>foldl'</span><span class='hs-layout'>)</span>
-<a name="line-44"></a><span class='hs-keyword'>import</span>           <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>Function</span>
-<a name="line-45"></a><span class='hs-keyword'>import</span>           <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>Hople</span>
-<a name="line-46"></a><span class='hs-keyword'>import</span>           <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>Ord</span>
-<a name="line-47"></a><span class='hs-keyword'>import</span>           <span class='hs-conid'>GHC</span><span class='hs-varop'>.</span><span class='hs-conid'>Generics</span>
-<a name="line-48"></a><span class='hs-keyword'>import</span>           <span class='hs-conid'>Numeric</span><span class='hs-varop'>.</span><span class='hs-conid'>AD</span><span class='hs-varop'>.</span><span class='hs-conid'>Mode</span><span class='hs-varop'>.</span><span class='hs-conid'>Sparse</span>
-<a name="line-49"></a><span class='hs-keyword'>import</span> <span class='hs-keyword'>qualified</span> <span class='hs-conid'>Numeric</span><span class='hs-varop'>.</span><span class='hs-conid'>AD</span><span class='hs-varop'>.</span><span class='hs-conid'>Mode</span><span class='hs-varop'>.</span><span class='hs-conid'>Tower</span>  <span class='hs-keyword'>as</span> <span class='hs-conid'>T</span>
-<a name="line-50"></a>
-<a name="line-51"></a><span class='hs-cpp'>#if __GLASGOW_HASKELL__ &lt; 710</span>
-<a name="line-52"></a><span class='hs-keyword'>import</span>           <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>Functor</span>     <span class='hs-layout'>(</span><span class='hs-layout'>(</span><span class='hs-varop'>&lt;$&gt;</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span>
-<a name="line-53"></a><span class='hs-keyword'>import</span>           <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>Traversable</span> <span class='hs-layout'>(</span><span class='hs-conid'>Traversable</span><span class='hs-layout'>)</span>
-<a name="line-54"></a><span class='hs-cpp'>#endif</span>
+<a name="line-6"></a><span class='hs-comment'>{-# LANGUAGE RankNTypes          #-}</span>
+<a name="line-7"></a><span class='hs-comment'>{-# LANGUAGE ScopedTypeVariables #-}</span>
+<a name="line-8"></a><span class='hs-comment'>{-# LANGUAGE ViewPatterns        #-}</span>
+<a name="line-9"></a>
+<a name="line-10"></a><span class='hs-cpp'>#ifndef MIN_VERSION_ad</span>
+<a name="line-11"></a><span class='hs-cpp'>#define MIN_VERSION_mtl(x,y,z) 1</span>
+<a name="line-12"></a><span class='hs-cpp'>#endif</span>
+<a name="line-13"></a>
+<a name="line-14"></a><span class='hs-cpp'>#if __GLASGOW_HASKELL__ &gt;= 708</span>
+<a name="line-15"></a><span class='hs-comment'>{-# LANGUAGE PatternSynonyms     #-}</span>
+<a name="line-16"></a><span class='hs-cpp'>#endif</span>
+<a name="line-17"></a>
+<a name="line-18"></a><span class='hs-comment'>-- |</span>
+<a name="line-19"></a><span class='hs-comment'>-- Module      : Data.Uncertain</span>
+<a name="line-20"></a><span class='hs-comment'>-- Copyright   : (c) Justin Le 2016</span>
+<a name="line-21"></a><span class='hs-comment'>-- License     : BSD3</span>
+<a name="line-22"></a><span class='hs-comment'>--</span>
+<a name="line-23"></a><span class='hs-comment'>-- Maintainer  : justin@jle.im</span>
+<a name="line-24"></a><span class='hs-comment'>-- Stability   : experimental</span>
+<a name="line-25"></a><span class='hs-comment'>-- Portability : non-portable</span>
+<a name="line-26"></a><span class='hs-comment'>--</span>
+<a name="line-27"></a>
+<a name="line-28"></a><span class='hs-keyword'>module</span> <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>Uncertain</span>
+<a name="line-29"></a>  <span class='hs-layout'>(</span> <span class='hs-comment'>-- * 'Uncert'</span>
+<a name="line-30"></a>    <span class='hs-conid'>Uncert</span>
+<a name="line-31"></a><span class='hs-cpp'>#if __GLASGOW_HASKELL__ &gt;= 708</span>
+<a name="line-32"></a>  <span class='hs-layout'>,</span> <span class='hs-varid'>pattern</span> <span class='hs-layout'>(</span><span class='hs-conop'>:+/-</span><span class='hs-layout'>)</span>
+<a name="line-33"></a><span class='hs-cpp'>#endif</span>
+<a name="line-34"></a>    <span class='hs-comment'>-- ** Creating 'Uncert' values</span>
+<a name="line-35"></a>  <span class='hs-layout'>,</span> <span class='hs-layout'>(</span><span class='hs-varop'>+/-</span><span class='hs-layout'>)</span><span class='hs-layout'>,</span> <span class='hs-varid'>exact</span><span class='hs-layout'>,</span> <span class='hs-varid'>withPrecision</span><span class='hs-layout'>,</span> <span class='hs-varid'>withPrecisionAtBase</span><span class='hs-layout'>,</span> <span class='hs-varid'>withVar</span><span class='hs-layout'>,</span> <span class='hs-varid'>fromSamples</span>
+<a name="line-36"></a>    <span class='hs-comment'>-- ** Inspecting properties</span>
+<a name="line-37"></a>  <span class='hs-layout'>,</span> <span class='hs-varid'>uMean</span><span class='hs-layout'>,</span> <span class='hs-varid'>uVar</span><span class='hs-layout'>,</span> <span class='hs-varid'>uStd</span><span class='hs-layout'>,</span> <span class='hs-varid'>uMeanVar</span><span class='hs-layout'>,</span> <span class='hs-varid'>uMeanStd</span><span class='hs-layout'>,</span> <span class='hs-varid'>uRange</span>
+<a name="line-38"></a>    <span class='hs-comment'>-- * Applying arbitrary functions</span>
+<a name="line-39"></a>  <span class='hs-layout'>,</span> <span class='hs-varid'>liftU</span>
+<a name="line-40"></a>  <span class='hs-layout'>,</span> <span class='hs-varid'>liftU2</span><span class='hs-layout'>,</span> <span class='hs-varid'>liftU3</span><span class='hs-layout'>,</span> <span class='hs-varid'>liftU4</span><span class='hs-layout'>,</span> <span class='hs-varid'>liftU5</span><span class='hs-layout'>,</span> <span class='hs-varid'>liftUF</span>
+<a name="line-41"></a>    <span class='hs-comment'>-- * Utility functions</span>
+<a name="line-42"></a>  <span class='hs-layout'>,</span> <span class='hs-varid'>uNormalize</span><span class='hs-layout'>,</span> <span class='hs-varid'>uNormalizeAtBase</span>
+<a name="line-43"></a>  <span class='hs-layout'>,</span> <span class='hs-varid'>uShow</span><span class='hs-layout'>,</span> <span class='hs-varid'>uShowsPrec</span>
+<a name="line-44"></a>  <span class='hs-layout'>)</span>
+<a name="line-45"></a>  <span class='hs-keyword'>where</span>
+<a name="line-46"></a>
+<a name="line-47"></a><span class='hs-keyword'>import</span>           <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>Data</span>
+<a name="line-48"></a><span class='hs-keyword'>import</span>           <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>Foldable</span>          <span class='hs-layout'>(</span><span class='hs-varid'>toList</span><span class='hs-layout'>,</span> <span class='hs-varid'>foldl'</span><span class='hs-layout'>)</span>
+<a name="line-49"></a><span class='hs-keyword'>import</span>           <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>Function</span>
+<a name="line-50"></a><span class='hs-keyword'>import</span>           <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>Hople</span>
+<a name="line-51"></a><span class='hs-keyword'>import</span>           <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>Ord</span>
+<a name="line-52"></a><span class='hs-keyword'>import</span>           <span class='hs-conid'>GHC</span><span class='hs-varop'>.</span><span class='hs-conid'>Generics</span>
+<a name="line-53"></a><span class='hs-keyword'>import</span>           <span class='hs-conid'>Numeric</span><span class='hs-varop'>.</span><span class='hs-conid'>AD</span><span class='hs-varop'>.</span><span class='hs-conid'>Mode</span><span class='hs-varop'>.</span><span class='hs-conid'>Sparse</span>
+<a name="line-54"></a><span class='hs-keyword'>import</span> <span class='hs-keyword'>qualified</span> <span class='hs-conid'>Numeric</span><span class='hs-varop'>.</span><span class='hs-conid'>AD</span><span class='hs-varop'>.</span><span class='hs-conid'>Mode</span><span class='hs-varop'>.</span><span class='hs-conid'>Tower</span>  <span class='hs-keyword'>as</span> <span class='hs-conid'>T</span>
 <a name="line-55"></a>
-<a name="line-56"></a><a name="Uncert"></a><span class='hs-comment'>-- | Represents an independent experimental value centered around a mean</span>
-<a name="line-57"></a><a name="Uncert"></a><span class='hs-comment'>-- value with "inherent" and independent uncertainty.</span>
-<a name="line-58"></a><a name="Uncert"></a><span class='hs-comment'>--</span>
-<a name="line-59"></a><a name="Uncert"></a><span class='hs-comment'>-- Mostly useful due to its instances of numeric typeclasses like `Num`,</span>
-<a name="line-60"></a><a name="Uncert"></a><span class='hs-comment'>-- `Fractional`, etc., which allows you to add and multiply and apply</span>
-<a name="line-61"></a><a name="Uncert"></a><span class='hs-comment'>-- arbitrary numerical functions to them and have the uncertainty</span>
-<a name="line-62"></a><a name="Uncert"></a><span class='hs-comment'>-- propagate appropriately.  You can also lift arbitrary (sufficiently</span>
-<a name="line-63"></a><a name="Uncert"></a><span class='hs-comment'>-- polymorphic) functions with 'liftU', 'liftUF', 'liftU2' and family.</span>
-<a name="line-64"></a><a name="Uncert"></a><span class='hs-comment'>--</span>
-<a name="line-65"></a><a name="Uncert"></a><span class='hs-comment'>-- @</span>
-<a name="line-66"></a><a name="Uncert"></a><span class='hs-comment'>-- ghci&gt; let x = 1.52 '+/-' 0.07</span>
-<a name="line-67"></a><a name="Uncert"></a><span class='hs-comment'>-- ghci&gt; let y = 781.4 +/- 0.3</span>
-<a name="line-68"></a><a name="Uncert"></a><span class='hs-comment'>-- ghci&gt; let z = 1.53e-1 `'withPrecision'` 3</span>
-<a name="line-69"></a><a name="Uncert"></a><span class='hs-comment'>-- ghci&gt; cosh x</span>
-<a name="line-70"></a><a name="Uncert"></a><span class='hs-comment'>-- 2.4 +/- 0.2</span>
-<a name="line-71"></a><a name="Uncert"></a><span class='hs-comment'>-- ghci&gt; exp x / z * sin (y ** z)</span>
-<a name="line-72"></a><a name="Uncert"></a><span class='hs-comment'>-- 10.9 +/- 0.9</span>
-<a name="line-73"></a><a name="Uncert"></a><span class='hs-comment'>-- ghci&gt; pi + 3 * logBase x y</span>
-<a name="line-74"></a><a name="Uncert"></a><span class='hs-comment'>-- 52 +/- 5</span>
-<a name="line-75"></a><a name="Uncert"></a><span class='hs-comment'>-- @</span>
+<a name="line-56"></a><span class='hs-cpp'>#if __GLASGOW_HASKELL__ &lt; 710</span>
+<a name="line-57"></a><span class='hs-keyword'>import</span>           <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>Functor</span>     <span class='hs-layout'>(</span><span class='hs-layout'>(</span><span class='hs-varop'>&lt;$&gt;</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span>
+<a name="line-58"></a><span class='hs-keyword'>import</span>           <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>Traversable</span> <span class='hs-layout'>(</span><span class='hs-conid'>Traversable</span><span class='hs-layout'>)</span>
+<a name="line-59"></a><span class='hs-cpp'>#endif</span>
+<a name="line-60"></a>
+<a name="line-61"></a><span class='hs-cpp'>#if !(MIN_VERSION_ad(4,0,0))</span>
+<a name="line-62"></a><span class='hs-keyword'>import</span>           <span class='hs-conid'>Numeric</span><span class='hs-varop'>.</span><span class='hs-conid'>AD</span><span class='hs-varop'>.</span><span class='hs-conid'>Internal</span><span class='hs-varop'>.</span><span class='hs-conid'>Sparse</span>     <span class='hs-layout'>(</span><span class='hs-conid'>Sparse</span><span class='hs-layout'>)</span>
+<a name="line-63"></a><span class='hs-keyword'>import</span>           <span class='hs-conid'>Numeric</span><span class='hs-varop'>.</span><span class='hs-conid'>AD</span><span class='hs-varop'>.</span><span class='hs-conid'>Types</span>               <span class='hs-layout'>(</span><span class='hs-conid'>AD</span><span class='hs-layout'>)</span>
+<a name="line-64"></a><span class='hs-keyword'>import</span> <span class='hs-keyword'>qualified</span> <span class='hs-conid'>Numeric</span><span class='hs-varop'>.</span><span class='hs-conid'>AD</span><span class='hs-varop'>.</span><span class='hs-conid'>Internal</span><span class='hs-varop'>.</span><span class='hs-conid'>Tower</span> <span class='hs-keyword'>as</span> <span class='hs-conid'>T</span> <span class='hs-layout'>(</span><span class='hs-conid'>Tower</span><span class='hs-layout'>)</span>
+<a name="line-65"></a><span class='hs-cpp'>#endif</span>
+<a name="line-66"></a>
+<a name="line-67"></a>
+<a name="line-68"></a><a name="Uncert"></a><span class='hs-comment'>-- | Represents an independent experimental value centered around a mean</span>
+<a name="line-69"></a><a name="Uncert"></a><span class='hs-comment'>-- value with "inherent" and independent uncertainty.</span>
+<a name="line-70"></a><a name="Uncert"></a><span class='hs-comment'>--</span>
+<a name="line-71"></a><a name="Uncert"></a><span class='hs-comment'>-- Mostly useful due to its instances of numeric typeclasses like `Num`,</span>
+<a name="line-72"></a><a name="Uncert"></a><span class='hs-comment'>-- `Fractional`, etc., which allows you to add and multiply and apply</span>
+<a name="line-73"></a><a name="Uncert"></a><span class='hs-comment'>-- arbitrary numerical functions to them and have the uncertainty</span>
+<a name="line-74"></a><a name="Uncert"></a><span class='hs-comment'>-- propagate appropriately.  You can also lift arbitrary (sufficiently</span>
+<a name="line-75"></a><a name="Uncert"></a><span class='hs-comment'>-- polymorphic) functions with 'liftU', 'liftUF', 'liftU2' and family.</span>
 <a name="line-76"></a><a name="Uncert"></a><span class='hs-comment'>--</span>
-<a name="line-77"></a><a name="Uncert"></a><span class='hs-comment'>-- Uncertaintly is properly propagated according to the second-degree</span>
-<a name="line-78"></a><a name="Uncert"></a><span class='hs-comment'>-- taylor series approximations of the applied functions.  However, if the</span>
-<a name="line-79"></a><a name="Uncert"></a><span class='hs-comment'>-- higher-degree terms are large with respect to to the means and</span>
-<a name="line-80"></a><a name="Uncert"></a><span class='hs-comment'>-- variances of the uncertain values, these approximations may be</span>
-<a name="line-81"></a><a name="Uncert"></a><span class='hs-comment'>-- inaccurate.</span>
-<a name="line-82"></a><a name="Uncert"></a><span class='hs-comment'>--</span>
-<a name="line-83"></a><a name="Uncert"></a><span class='hs-comment'>-- Can be created with 'exact' to represent an "exact" measurement with no</span>
-<a name="line-84"></a><a name="Uncert"></a><span class='hs-comment'>-- uncertainty, '+/-' and ':+/-' to specify a standard deviation as</span>
-<a name="line-85"></a><a name="Uncert"></a><span class='hs-comment'>-- a range, 'withPrecision' to specify through decimal precision, and</span>
-<a name="line-86"></a><a name="Uncert"></a><span class='hs-comment'>-- 'withVar' to specify with a variance.  Can also be inferred from a list</span>
-<a name="line-87"></a><a name="Uncert"></a><span class='hs-comment'>-- of samples with 'fromSamples'</span>
+<a name="line-77"></a><a name="Uncert"></a><span class='hs-comment'>-- @</span>
+<a name="line-78"></a><a name="Uncert"></a><span class='hs-comment'>-- ghci&gt; let x = 1.52 '+/-' 0.07</span>
+<a name="line-79"></a><a name="Uncert"></a><span class='hs-comment'>-- ghci&gt; let y = 781.4 +/- 0.3</span>
+<a name="line-80"></a><a name="Uncert"></a><span class='hs-comment'>-- ghci&gt; let z = 1.53e-1 `'withPrecision'` 3</span>
+<a name="line-81"></a><a name="Uncert"></a><span class='hs-comment'>-- ghci&gt; cosh x</span>
+<a name="line-82"></a><a name="Uncert"></a><span class='hs-comment'>-- 2.4 +/- 0.2</span>
+<a name="line-83"></a><a name="Uncert"></a><span class='hs-comment'>-- ghci&gt; exp x / z * sin (y ** z)</span>
+<a name="line-84"></a><a name="Uncert"></a><span class='hs-comment'>-- 10.9 +/- 0.9</span>
+<a name="line-85"></a><a name="Uncert"></a><span class='hs-comment'>-- ghci&gt; pi + 3 * logBase x y</span>
+<a name="line-86"></a><a name="Uncert"></a><span class='hs-comment'>-- 52 +/- 5</span>
+<a name="line-87"></a><a name="Uncert"></a><span class='hs-comment'>-- @</span>
 <a name="line-88"></a><a name="Uncert"></a><span class='hs-comment'>--</span>
-<a name="line-89"></a><a name="Uncert"></a><span class='hs-comment'>-- @</span>
-<a name="line-90"></a><a name="Uncert"></a><span class='hs-comment'>-- 7.13 '+/-' 0.05</span>
-<a name="line-91"></a><a name="Uncert"></a><span class='hs-comment'>-- 91800 +/- 100</span>
-<a name="line-92"></a><a name="Uncert"></a><span class='hs-comment'>-- 12.5 `'withVar'` 0.36</span>
-<a name="line-93"></a><a name="Uncert"></a><span class='hs-comment'>-- 'exact' 7.9512</span>
-<a name="line-94"></a><a name="Uncert"></a><span class='hs-comment'>-- 81.42 `'withPrecision'` 4</span>
-<a name="line-95"></a><a name="Uncert"></a><span class='hs-comment'>-- 7    :: Uncertain Double</span>
-<a name="line-96"></a><a name="Uncert"></a><span class='hs-comment'>-- 9.18 :: Uncertain Double</span>
-<a name="line-97"></a><a name="Uncert"></a><span class='hs-comment'>-- 'fromSamples' [12.5, 12.7, 12.6, 12.6, 12.5]</span>
-<a name="line-98"></a><a name="Uncert"></a><span class='hs-comment'>-- @</span>
-<a name="line-99"></a><a name="Uncert"></a><span class='hs-comment'>--</span>
-<a name="line-100"></a><a name="Uncert"></a><span class='hs-comment'>-- Can be deconstructed with ':+/-', the pattern synonym/pseudo-constructor</span>
-<a name="line-101"></a><a name="Uncert"></a><span class='hs-comment'>-- which matches on the mean and a standard deviation (supported on GHC</span>
-<a name="line-102"></a><a name="Uncert"></a><span class='hs-comment'>-- 7.8+, with bidirectional constructor functionality supported on GHC</span>
-<a name="line-103"></a><a name="Uncert"></a><span class='hs-comment'>-- 7.10+).  You can also access properties with 'uMean', 'uStd', 'uVar',</span>
-<a name="line-104"></a><a name="Uncert"></a><span class='hs-comment'>-- 'uMeanStd', 'uMeanVar', 'uRange', etc.</span>
-<a name="line-105"></a><a name="Uncert"></a><span class='hs-comment'>--</span>
-<a name="line-106"></a><a name="Uncert"></a><span class='hs-comment'>-- It's important to remember that each "occurrence" represents a unique</span>
-<a name="line-107"></a><a name="Uncert"></a><span class='hs-comment'>-- independent sample, so:</span>
-<a name="line-108"></a><a name="Uncert"></a><span class='hs-comment'>--</span>
-<a name="line-109"></a><a name="Uncert"></a><span class='hs-comment'>-- @</span>
-<a name="line-110"></a><a name="Uncert"></a><span class='hs-comment'>-- ghci&gt; let x = 15 '+/-' 2 in x + x</span>
-<a name="line-111"></a><a name="Uncert"></a><span class='hs-comment'>-- 30 +/- 3</span>
-<a name="line-112"></a><a name="Uncert"></a><span class='hs-comment'>--</span>
-<a name="line-113"></a><a name="Uncert"></a><span class='hs-comment'>-- ghci&gt; let x = 15 +/- 2 in x*2</span>
-<a name="line-114"></a><a name="Uncert"></a><span class='hs-comment'>-- 30 +/- 4</span>
-<a name="line-115"></a><a name="Uncert"></a><span class='hs-comment'>-- @</span>
-<a name="line-116"></a><a name="Uncert"></a><span class='hs-comment'>--</span>
-<a name="line-117"></a><a name="Uncert"></a><span class='hs-comment'>-- @x + x@ does not represent adding the same sample to itself twice, it</span>
-<a name="line-118"></a><a name="Uncert"></a><span class='hs-comment'>-- represents /independently/ sampling two values within the range @15 +/- 2@</span>
-<a name="line-119"></a><a name="Uncert"></a><span class='hs-comment'>-- and adding them together.  In general, errors and deviations will cancel</span>
-<a name="line-120"></a><a name="Uncert"></a><span class='hs-comment'>-- each-other out, leading to a smaller uncertainty.</span>
-<a name="line-121"></a><a name="Uncert"></a><span class='hs-comment'>--</span>
-<a name="line-122"></a><a name="Uncert"></a><span class='hs-comment'>-- However, @x*2@ represents taking /one/ sample and multiplying it by two.</span>
-<a name="line-123"></a><a name="Uncert"></a><span class='hs-comment'>-- This yields a greater uncertainty, because errors and deviations are</span>
-<a name="line-124"></a><a name="Uncert"></a><span class='hs-comment'>-- amplified.</span>
-<a name="line-125"></a><a name="Uncert"></a><span class='hs-comment'>--</span>
-<a name="line-126"></a><a name="Uncert"></a><span class='hs-comment'>-- Also be aware that the 'Show' instance "normalizes" the result, and</span>
-<a name="line-127"></a><a name="Uncert"></a><span class='hs-comment'>-- won't show any mean/central point to a decimal precision smaller than</span>
-<a name="line-128"></a><a name="Uncert"></a><span class='hs-comment'>-- the uncertainty, rounding off the excess.</span>
-<a name="line-129"></a><a name="Uncert"></a><span class='hs-comment'>--</span>
-<a name="line-130"></a><a name="Uncert"></a><span class='hs-keyword'>data</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Un</span> <span class='hs-layout'>{</span> <span class='hs-sel'>_uMean</span> <span class='hs-keyglyph'>::</span> <span class='hs-varop'>!</span><span class='hs-varid'>a</span>
-<a name="line-131"></a>                   <span class='hs-layout'>,</span> <span class='hs-sel'>_uVar</span>  <span class='hs-keyglyph'>::</span> <span class='hs-varop'>!</span><span class='hs-varid'>a</span>    <span class='hs-comment'>-- ^ maintained to be positive!</span>
-<a name="line-132"></a>                   <span class='hs-layout'>}</span>
-<a name="line-133"></a>  <span class='hs-keyword'>deriving</span> <span class='hs-layout'>(</span><span class='hs-conid'>Data</span><span class='hs-layout'>,</span> <span class='hs-conid'>Typeable</span><span class='hs-layout'>,</span> <span class='hs-conid'>Generic</span><span class='hs-layout'>,</span> <span class='hs-conid'>Generic1</span><span class='hs-layout'>)</span>
-<a name="line-134"></a>
-<a name="line-135"></a><a name="uMean"></a><span class='hs-comment'>-- | Get the mean/central value/expected value of an 'Uncert'.</span>
-<a name="line-136"></a><span class='hs-definition'>uMean</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>a</span>
-<a name="line-137"></a><span class='hs-definition'>uMean</span> <span class='hs-keyglyph'>=</span> <span class='hs-sel'>_uMean</span>
-<a name="line-138"></a>
-<a name="line-139"></a><a name="uVar"></a><span class='hs-comment'>-- | Get the /variance/ of the uncertainty of an 'Uncert', proportional to</span>
-<a name="line-140"></a><span class='hs-comment'>-- the square of "how uncertain" a value is.  Is the square of 'uStd'.</span>
-<a name="line-141"></a><span class='hs-definition'>uVar</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>a</span>
-<a name="line-142"></a><span class='hs-definition'>uVar</span> <span class='hs-keyglyph'>=</span> <span class='hs-sel'>_uVar</span>
-<a name="line-143"></a>
-<a name="line-144"></a><a name="uStd"></a><span class='hs-comment'>-- | Get the /standard deviation/ of the uncertainty of an 'Uncert',</span>
-<a name="line-145"></a><span class='hs-comment'>-- proportional to "how uncertain" a value is.</span>
-<a name="line-146"></a><span class='hs-comment'>--</span>
-<a name="line-147"></a><span class='hs-comment'>-- Very informally, it can be thought of as the interval above and below</span>
-<a name="line-148"></a><span class='hs-comment'>-- the mean that about 68% of sampled values will fall under after repeated</span>
-<a name="line-149"></a><span class='hs-comment'>-- sampling, or as the range that one is 68% sure the true value is within.</span>
-<a name="line-150"></a><span class='hs-comment'>--</span>
-<a name="line-151"></a><span class='hs-comment'>-- Is the square root of 'uVar'.</span>
-<a name="line-152"></a><span class='hs-definition'>uStd</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Floating</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>a</span>
-<a name="line-153"></a><span class='hs-definition'>uStd</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>sqrt</span> <span class='hs-varop'>.</span> <span class='hs-varid'>uVar</span>
-<a name="line-154"></a>
-<a name="line-155"></a><a name="exact"></a><span class='hs-comment'>-- | Create an 'Uncert' with an exact value and 0 uncertainty.</span>
-<a name="line-156"></a><span class='hs-definition'>exact</span>
-<a name="line-157"></a>    <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Num</span> <span class='hs-varid'>a</span>
-<a name="line-158"></a>    <span class='hs-keyglyph'>=&gt;</span> <span class='hs-varid'>a</span>            <span class='hs-comment'>-- ^ The exact value</span>
-<a name="line-159"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
-<a name="line-160"></a><span class='hs-definition'>exact</span> <span class='hs-varid'>x</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Un</span> <span class='hs-varid'>x</span> <span class='hs-num'>0</span>
-<a name="line-161"></a>
-<a name="line-162"></a><span class='hs-keyword'>infixl</span> <span class='hs-num'>6</span> <span class='hs-varop'>+/-</span>
-<a name="line-163"></a><span class='hs-keyword'>infixl</span> <span class='hs-num'>6</span> <span class='hs-conop'>:+/-</span>
-<a name="line-164"></a>
-<a name="line-165"></a><a name="+/-"></a><span class='hs-comment'>-- | Create an 'Uncert' around a central value and a given "range" of</span>
-<a name="line-166"></a><span class='hs-comment'>-- uncertainty.  The range is interpreted as the standard deviation of the</span>
-<a name="line-167"></a><span class='hs-comment'>-- underlying random variable.  Might be preferrable over ':+/-' because it</span>
-<a name="line-168"></a><span class='hs-comment'>-- is more general (doesn't require a 'Floating' constraint) and looks</span>
-<a name="line-169"></a><span class='hs-comment'>-- a bit nicer.</span>
-<a name="line-170"></a><span class='hs-comment'>--</span>
-<a name="line-171"></a><span class='hs-comment'>-- See 'uStd' for more details.</span>
-<a name="line-172"></a><span class='hs-layout'>(</span><span class='hs-varop'>+/-</span><span class='hs-layout'>)</span>
-<a name="line-173"></a>    <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Num</span> <span class='hs-varid'>a</span>
-<a name="line-174"></a>    <span class='hs-keyglyph'>=&gt;</span> <span class='hs-varid'>a</span>            <span class='hs-comment'>-- ^ The mean or central value</span>
-<a name="line-175"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>a</span>            <span class='hs-comment'>-- ^ The standard deviation of the underlying uncertainty</span>
-<a name="line-176"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
-<a name="line-177"></a><a name="x"></a><span class='hs-definition'>x</span> <span class='hs-varop'>+/-</span> <span class='hs-varid'>dx</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Un</span> <span class='hs-varid'>x</span> <span class='hs-layout'>(</span><span class='hs-varid'>dx</span><span class='hs-varop'>*</span><span class='hs-varid'>dx</span><span class='hs-layout'>)</span>
-<a name="line-178"></a>
-<a name="line-179"></a><a name="withVar"></a><span class='hs-comment'>-- | Create an 'Uncert' around a central value, specifying its uncertainty</span>
-<a name="line-180"></a><span class='hs-comment'>-- with a given /variance/.  The variance is taken to be proportional to</span>
-<a name="line-181"></a><span class='hs-comment'>-- the square of the range of uncertainty.  See 'uStd' for more details.</span>
-<a name="line-182"></a><span class='hs-comment'>--</span>
-<a name="line-183"></a><span class='hs-comment'>-- "Negative variances" are treated as positive.</span>
-<a name="line-184"></a><span class='hs-definition'>withVar</span>
-<a name="line-185"></a>    <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Num</span> <span class='hs-varid'>a</span>
-<a name="line-186"></a>    <span class='hs-keyglyph'>=&gt;</span> <span class='hs-varid'>a</span>            <span class='hs-comment'>-- ^ The mean or central value</span>
-<a name="line-187"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>a</span>            <span class='hs-comment'>-- ^ The variance of the underlying uncertainty</span>
-<a name="line-188"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
-<a name="line-189"></a><span class='hs-definition'>withVar</span> <span class='hs-varid'>x</span> <span class='hs-varid'>vx</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Un</span> <span class='hs-varid'>x</span> <span class='hs-layout'>(</span><span class='hs-varid'>abs</span> <span class='hs-varid'>vx</span><span class='hs-layout'>)</span>
-<a name="line-190"></a>
-<a name="line-191"></a><span class='hs-cpp'>#if __GLASGOW_HASKELL__ &gt;= 708</span>
-<a name="line-192"></a><span class='hs-comment'>-- | Pattern match on an 'Uncert' with its central value and its standard</span>
-<a name="line-193"></a><span class='hs-comment'>-- deviation (see 'uStd' for clarification).</span>
-<a name="line-194"></a><span class='hs-comment'>--</span>
-<a name="line-195"></a><span class='hs-comment'>-- Can also be used to /construct/ an 'Uncert', identically as '+/-'.</span>
-<a name="line-196"></a><span class='hs-comment'>--</span>
-<a name="line-197"></a><span class='hs-comment'>-- /Note:/ Only supported on GHC 7.8 and above.  Bidirectional</span>
-<a name="line-198"></a><span class='hs-comment'>-- functionality (to allow use as a constructor) only supported on GHC</span>
-<a name="line-199"></a><span class='hs-comment'>-- 7.10 and above.</span>
-<a name="line-200"></a><span class='hs-comment'>--</span>
-<a name="line-201"></a><span class='hs-cpp'>#if __GLASGOW_HASKELL__ &gt;= 710</span>
-<a name="line-202"></a><a name="pattern"></a><span class='hs-definition'>pattern</span> <span class='hs-layout'>(</span><span class='hs-conop'>:+/-</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>()</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-conid'>Floating</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
-<a name="line-203"></a><span class='hs-cpp'>#endif</span>
-<a name="line-204"></a><span class='hs-definition'>pattern</span> <span class='hs-varid'>x</span> <span class='hs-conop'>:+/-</span> <span class='hs-varid'>dx</span> <span class='hs-keyglyph'>&lt;-</span> <span class='hs-conid'>Un</span> <span class='hs-varid'>x</span> <span class='hs-layout'>(</span><span class='hs-varid'>sqrt</span><span class='hs-keyglyph'>-&gt;</span><span class='hs-varid'>dx</span><span class='hs-layout'>)</span>
-<a name="line-205"></a><span class='hs-cpp'>#if __GLASGOW_HASKELL__ &gt;= 710</span>
-<a name="line-206"></a>  <span class='hs-keyword'>where</span>
-<a name="line-207"></a>    <span class='hs-varid'>x</span> <span class='hs-conop'>:+/-</span> <span class='hs-varid'>dx</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Un</span> <span class='hs-varid'>x</span> <span class='hs-layout'>(</span><span class='hs-varid'>dx</span><span class='hs-varop'>*</span><span class='hs-varid'>dx</span><span class='hs-layout'>)</span>
-<a name="line-208"></a><span class='hs-cpp'>#endif</span>
-<a name="line-209"></a><span class='hs-cpp'>#endif</span>
+<a name="line-89"></a><a name="Uncert"></a><span class='hs-comment'>-- Uncertaintly is properly propagated according to the second-degree</span>
+<a name="line-90"></a><a name="Uncert"></a><span class='hs-comment'>-- taylor series approximations of the applied functions.  However, if the</span>
+<a name="line-91"></a><a name="Uncert"></a><span class='hs-comment'>-- higher-degree terms are large with respect to to the means and</span>
+<a name="line-92"></a><a name="Uncert"></a><span class='hs-comment'>-- variances of the uncertain values, these approximations may be</span>
+<a name="line-93"></a><a name="Uncert"></a><span class='hs-comment'>-- inaccurate.</span>
+<a name="line-94"></a><a name="Uncert"></a><span class='hs-comment'>--</span>
+<a name="line-95"></a><a name="Uncert"></a><span class='hs-comment'>-- Can be created with 'exact' to represent an "exact" measurement with no</span>
+<a name="line-96"></a><a name="Uncert"></a><span class='hs-comment'>-- uncertainty, '+/-' and ':+/-' to specify a standard deviation as</span>
+<a name="line-97"></a><a name="Uncert"></a><span class='hs-comment'>-- a range, 'withPrecision' to specify through decimal precision, and</span>
+<a name="line-98"></a><a name="Uncert"></a><span class='hs-comment'>-- 'withVar' to specify with a variance.  Can also be inferred from a list</span>
+<a name="line-99"></a><a name="Uncert"></a><span class='hs-comment'>-- of samples with 'fromSamples'</span>
+<a name="line-100"></a><a name="Uncert"></a><span class='hs-comment'>--</span>
+<a name="line-101"></a><a name="Uncert"></a><span class='hs-comment'>-- @</span>
+<a name="line-102"></a><a name="Uncert"></a><span class='hs-comment'>-- 7.13 '+/-' 0.05</span>
+<a name="line-103"></a><a name="Uncert"></a><span class='hs-comment'>-- 91800 +/- 100</span>
+<a name="line-104"></a><a name="Uncert"></a><span class='hs-comment'>-- 12.5 `'withVar'` 0.36</span>
+<a name="line-105"></a><a name="Uncert"></a><span class='hs-comment'>-- 'exact' 7.9512</span>
+<a name="line-106"></a><a name="Uncert"></a><span class='hs-comment'>-- 81.42 `'withPrecision'` 4</span>
+<a name="line-107"></a><a name="Uncert"></a><span class='hs-comment'>-- 7    :: Uncertain Double</span>
+<a name="line-108"></a><a name="Uncert"></a><span class='hs-comment'>-- 9.18 :: Uncertain Double</span>
+<a name="line-109"></a><a name="Uncert"></a><span class='hs-comment'>-- 'fromSamples' [12.5, 12.7, 12.6, 12.6, 12.5]</span>
+<a name="line-110"></a><a name="Uncert"></a><span class='hs-comment'>-- @</span>
+<a name="line-111"></a><a name="Uncert"></a><span class='hs-comment'>--</span>
+<a name="line-112"></a><a name="Uncert"></a><span class='hs-comment'>-- Can be deconstructed with ':+/-', the pattern synonym/pseudo-constructor</span>
+<a name="line-113"></a><a name="Uncert"></a><span class='hs-comment'>-- which matches on the mean and a standard deviation (supported on GHC</span>
+<a name="line-114"></a><a name="Uncert"></a><span class='hs-comment'>-- 7.8+, with bidirectional constructor functionality supported on GHC</span>
+<a name="line-115"></a><a name="Uncert"></a><span class='hs-comment'>-- 7.10+).  You can also access properties with 'uMean', 'uStd', 'uVar',</span>
+<a name="line-116"></a><a name="Uncert"></a><span class='hs-comment'>-- 'uMeanStd', 'uMeanVar', 'uRange', etc.</span>
+<a name="line-117"></a><a name="Uncert"></a><span class='hs-comment'>--</span>
+<a name="line-118"></a><a name="Uncert"></a><span class='hs-comment'>-- It's important to remember that each "occurrence" represents a unique</span>
+<a name="line-119"></a><a name="Uncert"></a><span class='hs-comment'>-- independent sample, so:</span>
+<a name="line-120"></a><a name="Uncert"></a><span class='hs-comment'>--</span>
+<a name="line-121"></a><a name="Uncert"></a><span class='hs-comment'>-- @</span>
+<a name="line-122"></a><a name="Uncert"></a><span class='hs-comment'>-- ghci&gt; let x = 15 '+/-' 2 in x + x</span>
+<a name="line-123"></a><a name="Uncert"></a><span class='hs-comment'>-- 30 +/- 3</span>
+<a name="line-124"></a><a name="Uncert"></a><span class='hs-comment'>--</span>
+<a name="line-125"></a><a name="Uncert"></a><span class='hs-comment'>-- ghci&gt; let x = 15 +/- 2 in x*2</span>
+<a name="line-126"></a><a name="Uncert"></a><span class='hs-comment'>-- 30 +/- 4</span>
+<a name="line-127"></a><a name="Uncert"></a><span class='hs-comment'>-- @</span>
+<a name="line-128"></a><a name="Uncert"></a><span class='hs-comment'>--</span>
+<a name="line-129"></a><a name="Uncert"></a><span class='hs-comment'>-- @x + x@ does not represent adding the same sample to itself twice, it</span>
+<a name="line-130"></a><a name="Uncert"></a><span class='hs-comment'>-- represents /independently/ sampling two values within the range @15 +/- 2@</span>
+<a name="line-131"></a><a name="Uncert"></a><span class='hs-comment'>-- and adding them together.  In general, errors and deviations will cancel</span>
+<a name="line-132"></a><a name="Uncert"></a><span class='hs-comment'>-- each-other out, leading to a smaller uncertainty.</span>
+<a name="line-133"></a><a name="Uncert"></a><span class='hs-comment'>--</span>
+<a name="line-134"></a><a name="Uncert"></a><span class='hs-comment'>-- However, @x*2@ represents taking /one/ sample and multiplying it by two.</span>
+<a name="line-135"></a><a name="Uncert"></a><span class='hs-comment'>-- This yields a greater uncertainty, because errors and deviations are</span>
+<a name="line-136"></a><a name="Uncert"></a><span class='hs-comment'>-- amplified.</span>
+<a name="line-137"></a><a name="Uncert"></a><span class='hs-comment'>--</span>
+<a name="line-138"></a><a name="Uncert"></a><span class='hs-comment'>-- Also be aware that the 'Show' instance "normalizes" the result, and</span>
+<a name="line-139"></a><a name="Uncert"></a><span class='hs-comment'>-- won't show any mean/central point to a decimal precision smaller than</span>
+<a name="line-140"></a><a name="Uncert"></a><span class='hs-comment'>-- the uncertainty, rounding off the excess.</span>
+<a name="line-141"></a><a name="Uncert"></a><span class='hs-comment'>--</span>
+<a name="line-142"></a><a name="Uncert"></a><span class='hs-keyword'>data</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Un</span> <span class='hs-layout'>{</span> <span class='hs-sel'>_uMean</span> <span class='hs-keyglyph'>::</span> <span class='hs-varop'>!</span><span class='hs-varid'>a</span>
+<a name="line-143"></a>                   <span class='hs-layout'>,</span> <span class='hs-sel'>_uVar</span>  <span class='hs-keyglyph'>::</span> <span class='hs-varop'>!</span><span class='hs-varid'>a</span>    <span class='hs-comment'>-- ^ maintained to be positive!</span>
+<a name="line-144"></a>                   <span class='hs-layout'>}</span>
+<a name="line-145"></a>  <span class='hs-keyword'>deriving</span> <span class='hs-layout'>(</span><span class='hs-conid'>Data</span><span class='hs-layout'>,</span> <span class='hs-conid'>Typeable</span><span class='hs-layout'>,</span> <span class='hs-conid'>Generic</span><span class='hs-layout'>,</span> <span class='hs-conid'>Generic1</span><span class='hs-layout'>)</span>
+<a name="line-146"></a>
+<a name="line-147"></a><a name="uMean"></a><span class='hs-comment'>-- | Get the mean/central value/expected value of an 'Uncert'.</span>
+<a name="line-148"></a><span class='hs-definition'>uMean</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>a</span>
+<a name="line-149"></a><span class='hs-definition'>uMean</span> <span class='hs-keyglyph'>=</span> <span class='hs-sel'>_uMean</span>
+<a name="line-150"></a><span class='hs-comment'>{-# INLINE uMean #-}</span>
+<a name="line-151"></a>
+<a name="line-152"></a><a name="uVar"></a><span class='hs-comment'>-- | Get the /variance/ of the uncertainty of an 'Uncert', proportional to</span>
+<a name="line-153"></a><span class='hs-comment'>-- the square of "how uncertain" a value is.  Is the square of 'uStd'.</span>
+<a name="line-154"></a><span class='hs-definition'>uVar</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>a</span>
+<a name="line-155"></a><span class='hs-definition'>uVar</span> <span class='hs-keyglyph'>=</span> <span class='hs-sel'>_uVar</span>
+<a name="line-156"></a><span class='hs-comment'>{-# INLINE uVar #-}</span>
+<a name="line-157"></a>
+<a name="line-158"></a><a name="uStd"></a><span class='hs-comment'>-- | Get the /standard deviation/ of the uncertainty of an 'Uncert',</span>
+<a name="line-159"></a><span class='hs-comment'>-- proportional to "how uncertain" a value is.</span>
+<a name="line-160"></a><span class='hs-comment'>--</span>
+<a name="line-161"></a><span class='hs-comment'>-- Very informally, it can be thought of as the interval above and below</span>
+<a name="line-162"></a><span class='hs-comment'>-- the mean that about 68% of sampled values will fall under after repeated</span>
+<a name="line-163"></a><span class='hs-comment'>-- sampling, or as the range that one is 68% sure the true value is within.</span>
+<a name="line-164"></a><span class='hs-comment'>--</span>
+<a name="line-165"></a><span class='hs-comment'>-- Is the square root of 'uVar'.</span>
+<a name="line-166"></a><span class='hs-definition'>uStd</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Floating</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>a</span>
+<a name="line-167"></a><span class='hs-definition'>uStd</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>sqrt</span> <span class='hs-varop'>.</span> <span class='hs-varid'>uVar</span>
+<a name="line-168"></a><span class='hs-comment'>{-# INLINE uStd #-}</span>
+<a name="line-169"></a>
+<a name="line-170"></a><a name="exact"></a><span class='hs-comment'>-- | Create an 'Uncert' with an exact value and 0 uncertainty.</span>
+<a name="line-171"></a><span class='hs-definition'>exact</span>
+<a name="line-172"></a>    <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Num</span> <span class='hs-varid'>a</span>
+<a name="line-173"></a>    <span class='hs-keyglyph'>=&gt;</span> <span class='hs-varid'>a</span>            <span class='hs-comment'>-- ^ The exact value</span>
+<a name="line-174"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
+<a name="line-175"></a><span class='hs-definition'>exact</span> <span class='hs-varid'>x</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Un</span> <span class='hs-varid'>x</span> <span class='hs-num'>0</span>
+<a name="line-176"></a><span class='hs-comment'>{-# INLINE exact #-}</span>
+<a name="line-177"></a>
+<a name="line-178"></a><span class='hs-keyword'>infixl</span> <span class='hs-num'>6</span> <span class='hs-varop'>+/-</span>
+<a name="line-179"></a><span class='hs-cpp'>#if __GLASGOW_HASKELL__ &gt;= 708</span>
+<a name="line-180"></a><span class='hs-keyword'>infixl</span> <span class='hs-num'>6</span> <span class='hs-conop'>:+/-</span>
+<a name="line-181"></a><span class='hs-cpp'>#endif</span>
+<a name="line-182"></a>
+<a name="line-183"></a><a name="+/-"></a><span class='hs-comment'>-- | Create an 'Uncert' around a central value and a given "range" of</span>
+<a name="line-184"></a><span class='hs-comment'>-- uncertainty.  The range is interpreted as the standard deviation of the</span>
+<a name="line-185"></a><span class='hs-comment'>-- underlying random variable.  Might be preferrable over ':+/-' because it</span>
+<a name="line-186"></a><span class='hs-comment'>-- is more general (doesn't require a 'Floating' constraint) and looks</span>
+<a name="line-187"></a><span class='hs-comment'>-- a bit nicer.</span>
+<a name="line-188"></a><span class='hs-comment'>--</span>
+<a name="line-189"></a><span class='hs-comment'>-- See 'uStd' for more details.</span>
+<a name="line-190"></a><span class='hs-layout'>(</span><span class='hs-varop'>+/-</span><span class='hs-layout'>)</span>
+<a name="line-191"></a>    <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Num</span> <span class='hs-varid'>a</span>
+<a name="line-192"></a>    <span class='hs-keyglyph'>=&gt;</span> <span class='hs-varid'>a</span>            <span class='hs-comment'>-- ^ The mean or central value</span>
+<a name="line-193"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>a</span>            <span class='hs-comment'>-- ^ The standard deviation of the underlying uncertainty</span>
+<a name="line-194"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
+<a name="line-195"></a><a name="x"></a><span class='hs-definition'>x</span> <span class='hs-varop'>+/-</span> <span class='hs-varid'>dx</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Un</span> <span class='hs-varid'>x</span> <span class='hs-layout'>(</span><span class='hs-varid'>dx</span><span class='hs-varop'>*</span><span class='hs-varid'>dx</span><span class='hs-layout'>)</span>
+<a name="line-196"></a><span class='hs-comment'>{-# INLINE (+/-) #-}</span>
+<a name="line-197"></a>
+<a name="line-198"></a><a name="withVar"></a><span class='hs-comment'>-- | Create an 'Uncert' around a central value, specifying its uncertainty</span>
+<a name="line-199"></a><span class='hs-comment'>-- with a given /variance/.  The variance is taken to be proportional to</span>
+<a name="line-200"></a><span class='hs-comment'>-- the square of the range of uncertainty.  See 'uStd' for more details.</span>
+<a name="line-201"></a><span class='hs-comment'>--</span>
+<a name="line-202"></a><span class='hs-comment'>-- "Negative variances" are treated as positive.</span>
+<a name="line-203"></a><span class='hs-definition'>withVar</span>
+<a name="line-204"></a>    <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Num</span> <span class='hs-varid'>a</span>
+<a name="line-205"></a>    <span class='hs-keyglyph'>=&gt;</span> <span class='hs-varid'>a</span>            <span class='hs-comment'>-- ^ The mean or central value</span>
+<a name="line-206"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>a</span>            <span class='hs-comment'>-- ^ The variance of the underlying uncertainty</span>
+<a name="line-207"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
+<a name="line-208"></a><span class='hs-definition'>withVar</span> <span class='hs-varid'>x</span> <span class='hs-varid'>vx</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Un</span> <span class='hs-varid'>x</span> <span class='hs-layout'>(</span><span class='hs-varid'>abs</span> <span class='hs-varid'>vx</span><span class='hs-layout'>)</span>
+<a name="line-209"></a><span class='hs-comment'>{-# INLINE withVar #-}</span>
 <a name="line-210"></a>
-<a name="line-211"></a><a name="fromSamples"></a><span class='hs-comment'>-- | Infer an 'Uncert' from a given list of independent /samples/ of an</span>
-<a name="line-212"></a><span class='hs-comment'>-- underlying uncertain or random distribution.</span>
-<a name="line-213"></a><span class='hs-definition'>fromSamples</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Fractional</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-keyglyph'>[</span><span class='hs-varid'>a</span><span class='hs-keyglyph'>]</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
-<a name="line-214"></a><span class='hs-definition'>fromSamples</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>makeUn</span> <span class='hs-varop'>.</span> <span class='hs-varid'>foldStats</span>
-<a name="line-215"></a>  <span class='hs-keyword'>where</span>
-<a name="line-216"></a>    <span class='hs-varid'>makeUn</span> <span class='hs-layout'>(</span><span class='hs-conid'>H3</span> <span class='hs-varid'>x0</span> <span class='hs-varid'>x1</span> <span class='hs-varid'>x2</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Un</span> <span class='hs-varid'>μ</span> <span class='hs-varid'>v</span>
-<a name="line-217"></a>      <span class='hs-keyword'>where</span>
-<a name="line-218"></a>        <span class='hs-varid'>μ</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>x1</span><span class='hs-varop'>/</span><span class='hs-varid'>x0</span>
-<a name="line-219"></a>        <span class='hs-varid'>v</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>x2</span><span class='hs-varop'>/</span><span class='hs-varid'>x0</span> <span class='hs-comment'>-</span> <span class='hs-varid'>μ</span><span class='hs-varop'>*</span><span class='hs-varid'>μ</span>     <span class='hs-comment'>-- maybe use pop var?</span>
-<a name="line-220"></a>    <span class='hs-varid'>foldStats</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>flip</span> <span class='hs-varid'>foldl'</span> <span class='hs-layout'>(</span><span class='hs-conid'>H3</span> <span class='hs-num'>0</span> <span class='hs-num'>0</span> <span class='hs-num'>0</span><span class='hs-layout'>)</span> <span class='hs-varop'>$</span>
-<a name="line-221"></a>                  <span class='hs-keyglyph'>\</span><span class='hs-layout'>(</span><span class='hs-conid'>H3</span> <span class='hs-varid'>s0</span> <span class='hs-varid'>s1</span> <span class='hs-varid'>s2</span><span class='hs-layout'>)</span> <span class='hs-varid'>x</span> <span class='hs-keyglyph'>-&gt;</span>
-<a name="line-222"></a>                    <span class='hs-conid'>H3</span> <span class='hs-layout'>(</span><span class='hs-varid'>s0</span> <span class='hs-varop'>+</span> <span class='hs-num'>1</span><span class='hs-layout'>)</span> <span class='hs-layout'>(</span><span class='hs-varid'>s1</span> <span class='hs-varop'>+</span> <span class='hs-varid'>x</span><span class='hs-layout'>)</span> <span class='hs-layout'>(</span><span class='hs-varid'>s2</span> <span class='hs-varop'>+</span> <span class='hs-varid'>x</span><span class='hs-varop'>*</span><span class='hs-varid'>x</span><span class='hs-layout'>)</span>
-<a name="line-223"></a>
-<a name="line-224"></a><a name="uMeanVar"></a><span class='hs-comment'>-- | Retrieve both the mean (central) value and the underlying variance of</span>
-<a name="line-225"></a><span class='hs-comment'>-- an 'Uncert' together.</span>
-<a name="line-226"></a><span class='hs-comment'>--</span>
-<a name="line-227"></a><span class='hs-comment'>-- @uMeanVar ≡ 'uMean' &amp;&amp;&amp; 'uVar'@</span>
-<a name="line-228"></a><span class='hs-definition'>uMeanVar</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-layout'>(</span><span class='hs-varid'>a</span><span class='hs-layout'>,</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span>
-<a name="line-229"></a><span class='hs-definition'>uMeanVar</span> <span class='hs-layout'>(</span><span class='hs-conid'>Un</span> <span class='hs-varid'>x</span> <span class='hs-varid'>vx</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-layout'>(</span><span class='hs-varid'>x</span><span class='hs-layout'>,</span> <span class='hs-varid'>vx</span><span class='hs-layout'>)</span>
+<a name="line-211"></a><span class='hs-cpp'>#if __GLASGOW_HASKELL__ &gt;= 708</span>
+<a name="line-212"></a><span class='hs-comment'>-- | Pattern match on an 'Uncert' with its central value and its standard</span>
+<a name="line-213"></a><span class='hs-comment'>-- deviation (see 'uStd' for clarification).</span>
+<a name="line-214"></a><span class='hs-comment'>--</span>
+<a name="line-215"></a><span class='hs-comment'>-- Can also be used to /construct/ an 'Uncert', identically as '+/-'.</span>
+<a name="line-216"></a><span class='hs-comment'>--</span>
+<a name="line-217"></a><span class='hs-comment'>-- /Note:/ Only supported on GHC 7.8 and above.  Bidirectional</span>
+<a name="line-218"></a><span class='hs-comment'>-- functionality (to allow use as a constructor) only supported on GHC</span>
+<a name="line-219"></a><span class='hs-comment'>-- 7.10 and above.</span>
+<a name="line-220"></a><span class='hs-comment'>--</span>
+<a name="line-221"></a><span class='hs-cpp'>#if __GLASGOW_HASKELL__ &gt;= 710</span>
+<a name="line-222"></a><a name="pattern"></a><span class='hs-definition'>pattern</span> <span class='hs-layout'>(</span><span class='hs-conop'>:+/-</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>()</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-conid'>Floating</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
+<a name="line-223"></a><span class='hs-cpp'>#endif</span>
+<a name="line-224"></a><span class='hs-definition'>pattern</span> <span class='hs-varid'>x</span> <span class='hs-conop'>:+/-</span> <span class='hs-varid'>dx</span> <span class='hs-keyglyph'>&lt;-</span> <span class='hs-conid'>Un</span> <span class='hs-varid'>x</span> <span class='hs-layout'>(</span><span class='hs-varid'>sqrt</span><span class='hs-keyglyph'>-&gt;</span><span class='hs-varid'>dx</span><span class='hs-layout'>)</span>
+<a name="line-225"></a><span class='hs-cpp'>#if __GLASGOW_HASKELL__ &gt;= 710</span>
+<a name="line-226"></a>  <span class='hs-keyword'>where</span>
+<a name="line-227"></a>    <span class='hs-varid'>x</span> <span class='hs-conop'>:+/-</span> <span class='hs-varid'>dx</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Un</span> <span class='hs-varid'>x</span> <span class='hs-layout'>(</span><span class='hs-varid'>dx</span><span class='hs-varop'>*</span><span class='hs-varid'>dx</span><span class='hs-layout'>)</span>
+<a name="line-228"></a><span class='hs-cpp'>#endif</span>
+<a name="line-229"></a><span class='hs-cpp'>#endif</span>
 <a name="line-230"></a>
-<a name="line-231"></a><a name="uMeanStd"></a><span class='hs-comment'>-- | Retreve both the mean (central) value and the underlying standard</span>
-<a name="line-232"></a><span class='hs-comment'>-- deviation of an 'Uncert' together.  (See 'uStd' for more details)</span>
-<a name="line-233"></a><span class='hs-comment'>--</span>
-<a name="line-234"></a><span class='hs-comment'>-- @uMeanStd ≡ 'uMean' &amp;&amp;&amp; 'uStd'@</span>
-<a name="line-235"></a><span class='hs-definition'>uMeanStd</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Floating</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-layout'>(</span><span class='hs-varid'>a</span><span class='hs-layout'>,</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span>
-<a name="line-236"></a><span class='hs-definition'>uMeanStd</span> <span class='hs-layout'>(</span><span class='hs-conid'>Un</span> <span class='hs-varid'>x</span> <span class='hs-varid'>vx</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-layout'>(</span><span class='hs-varid'>x</span><span class='hs-layout'>,</span> <span class='hs-varid'>sqrt</span> <span class='hs-varid'>vx</span><span class='hs-layout'>)</span>
-<a name="line-237"></a>
-<a name="line-238"></a><a name="uRange"></a><span class='hs-comment'>-- | Retrieve the "range" of the underlying distribution of an 'Uncert',</span>
-<a name="line-239"></a><span class='hs-comment'>-- derived from the standard deviation, where which approximly 68% of</span>
-<a name="line-240"></a><span class='hs-comment'>-- sampled values are expected to occur (or within which you are 68%</span>
-<a name="line-241"></a><span class='hs-comment'>-- certain the true value is).</span>
-<a name="line-242"></a><span class='hs-comment'>--</span>
-<a name="line-243"></a><span class='hs-comment'>-- @uRange (x +/- dx) ≡ (x - dx, x + dx)@</span>
-<a name="line-244"></a><span class='hs-definition'>uRange</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Floating</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-layout'>(</span><span class='hs-varid'>a</span><span class='hs-layout'>,</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span>
-<a name="line-245"></a><span class='hs-definition'>uRange</span> <span class='hs-varid'>u</span> <span class='hs-keyglyph'>=</span> <span class='hs-keyword'>let</span> <span class='hs-varid'>x</span> <span class='hs-conop'>:+/-</span> <span class='hs-varid'>dx</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>u</span>
-<a name="line-246"></a>           <span class='hs-keyword'>in</span>  <span class='hs-layout'>(</span><span class='hs-varid'>x</span> <span class='hs-comment'>-</span> <span class='hs-varid'>dx</span><span class='hs-layout'>,</span> <span class='hs-varid'>x</span> <span class='hs-varop'>+</span> <span class='hs-varid'>dx</span><span class='hs-layout'>)</span>
-<a name="line-247"></a>
-<a name="line-248"></a><a name="withPrecisionAtBase"></a><span class='hs-comment'>-- | Like 'withPrecision', except takes a number of "digits" of precision in</span>
-<a name="line-249"></a><span class='hs-comment'>-- the desired numeric base.  For example, in base 2, takes the number of</span>
-<a name="line-250"></a><span class='hs-comment'>-- /bits/ of precision.</span>
-<a name="line-251"></a><span class='hs-comment'>--</span>
-<a name="line-252"></a><span class='hs-comment'>-- @'withPrecision' ≡ withPrecisionAtBase 10@</span>
-<a name="line-253"></a><span class='hs-definition'>withPrecisionAtBase</span>
-<a name="line-254"></a>    <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-conid'>Floating</span> <span class='hs-varid'>a</span><span class='hs-layout'>,</span> <span class='hs-conid'>RealFrac</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span>
-<a name="line-255"></a>    <span class='hs-keyglyph'>=&gt;</span> <span class='hs-conid'>Int</span>          <span class='hs-comment'>-- ^ The base to determine precision with respect to</span>
-<a name="line-256"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>a</span>            <span class='hs-comment'>-- ^ The approximate value of the 'Uncert'</span>
-<a name="line-257"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Int</span>          <span class='hs-comment'>-- ^ The number of "digits" of precision to take</span>
-<a name="line-258"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
-<a name="line-259"></a><span class='hs-definition'>withPrecisionAtBase</span> <span class='hs-varid'>b</span> <span class='hs-varid'>x</span> <span class='hs-varid'>p</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>x'</span> <span class='hs-varop'>+/-</span> <span class='hs-varid'>dx'</span>
-<a name="line-260"></a>  <span class='hs-keyword'>where</span>
-<a name="line-261"></a>    <span class='hs-varid'>leading</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Int</span>
-<a name="line-262"></a>    <span class='hs-varid'>leading</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>negate</span> <span class='hs-varop'>.</span> <span class='hs-varid'>floor</span> <span class='hs-varop'>.</span> <span class='hs-varid'>logBase</span> <span class='hs-layout'>(</span><span class='hs-varid'>fromIntegral</span> <span class='hs-varid'>b</span><span class='hs-layout'>)</span> <span class='hs-varop'>$</span> <span class='hs-varid'>x</span>
-<a name="line-263"></a>    <span class='hs-varid'>uncert</span>  <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Int</span>
-<a name="line-264"></a>    <span class='hs-varid'>uncert</span>  <span class='hs-keyglyph'>=</span> <span class='hs-varid'>leading</span> <span class='hs-comment'>-</span> <span class='hs-num'>1</span> <span class='hs-varop'>+</span> <span class='hs-varid'>fromIntegral</span> <span class='hs-varid'>p</span>
-<a name="line-265"></a>    <span class='hs-varid'>rounder</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>fromIntegral</span> <span class='hs-varid'>b</span> <span class='hs-varop'>**</span> <span class='hs-varid'>fromIntegral</span> <span class='hs-varid'>uncert</span>
-<a name="line-266"></a>    <span class='hs-varid'>x'</span>      <span class='hs-keyglyph'>=</span> <span class='hs-layout'>(</span><span class='hs-varop'>/</span> <span class='hs-varid'>rounder</span><span class='hs-layout'>)</span> <span class='hs-varop'>.</span> <span class='hs-varid'>fromIntegral</span> <span class='hs-varop'>.</span> <span class='hs-varid'>round'</span> <span class='hs-varop'>.</span> <span class='hs-layout'>(</span><span class='hs-varop'>*</span> <span class='hs-varid'>rounder</span><span class='hs-layout'>)</span> <span class='hs-varop'>$</span> <span class='hs-varid'>x</span>
-<a name="line-267"></a>    <span class='hs-varid'>dx'</span>     <span class='hs-keyglyph'>=</span> <span class='hs-num'>1</span> <span class='hs-varop'>/</span> <span class='hs-varid'>rounder</span>
-<a name="line-268"></a>    <span class='hs-varid'>round'</span>  <span class='hs-keyglyph'>::</span> <span class='hs-conid'>RealFrac</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Integer</span>
-<a name="line-269"></a>    <span class='hs-varid'>round'</span>  <span class='hs-keyglyph'>=</span> <span class='hs-varid'>round</span>
+<a name="line-231"></a><a name="fromSamples"></a><span class='hs-comment'>-- | Infer an 'Uncert' from a given list of independent /samples/ of an</span>
+<a name="line-232"></a><span class='hs-comment'>-- underlying uncertain or random distribution.</span>
+<a name="line-233"></a><span class='hs-definition'>fromSamples</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Fractional</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-keyglyph'>[</span><span class='hs-varid'>a</span><span class='hs-keyglyph'>]</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
+<a name="line-234"></a><span class='hs-definition'>fromSamples</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>makeUn</span> <span class='hs-varop'>.</span> <span class='hs-varid'>foldStats</span>
+<a name="line-235"></a>  <span class='hs-keyword'>where</span>
+<a name="line-236"></a>    <span class='hs-varid'>makeUn</span> <span class='hs-layout'>(</span><span class='hs-conid'>H3</span> <span class='hs-varid'>x0</span> <span class='hs-varid'>x1</span> <span class='hs-varid'>x2</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Un</span> <span class='hs-varid'>μ</span> <span class='hs-varid'>v</span>
+<a name="line-237"></a>      <span class='hs-keyword'>where</span>
+<a name="line-238"></a>        <span class='hs-varid'>μ</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>x1</span><span class='hs-varop'>/</span><span class='hs-varid'>x0</span>
+<a name="line-239"></a>        <span class='hs-varid'>v</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>x2</span><span class='hs-varop'>/</span><span class='hs-varid'>x0</span> <span class='hs-comment'>-</span> <span class='hs-varid'>μ</span><span class='hs-varop'>*</span><span class='hs-varid'>μ</span>     <span class='hs-comment'>-- maybe use pop var?</span>
+<a name="line-240"></a>    <span class='hs-varid'>foldStats</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>flip</span> <span class='hs-varid'>foldl'</span> <span class='hs-layout'>(</span><span class='hs-conid'>H3</span> <span class='hs-num'>0</span> <span class='hs-num'>0</span> <span class='hs-num'>0</span><span class='hs-layout'>)</span> <span class='hs-varop'>$</span>
+<a name="line-241"></a>                  <span class='hs-keyglyph'>\</span><span class='hs-layout'>(</span><span class='hs-conid'>H3</span> <span class='hs-varid'>s0</span> <span class='hs-varid'>s1</span> <span class='hs-varid'>s2</span><span class='hs-layout'>)</span> <span class='hs-varid'>x</span> <span class='hs-keyglyph'>-&gt;</span>
+<a name="line-242"></a>                    <span class='hs-conid'>H3</span> <span class='hs-layout'>(</span><span class='hs-varid'>s0</span> <span class='hs-varop'>+</span> <span class='hs-num'>1</span><span class='hs-layout'>)</span> <span class='hs-layout'>(</span><span class='hs-varid'>s1</span> <span class='hs-varop'>+</span> <span class='hs-varid'>x</span><span class='hs-layout'>)</span> <span class='hs-layout'>(</span><span class='hs-varid'>s2</span> <span class='hs-varop'>+</span> <span class='hs-varid'>x</span><span class='hs-varop'>*</span><span class='hs-varid'>x</span><span class='hs-layout'>)</span>
+<a name="line-243"></a><span class='hs-comment'>{-# INLINABLE fromSamples #-}</span>
+<a name="line-244"></a>
+<a name="line-245"></a><a name="uMeanVar"></a><span class='hs-comment'>-- | Retrieve both the mean (central) value and the underlying variance of</span>
+<a name="line-246"></a><span class='hs-comment'>-- an 'Uncert' together.</span>
+<a name="line-247"></a><span class='hs-comment'>--</span>
+<a name="line-248"></a><span class='hs-comment'>-- @uMeanVar ≡ 'uMean' &amp;&amp;&amp; 'uVar'@</span>
+<a name="line-249"></a><span class='hs-definition'>uMeanVar</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-layout'>(</span><span class='hs-varid'>a</span><span class='hs-layout'>,</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span>
+<a name="line-250"></a><span class='hs-definition'>uMeanVar</span> <span class='hs-layout'>(</span><span class='hs-conid'>Un</span> <span class='hs-varid'>x</span> <span class='hs-varid'>vx</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-layout'>(</span><span class='hs-varid'>x</span><span class='hs-layout'>,</span> <span class='hs-varid'>vx</span><span class='hs-layout'>)</span>
+<a name="line-251"></a><span class='hs-comment'>{-# INLINE uMeanVar #-}</span>
+<a name="line-252"></a>
+<a name="line-253"></a><a name="uMeanStd"></a><span class='hs-comment'>-- | Retreve both the mean (central) value and the underlying standard</span>
+<a name="line-254"></a><span class='hs-comment'>-- deviation of an 'Uncert' together.  (See 'uStd' for more details)</span>
+<a name="line-255"></a><span class='hs-comment'>--</span>
+<a name="line-256"></a><span class='hs-comment'>-- @uMeanStd ≡ 'uMean' &amp;&amp;&amp; 'uStd'@</span>
+<a name="line-257"></a><span class='hs-definition'>uMeanStd</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Floating</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-layout'>(</span><span class='hs-varid'>a</span><span class='hs-layout'>,</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span>
+<a name="line-258"></a><span class='hs-definition'>uMeanStd</span> <span class='hs-layout'>(</span><span class='hs-conid'>Un</span> <span class='hs-varid'>x</span> <span class='hs-varid'>vx</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-layout'>(</span><span class='hs-varid'>x</span><span class='hs-layout'>,</span> <span class='hs-varid'>sqrt</span> <span class='hs-varid'>vx</span><span class='hs-layout'>)</span>
+<a name="line-259"></a><span class='hs-comment'>{-# INLINE uMeanStd #-}</span>
+<a name="line-260"></a>
+<a name="line-261"></a><a name="uRange"></a><span class='hs-comment'>-- | Retrieve the "range" of the underlying distribution of an 'Uncert',</span>
+<a name="line-262"></a><span class='hs-comment'>-- derived from the standard deviation, where which approximly 68% of</span>
+<a name="line-263"></a><span class='hs-comment'>-- sampled values are expected to occur (or within which you are 68%</span>
+<a name="line-264"></a><span class='hs-comment'>-- certain the true value is).</span>
+<a name="line-265"></a><span class='hs-comment'>--</span>
+<a name="line-266"></a><span class='hs-comment'>-- @uRange (x +/- dx) ≡ (x - dx, x + dx)@</span>
+<a name="line-267"></a><span class='hs-definition'>uRange</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Floating</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-layout'>(</span><span class='hs-varid'>a</span><span class='hs-layout'>,</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span>
+<a name="line-268"></a><span class='hs-definition'>uRange</span> <span class='hs-layout'>(</span><span class='hs-varid'>uMeanStd</span><span class='hs-keyglyph'>-&gt;</span><span class='hs-layout'>(</span><span class='hs-varid'>x</span><span class='hs-layout'>,</span> <span class='hs-varid'>dx</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-layout'>(</span><span class='hs-varid'>x</span> <span class='hs-comment'>-</span> <span class='hs-varid'>dx</span><span class='hs-layout'>,</span> <span class='hs-varid'>x</span> <span class='hs-varop'>+</span> <span class='hs-varid'>dx</span><span class='hs-layout'>)</span>
+<a name="line-269"></a><span class='hs-comment'>{-# INLINABLE uRange #-}</span>
 <a name="line-270"></a>
-<a name="line-271"></a><a name="withPrecision"></a><span class='hs-comment'>-- | Create an 'Uncert' about a given approximate central value, with the</span>
-<a name="line-272"></a><span class='hs-comment'>-- given number of /digits of precision/ (in decimal notation).</span>
-<a name="line-273"></a><span class='hs-comment'>--</span>
-<a name="line-274"></a><span class='hs-comment'>-- @5.21 `withPrecision` 3 ≡ 5.21 '+/-' 0.01@</span>
-<a name="line-275"></a><span class='hs-definition'>withPrecision</span>
-<a name="line-276"></a>    <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-conid'>Floating</span> <span class='hs-varid'>a</span><span class='hs-layout'>,</span> <span class='hs-conid'>RealFrac</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span>
-<a name="line-277"></a>    <span class='hs-keyglyph'>=&gt;</span> <span class='hs-varid'>a</span>            <span class='hs-comment'>-- ^ The approximate value of the 'Uncert'</span>
-<a name="line-278"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Int</span>          <span class='hs-comment'>-- ^ The number of "digits" of precision to take</span>
-<a name="line-279"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
-<a name="line-280"></a><span class='hs-definition'>withPrecision</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>withPrecisionAtBase</span> <span class='hs-num'>10</span>
-<a name="line-281"></a>
-<a name="line-282"></a><a name="uNormalizeAtBase"></a><span class='hs-comment'>-- | Like 'uNormalize', but takes a numerical base to round with respect</span>
-<a name="line-283"></a><span class='hs-comment'>-- to.</span>
-<a name="line-284"></a><span class='hs-comment'>--</span>
-<a name="line-285"></a><span class='hs-comment'>-- @'uNormalize' ≡ uNormalizeAtBase 10@</span>
-<a name="line-286"></a><span class='hs-definition'>uNormalizeAtBase</span>
-<a name="line-287"></a>    <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-conid'>Floating</span> <span class='hs-varid'>a</span><span class='hs-layout'>,</span> <span class='hs-conid'>RealFrac</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span>
-<a name="line-288"></a>    <span class='hs-keyglyph'>=&gt;</span> <span class='hs-conid'>Int</span>          <span class='hs-comment'>-- ^ The base to normalize with respect to</span>
-<a name="line-289"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
-<a name="line-290"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
-<a name="line-291"></a><span class='hs-definition'>uNormalizeAtBase</span> <span class='hs-varid'>b</span> <span class='hs-varid'>u</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>x'</span> <span class='hs-varop'>+/-</span> <span class='hs-varid'>dx'</span>
-<a name="line-292"></a>  <span class='hs-keyword'>where</span>
-<a name="line-293"></a>    <span class='hs-varid'>x</span> <span class='hs-conop'>:+/-</span> <span class='hs-varid'>dx</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>u</span>
-<a name="line-294"></a>    <span class='hs-varid'>uncert</span>    <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Int</span>
-<a name="line-295"></a>    <span class='hs-varid'>uncert</span>    <span class='hs-keyglyph'>=</span> <span class='hs-varid'>negate</span> <span class='hs-varop'>.</span> <span class='hs-varid'>floor</span> <span class='hs-varop'>.</span> <span class='hs-varid'>logBase</span> <span class='hs-layout'>(</span><span class='hs-varid'>fromIntegral</span> <span class='hs-varid'>b</span><span class='hs-layout'>)</span> <span class='hs-varop'>$</span> <span class='hs-varid'>dx</span>
-<a name="line-296"></a>    <span class='hs-varid'>rounder</span>   <span class='hs-keyglyph'>=</span> <span class='hs-varid'>fromIntegral</span> <span class='hs-varid'>b</span> <span class='hs-varop'>**</span> <span class='hs-varid'>fromIntegral</span> <span class='hs-varid'>uncert</span>
-<a name="line-297"></a>    <span class='hs-varid'>roundTo</span>   <span class='hs-keyglyph'>=</span> <span class='hs-layout'>(</span><span class='hs-varop'>/</span> <span class='hs-varid'>rounder</span><span class='hs-layout'>)</span> <span class='hs-varop'>.</span> <span class='hs-varid'>fromIntegral</span> <span class='hs-varop'>.</span> <span class='hs-varid'>round'</span> <span class='hs-varop'>.</span> <span class='hs-layout'>(</span><span class='hs-varop'>*</span> <span class='hs-varid'>rounder</span><span class='hs-layout'>)</span>
-<a name="line-298"></a>    <span class='hs-varid'>x'</span>        <span class='hs-keyglyph'>=</span> <span class='hs-varid'>roundTo</span> <span class='hs-varid'>x</span>
-<a name="line-299"></a>    <span class='hs-varid'>dx'</span>       <span class='hs-keyglyph'>=</span> <span class='hs-varid'>roundTo</span> <span class='hs-varid'>dx</span>
-<a name="line-300"></a>    <span class='hs-varid'>round'</span>    <span class='hs-keyglyph'>::</span> <span class='hs-conid'>RealFrac</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Integer</span>
-<a name="line-301"></a>    <span class='hs-varid'>round'</span>    <span class='hs-keyglyph'>=</span> <span class='hs-varid'>round</span>
-<a name="line-302"></a>
-<a name="line-303"></a><a name="uNormalize"></a><span class='hs-comment'>-- | Attempts to "normalize" an 'Uncert'.  Rounds the uncertainty (the</span>
-<a name="line-304"></a><span class='hs-comment'>-- standard deviation) to one digit of precision, and rounds the central</span>
-<a name="line-305"></a><span class='hs-comment'>-- moment up to the implied precision.</span>
-<a name="line-306"></a><span class='hs-comment'>--</span>
-<a name="line-307"></a><span class='hs-comment'>-- For example, it makes no real sense to have @542.185433 +/- 83.584@,</span>
-<a name="line-308"></a><span class='hs-comment'>-- because the extra digits of @542.185433@ past the tens place has no</span>
-<a name="line-309"></a><span class='hs-comment'>-- meaning because of the overpowering uncertainty.   Normalizing this</span>
-<a name="line-310"></a><span class='hs-comment'>-- results in @540 +/- 80@.</span>
-<a name="line-311"></a><span class='hs-comment'>--</span>
-<a name="line-312"></a><span class='hs-comment'>-- Note that the 'Show' instance for 'Uncert' normalizes values before</span>
-<a name="line-313"></a><span class='hs-comment'>-- showing them.</span>
-<a name="line-314"></a><span class='hs-definition'>uNormalize</span>
-<a name="line-315"></a>    <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-conid'>Floating</span> <span class='hs-varid'>a</span><span class='hs-layout'>,</span> <span class='hs-conid'>RealFrac</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span>
-<a name="line-316"></a>    <span class='hs-keyglyph'>=&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
-<a name="line-317"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
-<a name="line-318"></a><span class='hs-definition'>uNormalize</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>uNormalizeAtBase</span> <span class='hs-num'>10</span>
-<a name="line-319"></a>
-<a name="line-320"></a><a name="instance%20Show%20(Uncert%20a)"></a><span class='hs-keyword'>instance</span> <span class='hs-layout'>(</span><span class='hs-conid'>Show</span> <span class='hs-varid'>a</span><span class='hs-layout'>,</span> <span class='hs-conid'>Floating</span> <span class='hs-varid'>a</span><span class='hs-layout'>,</span> <span class='hs-conid'>RealFrac</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-conid'>Show</span> <span class='hs-layout'>(</span><span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyword'>where</span>
-<a name="line-321"></a>    <span class='hs-varid'>showsPrec</span> <span class='hs-varid'>d</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>uShowsPrec</span> <span class='hs-varid'>d</span> <span class='hs-varop'>.</span> <span class='hs-varid'>uNormalize</span>
-<a name="line-322"></a>
-<a name="line-323"></a><a name="uShowsPrec"></a><span class='hs-comment'>-- | Like 'showsPrec' for 'Uncert', but does not normalize the value (see</span>
-<a name="line-324"></a><span class='hs-comment'>-- 'uNormalize') before showing.  See documentation for 'showsPrec' for</span>
-<a name="line-325"></a><span class='hs-comment'>-- more information on how this is meant to be used.</span>
-<a name="line-326"></a><span class='hs-definition'>uShowsPrec</span> <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-conid'>Show</span> <span class='hs-varid'>a</span><span class='hs-layout'>,</span> <span class='hs-conid'>Floating</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-conid'>Int</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>ShowS</span>
-<a name="line-327"></a><span class='hs-definition'>uShowsPrec</span> <span class='hs-varid'>d</span> <span class='hs-varid'>u</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>showParen</span> <span class='hs-layout'>(</span><span class='hs-varid'>d</span> <span class='hs-varop'>&gt;</span> <span class='hs-num'>5</span><span class='hs-layout'>)</span> <span class='hs-varop'>$</span>
-<a name="line-328"></a>                     <span class='hs-varid'>showsPrec</span> <span class='hs-num'>6</span> <span class='hs-varid'>x</span>
-<a name="line-329"></a>                   <span class='hs-varop'>.</span> <span class='hs-varid'>showString</span> <span class='hs-str'>" +/- "</span>
-<a name="line-330"></a>                   <span class='hs-varop'>.</span> <span class='hs-varid'>showsPrec</span> <span class='hs-num'>6</span> <span class='hs-varid'>dx</span>
-<a name="line-331"></a>  <span class='hs-keyword'>where</span>
-<a name="line-332"></a>    <span class='hs-varid'>x</span> <span class='hs-conop'>:+/-</span> <span class='hs-varid'>dx</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>u</span>
-<a name="line-333"></a>
-<a name="line-334"></a><a name="uShow"></a><span class='hs-comment'>-- | Like 'show' for 'Uncert', but does not normalize the value (see</span>
-<a name="line-335"></a><span class='hs-comment'>-- 'uNormalize') before showing.</span>
+<a name="line-271"></a><a name="withPrecisionAtBase"></a><span class='hs-comment'>-- | Like 'withPrecision', except takes a number of "digits" of precision in</span>
+<a name="line-272"></a><span class='hs-comment'>-- the desired numeric base.  For example, in base 2, takes the number of</span>
+<a name="line-273"></a><span class='hs-comment'>-- /bits/ of precision.</span>
+<a name="line-274"></a><span class='hs-comment'>--</span>
+<a name="line-275"></a><span class='hs-comment'>-- @'withPrecision' ≡ withPrecisionAtBase 10@</span>
+<a name="line-276"></a><span class='hs-definition'>withPrecisionAtBase</span>
+<a name="line-277"></a>    <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-conid'>Floating</span> <span class='hs-varid'>a</span><span class='hs-layout'>,</span> <span class='hs-conid'>RealFrac</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span>
+<a name="line-278"></a>    <span class='hs-keyglyph'>=&gt;</span> <span class='hs-conid'>Int</span>          <span class='hs-comment'>-- ^ The base to determine precision with respect to</span>
+<a name="line-279"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>a</span>            <span class='hs-comment'>-- ^ The approximate value of the 'Uncert'</span>
+<a name="line-280"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Int</span>          <span class='hs-comment'>-- ^ The number of "digits" of precision to take</span>
+<a name="line-281"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
+<a name="line-282"></a><span class='hs-definition'>withPrecisionAtBase</span> <span class='hs-varid'>b</span> <span class='hs-varid'>x</span> <span class='hs-varid'>p</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>x'</span> <span class='hs-varop'>+/-</span> <span class='hs-varid'>dx'</span>
+<a name="line-283"></a>  <span class='hs-keyword'>where</span>
+<a name="line-284"></a>    <span class='hs-varid'>leading</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Int</span>
+<a name="line-285"></a>    <span class='hs-varid'>leading</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>negate</span> <span class='hs-varop'>.</span> <span class='hs-varid'>floor</span> <span class='hs-varop'>.</span> <span class='hs-varid'>logBase</span> <span class='hs-layout'>(</span><span class='hs-varid'>fromIntegral</span> <span class='hs-varid'>b</span><span class='hs-layout'>)</span> <span class='hs-varop'>$</span> <span class='hs-varid'>x</span>
+<a name="line-286"></a>    <span class='hs-varid'>uncert</span>  <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Int</span>
+<a name="line-287"></a>    <span class='hs-varid'>uncert</span>  <span class='hs-keyglyph'>=</span> <span class='hs-varid'>leading</span> <span class='hs-comment'>-</span> <span class='hs-num'>1</span> <span class='hs-varop'>+</span> <span class='hs-varid'>fromIntegral</span> <span class='hs-varid'>p</span>
+<a name="line-288"></a>    <span class='hs-varid'>rounder</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>fromIntegral</span> <span class='hs-varid'>b</span> <span class='hs-varop'>**</span> <span class='hs-varid'>fromIntegral</span> <span class='hs-varid'>uncert</span>
+<a name="line-289"></a>    <span class='hs-varid'>x'</span>      <span class='hs-keyglyph'>=</span> <span class='hs-layout'>(</span><span class='hs-varop'>/</span> <span class='hs-varid'>rounder</span><span class='hs-layout'>)</span> <span class='hs-varop'>.</span> <span class='hs-varid'>fromIntegral</span> <span class='hs-varop'>.</span> <span class='hs-varid'>round'</span> <span class='hs-varop'>.</span> <span class='hs-layout'>(</span><span class='hs-varop'>*</span> <span class='hs-varid'>rounder</span><span class='hs-layout'>)</span> <span class='hs-varop'>$</span> <span class='hs-varid'>x</span>
+<a name="line-290"></a>    <span class='hs-varid'>dx'</span>     <span class='hs-keyglyph'>=</span> <span class='hs-num'>1</span> <span class='hs-varop'>/</span> <span class='hs-varid'>rounder</span>
+<a name="line-291"></a>    <span class='hs-varid'>round'</span>  <span class='hs-keyglyph'>::</span> <span class='hs-conid'>RealFrac</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Integer</span>
+<a name="line-292"></a>    <span class='hs-varid'>round'</span>  <span class='hs-keyglyph'>=</span> <span class='hs-varid'>round</span>
+<a name="line-293"></a><span class='hs-comment'>{-# INLINABLE withPrecisionAtBase #-}</span>
+<a name="line-294"></a>
+<a name="line-295"></a><a name="withPrecision"></a><span class='hs-comment'>-- | Create an 'Uncert' about a given approximate central value, with the</span>
+<a name="line-296"></a><span class='hs-comment'>-- given number of /digits of precision/ (in decimal notation).</span>
+<a name="line-297"></a><span class='hs-comment'>--</span>
+<a name="line-298"></a><span class='hs-comment'>-- @5.21 `withPrecision` 3 ≡ 5.21 '+/-' 0.01@</span>
+<a name="line-299"></a><span class='hs-definition'>withPrecision</span>
+<a name="line-300"></a>    <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-conid'>Floating</span> <span class='hs-varid'>a</span><span class='hs-layout'>,</span> <span class='hs-conid'>RealFrac</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span>
+<a name="line-301"></a>    <span class='hs-keyglyph'>=&gt;</span> <span class='hs-varid'>a</span>            <span class='hs-comment'>-- ^ The approximate value of the 'Uncert'</span>
+<a name="line-302"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Int</span>          <span class='hs-comment'>-- ^ The number of "digits" of precision to take</span>
+<a name="line-303"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
+<a name="line-304"></a><span class='hs-definition'>withPrecision</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>withPrecisionAtBase</span> <span class='hs-num'>10</span>
+<a name="line-305"></a><span class='hs-comment'>{-# INLINABLE withPrecision #-}</span>
+<a name="line-306"></a>
+<a name="line-307"></a><a name="uNormalizeAtBase"></a><span class='hs-comment'>-- | Like 'uNormalize', but takes a numerical base to round with respect</span>
+<a name="line-308"></a><span class='hs-comment'>-- to.</span>
+<a name="line-309"></a><span class='hs-comment'>--</span>
+<a name="line-310"></a><span class='hs-comment'>-- @'uNormalize' ≡ uNormalizeAtBase 10@</span>
+<a name="line-311"></a><span class='hs-definition'>uNormalizeAtBase</span>
+<a name="line-312"></a>    <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-conid'>Floating</span> <span class='hs-varid'>a</span><span class='hs-layout'>,</span> <span class='hs-conid'>RealFrac</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span>
+<a name="line-313"></a>    <span class='hs-keyglyph'>=&gt;</span> <span class='hs-conid'>Int</span>          <span class='hs-comment'>-- ^ The base to normalize with respect to</span>
+<a name="line-314"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
+<a name="line-315"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
+<a name="line-316"></a><span class='hs-definition'>uNormalizeAtBase</span> <span class='hs-varid'>b</span> <span class='hs-layout'>(</span><span class='hs-varid'>uMeanStd</span><span class='hs-keyglyph'>-&gt;</span><span class='hs-layout'>(</span><span class='hs-varid'>x</span><span class='hs-layout'>,</span> <span class='hs-varid'>dx</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>x'</span> <span class='hs-varop'>+/-</span> <span class='hs-varid'>dx'</span>
+<a name="line-317"></a>  <span class='hs-keyword'>where</span>
+<a name="line-318"></a>    <span class='hs-varid'>uncert</span>    <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Int</span>
+<a name="line-319"></a>    <span class='hs-varid'>uncert</span>    <span class='hs-keyglyph'>=</span> <span class='hs-varid'>negate</span> <span class='hs-varop'>.</span> <span class='hs-varid'>floor</span> <span class='hs-varop'>.</span> <span class='hs-varid'>logBase</span> <span class='hs-layout'>(</span><span class='hs-varid'>fromIntegral</span> <span class='hs-varid'>b</span><span class='hs-layout'>)</span> <span class='hs-varop'>$</span> <span class='hs-varid'>dx</span>
+<a name="line-320"></a>    <span class='hs-varid'>rounder</span>   <span class='hs-keyglyph'>=</span> <span class='hs-varid'>fromIntegral</span> <span class='hs-varid'>b</span> <span class='hs-varop'>**</span> <span class='hs-varid'>fromIntegral</span> <span class='hs-varid'>uncert</span>
+<a name="line-321"></a>    <span class='hs-varid'>roundTo</span>   <span class='hs-keyglyph'>=</span> <span class='hs-layout'>(</span><span class='hs-varop'>/</span> <span class='hs-varid'>rounder</span><span class='hs-layout'>)</span> <span class='hs-varop'>.</span> <span class='hs-varid'>fromIntegral</span> <span class='hs-varop'>.</span> <span class='hs-varid'>round'</span> <span class='hs-varop'>.</span> <span class='hs-layout'>(</span><span class='hs-varop'>*</span> <span class='hs-varid'>rounder</span><span class='hs-layout'>)</span>
+<a name="line-322"></a>    <span class='hs-varid'>x'</span>        <span class='hs-keyglyph'>=</span> <span class='hs-varid'>roundTo</span> <span class='hs-varid'>x</span>
+<a name="line-323"></a>    <span class='hs-varid'>dx'</span>       <span class='hs-keyglyph'>=</span> <span class='hs-varid'>roundTo</span> <span class='hs-varid'>dx</span>
+<a name="line-324"></a>    <span class='hs-varid'>round'</span>    <span class='hs-keyglyph'>::</span> <span class='hs-conid'>RealFrac</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Integer</span>
+<a name="line-325"></a>    <span class='hs-varid'>round'</span>    <span class='hs-keyglyph'>=</span> <span class='hs-varid'>round</span>
+<a name="line-326"></a><span class='hs-comment'>{-# INLINABLE uNormalizeAtBase #-}</span>
+<a name="line-327"></a>
+<a name="line-328"></a><a name="uNormalize"></a><span class='hs-comment'>-- | Attempts to "normalize" an 'Uncert'.  Rounds the uncertainty (the</span>
+<a name="line-329"></a><span class='hs-comment'>-- standard deviation) to one digit of precision, and rounds the central</span>
+<a name="line-330"></a><span class='hs-comment'>-- moment up to the implied precision.</span>
+<a name="line-331"></a><span class='hs-comment'>--</span>
+<a name="line-332"></a><span class='hs-comment'>-- For example, it makes no real sense to have @542.185433 +/- 83.584@,</span>
+<a name="line-333"></a><span class='hs-comment'>-- because the extra digits of @542.185433@ past the tens place has no</span>
+<a name="line-334"></a><span class='hs-comment'>-- meaning because of the overpowering uncertainty.   Normalizing this</span>
+<a name="line-335"></a><span class='hs-comment'>-- results in @540 +/- 80@.</span>
 <a name="line-336"></a><span class='hs-comment'>--</span>
-<a name="line-337"></a><span class='hs-comment'>-- @'show' ≡ uShow . 'uNormalize'@</span>
-<a name="line-338"></a><span class='hs-definition'>uShow</span> <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-conid'>Show</span> <span class='hs-varid'>a</span><span class='hs-layout'>,</span> <span class='hs-conid'>Floating</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>String</span>
-<a name="line-339"></a><span class='hs-definition'>uShow</span> <span class='hs-varid'>u</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>uShowsPrec</span> <span class='hs-num'>0</span> <span class='hs-varid'>u</span> <span class='hs-str'>""</span>
-<a name="line-340"></a>
-<a name="line-341"></a><a name="liftUF"></a><span class='hs-comment'>-- | Lifts a multivariate numeric function on a container (given as an @f</span>
-<a name="line-342"></a><span class='hs-comment'>-- a -&gt; a@) to work on a container of 'Uncert's.  Correctly propagates the</span>
-<a name="line-343"></a><span class='hs-comment'>-- uncertainty according to the second-order (multivariate) taylor</span>
-<a name="line-344"></a><span class='hs-comment'>-- expansion of the function.  Note that if the higher-degree taylor series</span>
-<a name="line-345"></a><span class='hs-comment'>-- terms are large with respect to the means and variances, this</span>
-<a name="line-346"></a><span class='hs-comment'>-- approximation may be inaccurate.</span>
-<a name="line-347"></a><span class='hs-comment'>--</span>
-<a name="line-348"></a><span class='hs-comment'>-- Should take any function sufficiently polymorphic over numeric types, so</span>
-<a name="line-349"></a><span class='hs-comment'>-- you can use things like '*', 'sqrt', 'atan2', etc.</span>
-<a name="line-350"></a><span class='hs-comment'>--</span>
-<a name="line-351"></a><span class='hs-comment'>-- @</span>
-<a name="line-352"></a><span class='hs-comment'>-- ghci&gt; liftUF (\[x,y,z] -&gt; x*y+z) [12.2 +/- 0.5, 56 +/- 2, 0.12 +/- 0.08]</span>
-<a name="line-353"></a><span class='hs-comment'>-- 680 +/- 40</span>
-<a name="line-354"></a><span class='hs-comment'>-- @</span>
-<a name="line-355"></a><span class='hs-comment'>--</span>
-<a name="line-356"></a><span class='hs-definition'>liftUF</span>
-<a name="line-357"></a>    <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-conid'>Traversable</span> <span class='hs-varid'>f</span><span class='hs-layout'>,</span> <span class='hs-conid'>Fractional</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span>
-<a name="line-358"></a>    <span class='hs-keyglyph'>=&gt;</span> <span class='hs-layout'>(</span><span class='hs-keyword'>forall</span> <span class='hs-varid'>s</span><span class='hs-varop'>.</span> <span class='hs-varid'>f</span> <span class='hs-layout'>(</span><span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>Sparse</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>Sparse</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span>   <span class='hs-comment'>-- ^ Function on container of values to lift</span>
-<a name="line-359"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>f</span> <span class='hs-layout'>(</span><span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span>         <span class='hs-comment'>-- ^ Container of 'Uncert's to apply the function to</span>
-<a name="line-360"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
-<a name="line-361"></a><span class='hs-definition'>liftUF</span> <span class='hs-varid'>f</span> <span class='hs-varid'>us</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Un</span> <span class='hs-varid'>y</span> <span class='hs-varid'>vy</span>
-<a name="line-362"></a>  <span class='hs-keyword'>where</span>
-<a name="line-363"></a>    <span class='hs-varid'>xs</span>          <span class='hs-keyglyph'>=</span> <span class='hs-varid'>uMean</span> <span class='hs-varop'>&lt;$&gt;</span> <span class='hs-varid'>us</span>
-<a name="line-364"></a>    <span class='hs-varid'>vxs</span>         <span class='hs-keyglyph'>=</span> <span class='hs-varid'>uVar</span>  <span class='hs-varop'>&lt;$&gt;</span> <span class='hs-varid'>us</span>
-<a name="line-365"></a>    <span class='hs-varid'>vxsL</span>        <span class='hs-keyglyph'>=</span> <span class='hs-varid'>toList</span> <span class='hs-varid'>vxs</span>
-<a name="line-366"></a>    <span class='hs-layout'>(</span><span class='hs-varid'>fx</span><span class='hs-layout'>,</span> <span class='hs-varid'>dfxsh</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>hessian'</span> <span class='hs-varid'>f</span> <span class='hs-varid'>xs</span>
-<a name="line-367"></a>    <span class='hs-varid'>dfxs</span>        <span class='hs-keyglyph'>=</span> <span class='hs-varid'>fst</span> <span class='hs-varop'>&lt;$&gt;</span> <span class='hs-varid'>dfxsh</span>
-<a name="line-368"></a>    <span class='hs-varid'>hess</span>        <span class='hs-keyglyph'>=</span> <span class='hs-varid'>snd</span> <span class='hs-varop'>&lt;$&gt;</span> <span class='hs-varid'>dfxsh</span>
-<a name="line-369"></a>    <span class='hs-varid'>y</span>           <span class='hs-keyglyph'>=</span> <span class='hs-varid'>fx</span> <span class='hs-varop'>+</span> <span class='hs-varid'>hessQuad</span> <span class='hs-varop'>/</span> <span class='hs-num'>2</span>
-<a name="line-370"></a>      <span class='hs-keyword'>where</span>
-<a name="line-371"></a>        <span class='hs-varid'>hessQuad</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>dot</span> <span class='hs-varid'>vxsL</span>
-<a name="line-372"></a>                 <span class='hs-varop'>.</span> <span class='hs-varid'>diag</span>
-<a name="line-373"></a>                 <span class='hs-varop'>.</span> <span class='hs-varid'>toList</span>
-<a name="line-374"></a>                 <span class='hs-varop'>$</span> <span class='hs-varid'>fmap</span> <span class='hs-varid'>toList</span> <span class='hs-varid'>hess</span>
-<a name="line-375"></a>    <span class='hs-varid'>vy</span>          <span class='hs-keyglyph'>=</span> <span class='hs-varid'>dot</span> <span class='hs-varid'>vxsL</span> <span class='hs-layout'>(</span><span class='hs-layout'>(</span><span class='hs-varop'>^</span> <span class='hs-layout'>(</span><span class='hs-num'>2</span><span class='hs-keyglyph'>::</span><span class='hs-conid'>Int</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span> <span class='hs-varop'>&lt;$&gt;</span> <span class='hs-varid'>dfxs</span><span class='hs-layout'>)</span>
-<a name="line-376"></a>    <span class='hs-varid'>dot</span> <span class='hs-varid'>x</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>sum</span> <span class='hs-varop'>.</span> <span class='hs-varid'>zipWith</span> <span class='hs-layout'>(</span><span class='hs-varop'>*</span><span class='hs-layout'>)</span> <span class='hs-varid'>x</span> <span class='hs-varop'>.</span> <span class='hs-varid'>toList</span>
-<a name="line-377"></a>    <span class='hs-varid'>diag</span> <span class='hs-keyglyph'>=</span> <span class='hs-keyglyph'>\</span><span class='hs-keyword'>case</span> <span class='hs-conid'>[]</span>        <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>[]</span>
-<a name="line-378"></a>                 <span class='hs-conid'>[]</span>   <span class='hs-conop'>:</span><span class='hs-varid'>yss</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>diag</span> <span class='hs-layout'>(</span><span class='hs-varid'>drop1</span> <span class='hs-varop'>&lt;$&gt;</span> <span class='hs-varid'>yss</span><span class='hs-layout'>)</span>
-<a name="line-379"></a>                 <span class='hs-layout'>(</span><span class='hs-varid'>x</span><span class='hs-conop'>:</span><span class='hs-keyword'>_</span><span class='hs-layout'>)</span><span class='hs-conop'>:</span><span class='hs-varid'>yss</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>x</span> <span class='hs-conop'>:</span> <span class='hs-varid'>diag</span> <span class='hs-layout'>(</span><span class='hs-varid'>drop1</span> <span class='hs-varop'>&lt;$&gt;</span> <span class='hs-varid'>yss</span><span class='hs-layout'>)</span>
-<a name="line-380"></a>      <span class='hs-keyword'>where</span>
-<a name="line-381"></a>        <span class='hs-varid'>drop1</span> <span class='hs-conid'>[]</span>     <span class='hs-keyglyph'>=</span> <span class='hs-conid'>[]</span>
-<a name="line-382"></a>        <span class='hs-varid'>drop1</span> <span class='hs-layout'>(</span><span class='hs-keyword'>_</span><span class='hs-conop'>:</span><span class='hs-varid'>zs</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>zs</span>
-<a name="line-383"></a>
-<a name="line-384"></a><a name="liftU"></a><span class='hs-comment'>-- | Lifts a numeric function over an 'Uncert'.  Correctly propagates the</span>
-<a name="line-385"></a><span class='hs-comment'>-- uncertainty according to the second-order taylor expansion expansion of</span>
-<a name="line-386"></a><span class='hs-comment'>-- the function.  Note that if the higher-degree taylor series terms are</span>
-<a name="line-387"></a><span class='hs-comment'>-- large with respect to the mean and variance, this approximation may be</span>
-<a name="line-388"></a><span class='hs-comment'>-- inaccurate.</span>
-<a name="line-389"></a><span class='hs-comment'>--</span>
-<a name="line-390"></a><span class='hs-comment'>-- Should take any function sufficiently polymorphic over numeric types, so</span>
-<a name="line-391"></a><span class='hs-comment'>-- you can use things like 'sqrt', 'sin', 'negate', etc.</span>
-<a name="line-392"></a><span class='hs-comment'>--</span>
-<a name="line-393"></a><span class='hs-comment'>-- @</span>
-<a name="line-394"></a><span class='hs-comment'>-- ghci&gt; liftU (\x -&gt; log x ^ 2) (12.2 +/- 0.5)</span>
-<a name="line-395"></a><span class='hs-comment'>-- 6.3 +/- 0.2</span>
-<a name="line-396"></a><span class='hs-comment'>-- @</span>
-<a name="line-397"></a><span class='hs-definition'>liftU</span>
-<a name="line-398"></a>    <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Fractional</span> <span class='hs-varid'>a</span>
-<a name="line-399"></a>    <span class='hs-keyglyph'>=&gt;</span> <span class='hs-layout'>(</span><span class='hs-keyword'>forall</span> <span class='hs-varid'>s</span><span class='hs-varop'>.</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>T</span><span class='hs-varop'>.</span><span class='hs-conid'>Tower</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>T</span><span class='hs-varop'>.</span><span class='hs-conid'>Tower</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span>     <span class='hs-comment'>-- ^ Function on values to lift</span>
-<a name="line-400"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>     <span class='hs-comment'>-- ^ 'Uncert' to apply the function to</span>
-<a name="line-401"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
-<a name="line-402"></a><span class='hs-definition'>liftU</span> <span class='hs-varid'>f</span> <span class='hs-layout'>(</span><span class='hs-conid'>Un</span> <span class='hs-varid'>x</span> <span class='hs-varid'>vx</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Un</span> <span class='hs-varid'>y</span> <span class='hs-varid'>vy</span>
-<a name="line-403"></a>  <span class='hs-keyword'>where</span>
-<a name="line-404"></a>    <span class='hs-varid'>fx</span><span class='hs-conop'>:</span><span class='hs-varid'>dfx</span><span class='hs-conop'>:</span><span class='hs-varid'>ddfx</span><span class='hs-conop'>:</span><span class='hs-keyword'>_</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>T</span><span class='hs-varop'>.</span><span class='hs-varid'>diffs0</span> <span class='hs-varid'>f</span> <span class='hs-varid'>x</span>
-<a name="line-405"></a>    <span class='hs-varid'>y</span>             <span class='hs-keyglyph'>=</span> <span class='hs-varid'>fx</span> <span class='hs-varop'>+</span> <span class='hs-varid'>ddfx</span> <span class='hs-varop'>*</span> <span class='hs-varid'>vx</span> <span class='hs-varop'>/</span> <span class='hs-num'>2</span>
-<a name="line-406"></a>    <span class='hs-varid'>vy</span>            <span class='hs-keyglyph'>=</span> <span class='hs-varid'>dfx</span><span class='hs-varop'>*</span><span class='hs-varid'>dfx</span> <span class='hs-varop'>*</span> <span class='hs-varid'>vx</span>
-<a name="line-407"></a>
-<a name="line-408"></a><a name="liftU2"></a><span class='hs-comment'>-- | Lifts a two-argument (curried) function over two 'Uncert's.  Correctly</span>
-<a name="line-409"></a><span class='hs-comment'>-- propagates the uncertainty according to the second-order (multivariate)</span>
-<a name="line-410"></a><span class='hs-comment'>-- taylor expansion expansion of the function.  Note that if the</span>
-<a name="line-411"></a><span class='hs-comment'>-- higher-degree taylor series terms are large with respect to the mean and</span>
-<a name="line-412"></a><span class='hs-comment'>-- variance, this approximation may be inaccurate.</span>
-<a name="line-413"></a><span class='hs-comment'>--</span>
-<a name="line-414"></a><span class='hs-comment'>-- Should take any function sufficiently polymorphic over numeric types, so</span>
-<a name="line-415"></a><span class='hs-comment'>-- you can use things like '*', 'atan2', '**', etc.</span>
+<a name="line-337"></a><span class='hs-comment'>-- Note that the 'Show' instance for 'Uncert' normalizes values before</span>
+<a name="line-338"></a><span class='hs-comment'>-- showing them.</span>
+<a name="line-339"></a><span class='hs-definition'>uNormalize</span>
+<a name="line-340"></a>    <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-conid'>Floating</span> <span class='hs-varid'>a</span><span class='hs-layout'>,</span> <span class='hs-conid'>RealFrac</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span>
+<a name="line-341"></a>    <span class='hs-keyglyph'>=&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
+<a name="line-342"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
+<a name="line-343"></a><span class='hs-definition'>uNormalize</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>uNormalizeAtBase</span> <span class='hs-num'>10</span>
+<a name="line-344"></a><span class='hs-comment'>{-# INLINABLE uNormalize #-}</span>
+<a name="line-345"></a>
+<a name="line-346"></a><a name="instance%20Show%20(Uncert%20a)"></a><span class='hs-keyword'>instance</span> <span class='hs-layout'>(</span><span class='hs-conid'>Show</span> <span class='hs-varid'>a</span><span class='hs-layout'>,</span> <span class='hs-conid'>Floating</span> <span class='hs-varid'>a</span><span class='hs-layout'>,</span> <span class='hs-conid'>RealFrac</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-conid'>Show</span> <span class='hs-layout'>(</span><span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyword'>where</span>
+<a name="line-347"></a>    <span class='hs-varid'>showsPrec</span> <span class='hs-varid'>d</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>uShowsPrec</span> <span class='hs-varid'>d</span> <span class='hs-varop'>.</span> <span class='hs-varid'>uNormalize</span>
+<a name="line-348"></a>
+<a name="line-349"></a><a name="uShowsPrec"></a><span class='hs-comment'>-- | Like 'showsPrec' for 'Uncert', but does not normalize the value (see</span>
+<a name="line-350"></a><span class='hs-comment'>-- 'uNormalize') before showing.  See documentation for 'showsPrec' for</span>
+<a name="line-351"></a><span class='hs-comment'>-- more information on how this is meant to be used.</span>
+<a name="line-352"></a><span class='hs-definition'>uShowsPrec</span> <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-conid'>Show</span> <span class='hs-varid'>a</span><span class='hs-layout'>,</span> <span class='hs-conid'>Floating</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-conid'>Int</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>ShowS</span>
+<a name="line-353"></a><span class='hs-definition'>uShowsPrec</span> <span class='hs-varid'>d</span> <span class='hs-layout'>(</span><span class='hs-varid'>uMeanStd</span><span class='hs-keyglyph'>-&gt;</span><span class='hs-layout'>(</span><span class='hs-varid'>x</span><span class='hs-layout'>,</span> <span class='hs-varid'>dx</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>showParen</span> <span class='hs-layout'>(</span><span class='hs-varid'>d</span> <span class='hs-varop'>&gt;</span> <span class='hs-num'>5</span><span class='hs-layout'>)</span> <span class='hs-varop'>$</span>
+<a name="line-354"></a>                                       <span class='hs-varid'>showsPrec</span> <span class='hs-num'>6</span> <span class='hs-varid'>x</span>
+<a name="line-355"></a>                                     <span class='hs-varop'>.</span> <span class='hs-varid'>showString</span> <span class='hs-str'>" +/- "</span>
+<a name="line-356"></a>                                     <span class='hs-varop'>.</span> <span class='hs-varid'>showsPrec</span> <span class='hs-num'>6</span> <span class='hs-varid'>dx</span>
+<a name="line-357"></a><span class='hs-comment'>{-# INLINABLE uShowsPrec #-}</span>
+<a name="line-358"></a>
+<a name="line-359"></a><a name="uShow"></a><span class='hs-comment'>-- | Like 'show' for 'Uncert', but does not normalize the value (see</span>
+<a name="line-360"></a><span class='hs-comment'>-- 'uNormalize') before showing.</span>
+<a name="line-361"></a><span class='hs-comment'>--</span>
+<a name="line-362"></a><span class='hs-comment'>-- @'show' ≡ uShow . 'uNormalize'@</span>
+<a name="line-363"></a><span class='hs-definition'>uShow</span> <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-conid'>Show</span> <span class='hs-varid'>a</span><span class='hs-layout'>,</span> <span class='hs-conid'>Floating</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>String</span>
+<a name="line-364"></a><span class='hs-definition'>uShow</span> <span class='hs-varid'>u</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>uShowsPrec</span> <span class='hs-num'>0</span> <span class='hs-varid'>u</span> <span class='hs-str'>""</span>
+<a name="line-365"></a><span class='hs-comment'>{-# INLINABLE uShow #-}</span>
+<a name="line-366"></a>
+<a name="line-367"></a><a name="liftUF"></a><span class='hs-comment'>-- | Lifts a multivariate numeric function on a container (given as an @f</span>
+<a name="line-368"></a><span class='hs-comment'>-- a -&gt; a@) to work on a container of 'Uncert's.  Correctly propagates the</span>
+<a name="line-369"></a><span class='hs-comment'>-- uncertainty according to the second-order (multivariate) taylor</span>
+<a name="line-370"></a><span class='hs-comment'>-- expansion of the function.  Note that if the higher-degree taylor series</span>
+<a name="line-371"></a><span class='hs-comment'>-- terms are large with respect to the means and variances, this</span>
+<a name="line-372"></a><span class='hs-comment'>-- approximation may be inaccurate.</span>
+<a name="line-373"></a><span class='hs-comment'>--</span>
+<a name="line-374"></a><span class='hs-comment'>-- Should take any function sufficiently polymorphic over numeric types, so</span>
+<a name="line-375"></a><span class='hs-comment'>-- you can use things like '*', 'sqrt', 'atan2', etc.</span>
+<a name="line-376"></a><span class='hs-comment'>--</span>
+<a name="line-377"></a><span class='hs-comment'>-- @</span>
+<a name="line-378"></a><span class='hs-comment'>-- ghci&gt; liftUF (\[x,y,z] -&gt; x*y+z) [12.2 +/- 0.5, 56 +/- 2, 0.12 +/- 0.08]</span>
+<a name="line-379"></a><span class='hs-comment'>-- 680 +/- 40</span>
+<a name="line-380"></a><span class='hs-comment'>-- @</span>
+<a name="line-381"></a><span class='hs-comment'>--</span>
+<a name="line-382"></a><span class='hs-definition'>liftUF</span>
+<a name="line-383"></a>    <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-conid'>Traversable</span> <span class='hs-varid'>f</span><span class='hs-layout'>,</span> <span class='hs-conid'>Fractional</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span>
+<a name="line-384"></a>    <span class='hs-keyglyph'>=&gt;</span> <span class='hs-layout'>(</span><span class='hs-keyword'>forall</span> <span class='hs-varid'>s</span><span class='hs-varop'>.</span> <span class='hs-varid'>f</span> <span class='hs-layout'>(</span><span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>Sparse</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>Sparse</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span>   <span class='hs-comment'>-- ^ Function on container of values to lift</span>
+<a name="line-385"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>f</span> <span class='hs-layout'>(</span><span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span>         <span class='hs-comment'>-- ^ Container of 'Uncert's to apply the function to</span>
+<a name="line-386"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
+<a name="line-387"></a><span class='hs-definition'>liftUF</span> <span class='hs-varid'>f</span> <span class='hs-varid'>us</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Un</span> <span class='hs-varid'>y</span> <span class='hs-varid'>vy</span>
+<a name="line-388"></a>  <span class='hs-keyword'>where</span>
+<a name="line-389"></a>    <span class='hs-varid'>xs</span>          <span class='hs-keyglyph'>=</span> <span class='hs-varid'>uMean</span> <span class='hs-varop'>&lt;$&gt;</span> <span class='hs-varid'>us</span>
+<a name="line-390"></a>    <span class='hs-varid'>vxs</span>         <span class='hs-keyglyph'>=</span> <span class='hs-varid'>uVar</span>  <span class='hs-varop'>&lt;$&gt;</span> <span class='hs-varid'>us</span>
+<a name="line-391"></a>    <span class='hs-varid'>vxsL</span>        <span class='hs-keyglyph'>=</span> <span class='hs-varid'>toList</span> <span class='hs-varid'>vxs</span>
+<a name="line-392"></a>    <span class='hs-layout'>(</span><span class='hs-varid'>fx</span><span class='hs-layout'>,</span> <span class='hs-varid'>dfxsh</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>hessian'</span> <span class='hs-varid'>f</span> <span class='hs-varid'>xs</span>
+<a name="line-393"></a>    <span class='hs-varid'>dfxs</span>        <span class='hs-keyglyph'>=</span> <span class='hs-varid'>fst</span> <span class='hs-varop'>&lt;$&gt;</span> <span class='hs-varid'>dfxsh</span>
+<a name="line-394"></a>    <span class='hs-varid'>hess</span>        <span class='hs-keyglyph'>=</span> <span class='hs-varid'>snd</span> <span class='hs-varop'>&lt;$&gt;</span> <span class='hs-varid'>dfxsh</span>
+<a name="line-395"></a>    <span class='hs-varid'>y</span>           <span class='hs-keyglyph'>=</span> <span class='hs-varid'>fx</span> <span class='hs-varop'>+</span> <span class='hs-varid'>hessQuad</span> <span class='hs-varop'>/</span> <span class='hs-num'>2</span>
+<a name="line-396"></a>      <span class='hs-keyword'>where</span>
+<a name="line-397"></a>        <span class='hs-varid'>hessQuad</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>dot</span> <span class='hs-varid'>vxsL</span>
+<a name="line-398"></a>                 <span class='hs-varop'>.</span> <span class='hs-varid'>diag</span>
+<a name="line-399"></a>                 <span class='hs-varop'>.</span> <span class='hs-varid'>toList</span>
+<a name="line-400"></a>                 <span class='hs-varop'>$</span> <span class='hs-varid'>fmap</span> <span class='hs-varid'>toList</span> <span class='hs-varid'>hess</span>
+<a name="line-401"></a>    <span class='hs-varid'>vy</span>          <span class='hs-keyglyph'>=</span> <span class='hs-varid'>dot</span> <span class='hs-varid'>vxsL</span> <span class='hs-layout'>(</span><span class='hs-layout'>(</span><span class='hs-varop'>^</span> <span class='hs-layout'>(</span><span class='hs-num'>2</span><span class='hs-keyglyph'>::</span><span class='hs-conid'>Int</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span> <span class='hs-varop'>&lt;$&gt;</span> <span class='hs-varid'>dfxs</span><span class='hs-layout'>)</span>
+<a name="line-402"></a>    <span class='hs-varid'>dot</span> <span class='hs-varid'>x</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>sum</span> <span class='hs-varop'>.</span> <span class='hs-varid'>zipWith</span> <span class='hs-layout'>(</span><span class='hs-varop'>*</span><span class='hs-layout'>)</span> <span class='hs-varid'>x</span> <span class='hs-varop'>.</span> <span class='hs-varid'>toList</span>
+<a name="line-403"></a>    <span class='hs-varid'>diag</span> <span class='hs-keyglyph'>=</span> <span class='hs-keyglyph'>\</span><span class='hs-keyword'>case</span> <span class='hs-conid'>[]</span>        <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>[]</span>
+<a name="line-404"></a>                 <span class='hs-conid'>[]</span>   <span class='hs-conop'>:</span><span class='hs-varid'>yss</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>diag</span> <span class='hs-layout'>(</span><span class='hs-varid'>drop1</span> <span class='hs-varop'>&lt;$&gt;</span> <span class='hs-varid'>yss</span><span class='hs-layout'>)</span>
+<a name="line-405"></a>                 <span class='hs-layout'>(</span><span class='hs-varid'>x</span><span class='hs-conop'>:</span><span class='hs-keyword'>_</span><span class='hs-layout'>)</span><span class='hs-conop'>:</span><span class='hs-varid'>yss</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>x</span> <span class='hs-conop'>:</span> <span class='hs-varid'>diag</span> <span class='hs-layout'>(</span><span class='hs-varid'>drop1</span> <span class='hs-varop'>&lt;$&gt;</span> <span class='hs-varid'>yss</span><span class='hs-layout'>)</span>
+<a name="line-406"></a>      <span class='hs-keyword'>where</span>
+<a name="line-407"></a>        <span class='hs-varid'>drop1</span> <span class='hs-conid'>[]</span>     <span class='hs-keyglyph'>=</span> <span class='hs-conid'>[]</span>
+<a name="line-408"></a>        <span class='hs-varid'>drop1</span> <span class='hs-layout'>(</span><span class='hs-keyword'>_</span><span class='hs-conop'>:</span><span class='hs-varid'>zs</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>zs</span>
+<a name="line-409"></a><span class='hs-comment'>{-# INLINABLE liftUF #-}</span>
+<a name="line-410"></a>
+<a name="line-411"></a><a name="liftU"></a><span class='hs-comment'>-- | Lifts a numeric function over an 'Uncert'.  Correctly propagates the</span>
+<a name="line-412"></a><span class='hs-comment'>-- uncertainty according to the second-order taylor expansion expansion of</span>
+<a name="line-413"></a><span class='hs-comment'>-- the function.  Note that if the higher-degree taylor series terms are</span>
+<a name="line-414"></a><span class='hs-comment'>-- large with respect to the mean and variance, this approximation may be</span>
+<a name="line-415"></a><span class='hs-comment'>-- inaccurate.</span>
 <a name="line-416"></a><span class='hs-comment'>--</span>
-<a name="line-417"></a><span class='hs-comment'>-- @</span>
-<a name="line-418"></a><span class='hs-comment'>-- ghci&gt; liftU2 (\x y -&gt; x**y) (13.5 +/- 0.1) (1.64 +/- 0.08)</span>
-<a name="line-419"></a><span class='hs-comment'>-- 70 +/- 10</span>
+<a name="line-417"></a><span class='hs-comment'>-- Should take any function sufficiently polymorphic over numeric types, so</span>
+<a name="line-418"></a><span class='hs-comment'>-- you can use things like 'sqrt', 'sin', 'negate', etc.</span>
+<a name="line-419"></a><span class='hs-comment'>--</span>
 <a name="line-420"></a><span class='hs-comment'>-- @</span>
-<a name="line-421"></a><span class='hs-definition'>liftU2</span>
-<a name="line-422"></a>    <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Fractional</span> <span class='hs-varid'>a</span>
-<a name="line-423"></a>    <span class='hs-keyglyph'>=&gt;</span> <span class='hs-layout'>(</span><span class='hs-keyword'>forall</span> <span class='hs-varid'>s</span><span class='hs-varop'>.</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>Sparse</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>Sparse</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>Sparse</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span>
-<a name="line-424"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
-<a name="line-425"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
-<a name="line-426"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
-<a name="line-427"></a><span class='hs-definition'>liftU2</span> <span class='hs-varid'>f</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>curryH2</span> <span class='hs-varop'>$</span> <span class='hs-varid'>liftUF</span> <span class='hs-layout'>(</span><span class='hs-varid'>uncurryH2</span> <span class='hs-varid'>f</span><span class='hs-layout'>)</span>
-<a name="line-428"></a>
-<a name="line-429"></a><a name="liftU3"></a><span class='hs-comment'>-- | Lifts a three-argument (curried) function over three 'Uncert's.  See</span>
-<a name="line-430"></a><span class='hs-comment'>-- 'liftU2' and 'liftUF' for more details.</span>
-<a name="line-431"></a><span class='hs-definition'>liftU3</span>
-<a name="line-432"></a>    <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Fractional</span> <span class='hs-varid'>a</span>
-<a name="line-433"></a>    <span class='hs-keyglyph'>=&gt;</span> <span class='hs-layout'>(</span><span class='hs-keyword'>forall</span> <span class='hs-varid'>s</span><span class='hs-varop'>.</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>Sparse</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>Sparse</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>Sparse</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>Sparse</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span>
-<a name="line-434"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
-<a name="line-435"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
-<a name="line-436"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
-<a name="line-437"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
-<a name="line-438"></a><span class='hs-definition'>liftU3</span> <span class='hs-varid'>f</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>curryH3</span> <span class='hs-varop'>$</span> <span class='hs-varid'>liftUF</span> <span class='hs-layout'>(</span><span class='hs-varid'>uncurryH3</span> <span class='hs-varid'>f</span><span class='hs-layout'>)</span>
-<a name="line-439"></a>
-<a name="line-440"></a><a name="liftU4"></a><span class='hs-comment'>-- | Lifts a four-argument (curried) function over four 'Uncert's.  See</span>
-<a name="line-441"></a><span class='hs-comment'>-- 'liftU2' and 'liftUF' for more details.</span>
-<a name="line-442"></a><span class='hs-definition'>liftU4</span>
-<a name="line-443"></a>    <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Fractional</span> <span class='hs-varid'>a</span>
-<a name="line-444"></a>    <span class='hs-keyglyph'>=&gt;</span> <span class='hs-layout'>(</span><span class='hs-keyword'>forall</span> <span class='hs-varid'>s</span><span class='hs-varop'>.</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>Sparse</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>Sparse</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>Sparse</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>Sparse</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>Sparse</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span>
-<a name="line-445"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
-<a name="line-446"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
-<a name="line-447"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
-<a name="line-448"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
-<a name="line-449"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
-<a name="line-450"></a><span class='hs-definition'>liftU4</span> <span class='hs-varid'>f</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>curryH4</span> <span class='hs-varop'>$</span> <span class='hs-varid'>liftUF</span> <span class='hs-layout'>(</span><span class='hs-varid'>uncurryH4</span> <span class='hs-varid'>f</span><span class='hs-layout'>)</span>
-<a name="line-451"></a>
-<a name="line-452"></a><a name="liftU5"></a><span class='hs-comment'>-- | Lifts a five-argument (curried) function over five 'Uncert's.  See</span>
-<a name="line-453"></a><span class='hs-comment'>-- 'liftU2' and 'liftUF' for more details.</span>
-<a name="line-454"></a><span class='hs-definition'>liftU5</span>
-<a name="line-455"></a>    <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Fractional</span> <span class='hs-varid'>a</span>
-<a name="line-456"></a>    <span class='hs-keyglyph'>=&gt;</span> <span class='hs-layout'>(</span><span class='hs-keyword'>forall</span> <span class='hs-varid'>s</span><span class='hs-varop'>.</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>Sparse</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>Sparse</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>Sparse</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>Sparse</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>Sparse</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>Sparse</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span>
-<a name="line-457"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
-<a name="line-458"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
-<a name="line-459"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
-<a name="line-460"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
-<a name="line-461"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
-<a name="line-462"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
-<a name="line-463"></a><span class='hs-definition'>liftU5</span> <span class='hs-varid'>f</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>curryH5</span> <span class='hs-varop'>$</span> <span class='hs-varid'>liftUF</span> <span class='hs-layout'>(</span><span class='hs-varid'>uncurryH5</span> <span class='hs-varid'>f</span><span class='hs-layout'>)</span>
-<a name="line-464"></a>
-<a name="line-465"></a><a name="instance%20Num%20(Uncert%20a)"></a><span class='hs-keyword'>instance</span> <span class='hs-conid'>Fractional</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-conid'>Num</span> <span class='hs-layout'>(</span><span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyword'>where</span>
-<a name="line-466"></a>    <span class='hs-layout'>(</span><span class='hs-varop'>+</span><span class='hs-layout'>)</span>         <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU2</span> <span class='hs-layout'>(</span><span class='hs-varop'>+</span><span class='hs-layout'>)</span>
-<a name="line-467"></a>    <span class='hs-layout'>(</span><span class='hs-varop'>*</span><span class='hs-layout'>)</span>         <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU2</span> <span class='hs-layout'>(</span><span class='hs-varop'>*</span><span class='hs-layout'>)</span>
-<a name="line-468"></a>    <span class='hs-layout'>(</span><span class='hs-comment'>-</span><span class='hs-layout'>)</span>         <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU2</span> <span class='hs-layout'>(</span><span class='hs-comment'>-</span><span class='hs-layout'>)</span>
-<a name="line-469"></a>    <span class='hs-varid'>negate</span>      <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU</span> <span class='hs-varid'>negate</span>
-<a name="line-470"></a>    <span class='hs-varid'>abs</span>         <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU</span> <span class='hs-varid'>abs</span>
-<a name="line-471"></a>    <span class='hs-varid'>signum</span>      <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU</span> <span class='hs-varid'>signum</span>
-<a name="line-472"></a>    <span class='hs-varid'>fromInteger</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>exact</span> <span class='hs-varop'>.</span> <span class='hs-varid'>fromInteger</span>
-<a name="line-473"></a>
-<a name="line-474"></a><a name="instance%20Fractional%20(Uncert%20a)"></a><span class='hs-keyword'>instance</span> <span class='hs-conid'>Fractional</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-conid'>Fractional</span> <span class='hs-layout'>(</span><span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyword'>where</span>
-<a name="line-475"></a>    <span class='hs-varid'>recip</span>        <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU</span> <span class='hs-varid'>recip</span>
-<a name="line-476"></a>    <span class='hs-layout'>(</span><span class='hs-varop'>/</span><span class='hs-layout'>)</span>          <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU2</span> <span class='hs-layout'>(</span><span class='hs-varop'>/</span><span class='hs-layout'>)</span>
-<a name="line-477"></a>    <span class='hs-varid'>fromRational</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>exact</span> <span class='hs-varop'>.</span> <span class='hs-varid'>fromRational</span>
-<a name="line-478"></a>
-<a name="line-479"></a><a name="instance%20Floating%20(Uncert%20a)"></a><span class='hs-keyword'>instance</span> <span class='hs-conid'>Floating</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-conid'>Floating</span> <span class='hs-layout'>(</span><span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyword'>where</span>
-<a name="line-480"></a>    <span class='hs-varid'>pi</span>      <span class='hs-keyglyph'>=</span> <span class='hs-varid'>exact</span> <span class='hs-varid'>pi</span>
-<a name="line-481"></a>    <span class='hs-varid'>exp</span>     <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU</span> <span class='hs-varid'>exp</span>
-<a name="line-482"></a>    <span class='hs-varid'>log</span>     <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU</span> <span class='hs-varid'>log</span>
-<a name="line-483"></a>    <span class='hs-varid'>sqrt</span>    <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU</span> <span class='hs-varid'>sqrt</span>
-<a name="line-484"></a>    <span class='hs-layout'>(</span><span class='hs-varop'>**</span><span class='hs-layout'>)</span>    <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU2</span> <span class='hs-layout'>(</span><span class='hs-varop'>**</span><span class='hs-layout'>)</span>
-<a name="line-485"></a>    <span class='hs-varid'>logBase</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU2</span> <span class='hs-varid'>logBase</span>
-<a name="line-486"></a>    <span class='hs-varid'>sin</span>     <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU</span> <span class='hs-varid'>sin</span>
-<a name="line-487"></a>    <span class='hs-varid'>cos</span>     <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU</span> <span class='hs-varid'>cos</span>
-<a name="line-488"></a>    <span class='hs-varid'>asin</span>    <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU</span> <span class='hs-varid'>asin</span>
-<a name="line-489"></a>    <span class='hs-varid'>acos</span>    <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU</span> <span class='hs-varid'>acos</span>
-<a name="line-490"></a>    <span class='hs-varid'>atan</span>    <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU</span> <span class='hs-varid'>atan</span>
-<a name="line-491"></a>    <span class='hs-varid'>sinh</span>    <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU</span> <span class='hs-varid'>sinh</span>
-<a name="line-492"></a>    <span class='hs-varid'>cosh</span>    <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU</span> <span class='hs-varid'>cosh</span>
-<a name="line-493"></a>    <span class='hs-varid'>asinh</span>   <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU</span> <span class='hs-varid'>asinh</span>
-<a name="line-494"></a>    <span class='hs-varid'>acosh</span>   <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU</span> <span class='hs-varid'>acosh</span>
-<a name="line-495"></a>    <span class='hs-varid'>atanh</span>   <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU</span> <span class='hs-varid'>atanh</span>
+<a name="line-421"></a><span class='hs-comment'>-- ghci&gt; liftU (\x -&gt; log x ^ 2) (12.2 +/- 0.5)</span>
+<a name="line-422"></a><span class='hs-comment'>-- 6.3 +/- 0.2</span>
+<a name="line-423"></a><span class='hs-comment'>-- @</span>
+<a name="line-424"></a><span class='hs-definition'>liftU</span>
+<a name="line-425"></a>    <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Fractional</span> <span class='hs-varid'>a</span>
+<a name="line-426"></a>    <span class='hs-keyglyph'>=&gt;</span> <span class='hs-layout'>(</span><span class='hs-keyword'>forall</span> <span class='hs-varid'>s</span><span class='hs-varop'>.</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>T</span><span class='hs-varop'>.</span><span class='hs-conid'>Tower</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>T</span><span class='hs-varop'>.</span><span class='hs-conid'>Tower</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span>     <span class='hs-comment'>-- ^ Function on values to lift</span>
+<a name="line-427"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>     <span class='hs-comment'>-- ^ 'Uncert' to apply the function to</span>
+<a name="line-428"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
+<a name="line-429"></a><span class='hs-definition'>liftU</span> <span class='hs-varid'>f</span> <span class='hs-layout'>(</span><span class='hs-conid'>Un</span> <span class='hs-varid'>x</span> <span class='hs-varid'>vx</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Un</span> <span class='hs-varid'>y</span> <span class='hs-varid'>vy</span>
+<a name="line-430"></a>  <span class='hs-keyword'>where</span>
+<a name="line-431"></a>    <span class='hs-varid'>fx</span><span class='hs-conop'>:</span><span class='hs-varid'>dfx</span><span class='hs-conop'>:</span><span class='hs-varid'>ddfx</span><span class='hs-conop'>:</span><span class='hs-keyword'>_</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>T</span><span class='hs-varop'>.</span><span class='hs-varid'>diffs0</span> <span class='hs-varid'>f</span> <span class='hs-varid'>x</span>
+<a name="line-432"></a>    <span class='hs-varid'>y</span>             <span class='hs-keyglyph'>=</span> <span class='hs-varid'>fx</span> <span class='hs-varop'>+</span> <span class='hs-varid'>ddfx</span> <span class='hs-varop'>*</span> <span class='hs-varid'>vx</span> <span class='hs-varop'>/</span> <span class='hs-num'>2</span>
+<a name="line-433"></a>    <span class='hs-varid'>vy</span>            <span class='hs-keyglyph'>=</span> <span class='hs-varid'>dfx</span><span class='hs-varop'>*</span><span class='hs-varid'>dfx</span> <span class='hs-varop'>*</span> <span class='hs-varid'>vx</span>
+<a name="line-434"></a><span class='hs-comment'>{-# INLINABLE liftU #-}</span>
+<a name="line-435"></a>
+<a name="line-436"></a><a name="liftU2"></a><span class='hs-comment'>-- | Lifts a two-argument (curried) function over two 'Uncert's.  Correctly</span>
+<a name="line-437"></a><span class='hs-comment'>-- propagates the uncertainty according to the second-order (multivariate)</span>
+<a name="line-438"></a><span class='hs-comment'>-- taylor expansion expansion of the function.  Note that if the</span>
+<a name="line-439"></a><span class='hs-comment'>-- higher-degree taylor series terms are large with respect to the mean and</span>
+<a name="line-440"></a><span class='hs-comment'>-- variance, this approximation may be inaccurate.</span>
+<a name="line-441"></a><span class='hs-comment'>--</span>
+<a name="line-442"></a><span class='hs-comment'>-- Should take any function sufficiently polymorphic over numeric types, so</span>
+<a name="line-443"></a><span class='hs-comment'>-- you can use things like '*', 'atan2', '**', etc.</span>
+<a name="line-444"></a><span class='hs-comment'>--</span>
+<a name="line-445"></a><span class='hs-comment'>-- @</span>
+<a name="line-446"></a><span class='hs-comment'>-- ghci&gt; liftU2 (\x y -&gt; x**y) (13.5 +/- 0.1) (1.64 +/- 0.08)</span>
+<a name="line-447"></a><span class='hs-comment'>-- 70 +/- 10</span>
+<a name="line-448"></a><span class='hs-comment'>-- @</span>
+<a name="line-449"></a><span class='hs-definition'>liftU2</span>
+<a name="line-450"></a>    <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Fractional</span> <span class='hs-varid'>a</span>
+<a name="line-451"></a>    <span class='hs-keyglyph'>=&gt;</span> <span class='hs-layout'>(</span><span class='hs-keyword'>forall</span> <span class='hs-varid'>s</span><span class='hs-varop'>.</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>Sparse</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>Sparse</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>Sparse</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span>
+<a name="line-452"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
+<a name="line-453"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
+<a name="line-454"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
+<a name="line-455"></a><span class='hs-definition'>liftU2</span> <span class='hs-varid'>f</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>curryH2</span> <span class='hs-varop'>$</span> <span class='hs-varid'>liftUF</span> <span class='hs-layout'>(</span><span class='hs-varid'>uncurryH2</span> <span class='hs-varid'>f</span><span class='hs-layout'>)</span>
+<a name="line-456"></a><span class='hs-comment'>{-# INLINABLE liftU2 #-}</span>
+<a name="line-457"></a>
+<a name="line-458"></a><a name="liftU3"></a><span class='hs-comment'>-- | Lifts a three-argument (curried) function over three 'Uncert's.  See</span>
+<a name="line-459"></a><span class='hs-comment'>-- 'liftU2' and 'liftUF' for more details.</span>
+<a name="line-460"></a><span class='hs-definition'>liftU3</span>
+<a name="line-461"></a>    <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Fractional</span> <span class='hs-varid'>a</span>
+<a name="line-462"></a>    <span class='hs-keyglyph'>=&gt;</span> <span class='hs-layout'>(</span><span class='hs-keyword'>forall</span> <span class='hs-varid'>s</span><span class='hs-varop'>.</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>Sparse</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>Sparse</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>Sparse</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>Sparse</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span>
+<a name="line-463"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
+<a name="line-464"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
+<a name="line-465"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
+<a name="line-466"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
+<a name="line-467"></a><span class='hs-definition'>liftU3</span> <span class='hs-varid'>f</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>curryH3</span> <span class='hs-varop'>$</span> <span class='hs-varid'>liftUF</span> <span class='hs-layout'>(</span><span class='hs-varid'>uncurryH3</span> <span class='hs-varid'>f</span><span class='hs-layout'>)</span>
+<a name="line-468"></a><span class='hs-comment'>{-# INLINABLE liftU3 #-}</span>
+<a name="line-469"></a>
+<a name="line-470"></a><a name="liftU4"></a><span class='hs-comment'>-- | Lifts a four-argument (curried) function over four 'Uncert's.  See</span>
+<a name="line-471"></a><span class='hs-comment'>-- 'liftU2' and 'liftUF' for more details.</span>
+<a name="line-472"></a><span class='hs-definition'>liftU4</span>
+<a name="line-473"></a>    <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Fractional</span> <span class='hs-varid'>a</span>
+<a name="line-474"></a>    <span class='hs-keyglyph'>=&gt;</span> <span class='hs-layout'>(</span><span class='hs-keyword'>forall</span> <span class='hs-varid'>s</span><span class='hs-varop'>.</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>Sparse</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>Sparse</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>Sparse</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>Sparse</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>Sparse</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span>
+<a name="line-475"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
+<a name="line-476"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
+<a name="line-477"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
+<a name="line-478"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
+<a name="line-479"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
+<a name="line-480"></a><span class='hs-definition'>liftU4</span> <span class='hs-varid'>f</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>curryH4</span> <span class='hs-varop'>$</span> <span class='hs-varid'>liftUF</span> <span class='hs-layout'>(</span><span class='hs-varid'>uncurryH4</span> <span class='hs-varid'>f</span><span class='hs-layout'>)</span>
+<a name="line-481"></a><span class='hs-comment'>{-# INLINABLE liftU4 #-}</span>
+<a name="line-482"></a>
+<a name="line-483"></a><a name="liftU5"></a><span class='hs-comment'>-- | Lifts a five-argument (curried) function over five 'Uncert's.  See</span>
+<a name="line-484"></a><span class='hs-comment'>-- 'liftU2' and 'liftUF' for more details.</span>
+<a name="line-485"></a><span class='hs-definition'>liftU5</span>
+<a name="line-486"></a>    <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Fractional</span> <span class='hs-varid'>a</span>
+<a name="line-487"></a>    <span class='hs-keyglyph'>=&gt;</span> <span class='hs-layout'>(</span><span class='hs-keyword'>forall</span> <span class='hs-varid'>s</span><span class='hs-varop'>.</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>Sparse</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>Sparse</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>Sparse</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>Sparse</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>Sparse</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>AD</span> <span class='hs-varid'>s</span> <span class='hs-layout'>(</span><span class='hs-conid'>Sparse</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span>
+<a name="line-488"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
+<a name="line-489"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
+<a name="line-490"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
+<a name="line-491"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
+<a name="line-492"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
+<a name="line-493"></a>    <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span>
+<a name="line-494"></a><span class='hs-definition'>liftU5</span> <span class='hs-varid'>f</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>curryH5</span> <span class='hs-varop'>$</span> <span class='hs-varid'>liftUF</span> <span class='hs-layout'>(</span><span class='hs-varid'>uncurryH5</span> <span class='hs-varid'>f</span><span class='hs-layout'>)</span>
+<a name="line-495"></a><span class='hs-comment'>{-# INLINABLE liftU5 #-}</span>
 <a name="line-496"></a>
-<a name="line-497"></a><a name="instance%20Eq%20(Uncert%20a)"></a><span class='hs-keyword'>instance</span> <span class='hs-conid'>Eq</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-conid'>Eq</span> <span class='hs-layout'>(</span><span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyword'>where</span>
-<a name="line-498"></a>    <span class='hs-layout'>(</span><span class='hs-varop'>==</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-layout'>(</span><span class='hs-varop'>==</span><span class='hs-layout'>)</span> <span class='hs-varop'>`on`</span> <span class='hs-varid'>uMean</span>
-<a name="line-499"></a>    <span class='hs-layout'>(</span><span class='hs-varop'>/=</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-layout'>(</span><span class='hs-varop'>/=</span><span class='hs-layout'>)</span> <span class='hs-varop'>`on`</span> <span class='hs-varid'>uMean</span>
-<a name="line-500"></a>
-<a name="line-501"></a><a name="instance%20Ord%20(Uncert%20a)"></a><span class='hs-keyword'>instance</span> <span class='hs-conid'>Ord</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-conid'>Ord</span> <span class='hs-layout'>(</span><span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyword'>where</span>
-<a name="line-502"></a>    <span class='hs-varid'>compare</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>comparing</span> <span class='hs-varid'>uMean</span>
-<a name="line-503"></a>
-<a name="line-504"></a><a name="instance%20Real%20(Uncert%20a)"></a><span class='hs-keyword'>instance</span> <span class='hs-layout'>(</span><span class='hs-conid'>Fractional</span> <span class='hs-varid'>a</span><span class='hs-layout'>,</span> <span class='hs-conid'>Real</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-conid'>Real</span> <span class='hs-layout'>(</span><span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyword'>where</span>
-<a name="line-505"></a>    <span class='hs-varid'>toRational</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>toRational</span> <span class='hs-varop'>.</span> <span class='hs-varid'>uMean</span>
-<a name="line-506"></a>
-<a name="line-507"></a><a name="instance%20RealFrac%20(Uncert%20a)"></a><span class='hs-keyword'>instance</span> <span class='hs-conid'>RealFrac</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-conid'>RealFrac</span> <span class='hs-layout'>(</span><span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyword'>where</span>
-<a name="line-508"></a>    <span class='hs-varid'>properFraction</span> <span class='hs-varid'>x</span> <span class='hs-keyglyph'>=</span> <span class='hs-layout'>(</span><span class='hs-varid'>n</span><span class='hs-layout'>,</span> <span class='hs-varid'>d</span><span class='hs-layout'>)</span>
-<a name="line-509"></a>      <span class='hs-keyword'>where</span>
-<a name="line-510"></a>        <span class='hs-varid'>d</span>    <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU</span> <span class='hs-layout'>(</span><span class='hs-varid'>snd'</span> <span class='hs-varop'>.</span> <span class='hs-varid'>properFraction</span><span class='hs-layout'>)</span> <span class='hs-varid'>x</span>
-<a name="line-511"></a>        <span class='hs-varid'>n</span>    <span class='hs-keyglyph'>=</span> <span class='hs-varid'>fst</span> <span class='hs-varop'>.</span> <span class='hs-varid'>properFraction</span> <span class='hs-varop'>$</span> <span class='hs-varid'>uMean</span> <span class='hs-varid'>x</span>
-<a name="line-512"></a>        <span class='hs-varid'>snd'</span> <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-conid'>Int</span><span class='hs-layout'>,</span> <span class='hs-varid'>b</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>b</span>
-<a name="line-513"></a>        <span class='hs-varid'>snd'</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>snd</span>
-<a name="line-514"></a>    <span class='hs-varid'>truncate</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>truncate</span> <span class='hs-varop'>.</span> <span class='hs-varid'>uMean</span>
-<a name="line-515"></a>    <span class='hs-varid'>round</span>    <span class='hs-keyglyph'>=</span> <span class='hs-varid'>round</span>    <span class='hs-varop'>.</span> <span class='hs-varid'>uMean</span>
-<a name="line-516"></a>    <span class='hs-varid'>ceiling</span>  <span class='hs-keyglyph'>=</span> <span class='hs-varid'>ceiling</span>  <span class='hs-varop'>.</span> <span class='hs-varid'>uMean</span>
-<a name="line-517"></a>    <span class='hs-varid'>floor</span>    <span class='hs-keyglyph'>=</span> <span class='hs-varid'>floor</span>    <span class='hs-varop'>.</span> <span class='hs-varid'>uMean</span>
-<a name="line-518"></a>
-<a name="line-519"></a><a name="instance%20RealFloat%20(Uncert%20a)"></a><span class='hs-keyword'>instance</span> <span class='hs-conid'>RealFloat</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-conid'>RealFloat</span> <span class='hs-layout'>(</span><span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyword'>where</span>
-<a name="line-520"></a>    <span class='hs-varid'>floatRadix</span>      <span class='hs-keyglyph'>=</span> <span class='hs-varid'>floatRadix</span>     <span class='hs-varop'>.</span> <span class='hs-varid'>uMean</span>
-<a name="line-521"></a>    <span class='hs-varid'>floatDigits</span>     <span class='hs-keyglyph'>=</span> <span class='hs-varid'>floatDigits</span>    <span class='hs-varop'>.</span> <span class='hs-varid'>uMean</span>
-<a name="line-522"></a>    <span class='hs-varid'>floatRange</span>      <span class='hs-keyglyph'>=</span> <span class='hs-varid'>floatRange</span>     <span class='hs-varop'>.</span> <span class='hs-varid'>uMean</span>
-<a name="line-523"></a>    <span class='hs-varid'>decodeFloat</span>     <span class='hs-keyglyph'>=</span> <span class='hs-varid'>decodeFloat</span>    <span class='hs-varop'>.</span> <span class='hs-varid'>uMean</span>
-<a name="line-524"></a>    <span class='hs-varid'>exponent</span>        <span class='hs-keyglyph'>=</span> <span class='hs-varid'>exponent</span>       <span class='hs-varop'>.</span> <span class='hs-varid'>uMean</span>
-<a name="line-525"></a>    <span class='hs-varid'>isNaN</span>           <span class='hs-keyglyph'>=</span> <span class='hs-varid'>isNaN</span>          <span class='hs-varop'>.</span> <span class='hs-varid'>uMean</span>
-<a name="line-526"></a>    <span class='hs-varid'>isInfinite</span>      <span class='hs-keyglyph'>=</span> <span class='hs-varid'>isInfinite</span>     <span class='hs-varop'>.</span> <span class='hs-varid'>uMean</span>
-<a name="line-527"></a>    <span class='hs-varid'>isDenormalized</span>  <span class='hs-keyglyph'>=</span> <span class='hs-varid'>isDenormalized</span> <span class='hs-varop'>.</span> <span class='hs-varid'>uMean</span>
-<a name="line-528"></a>    <span class='hs-varid'>isNegativeZero</span>  <span class='hs-keyglyph'>=</span> <span class='hs-varid'>isNegativeZero</span> <span class='hs-varop'>.</span> <span class='hs-varid'>uMean</span>
-<a name="line-529"></a>    <span class='hs-varid'>isIEEE</span>          <span class='hs-keyglyph'>=</span> <span class='hs-varid'>isIEEE</span>         <span class='hs-varop'>.</span> <span class='hs-varid'>uMean</span>
-<a name="line-530"></a>    <span class='hs-varid'>encodeFloat</span> <span class='hs-varid'>a</span> <span class='hs-varid'>b</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>exact</span> <span class='hs-layout'>(</span><span class='hs-varid'>encodeFloat</span> <span class='hs-varid'>a</span> <span class='hs-varid'>b</span><span class='hs-layout'>)</span>
-<a name="line-531"></a>    <span class='hs-varid'>significand</span>     <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU</span> <span class='hs-varid'>significand</span>
-<a name="line-532"></a>    <span class='hs-varid'>atan2</span>           <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU2</span> <span class='hs-varid'>atan2</span>
-<a name="line-533"></a>
+<a name="line-497"></a><a name="instance%20Num%20(Uncert%20a)"></a><span class='hs-keyword'>instance</span> <span class='hs-conid'>Fractional</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-conid'>Num</span> <span class='hs-layout'>(</span><span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyword'>where</span>
+<a name="line-498"></a>    <span class='hs-layout'>(</span><span class='hs-varop'>+</span><span class='hs-layout'>)</span>         <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU2</span> <span class='hs-layout'>(</span><span class='hs-varop'>+</span><span class='hs-layout'>)</span>
+<a name="line-499"></a>    <span class='hs-comment'>{-# INLINE (+) #-}</span>
+<a name="line-500"></a>    <span class='hs-layout'>(</span><span class='hs-varop'>*</span><span class='hs-layout'>)</span>         <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU2</span> <span class='hs-layout'>(</span><span class='hs-varop'>*</span><span class='hs-layout'>)</span>
+<a name="line-501"></a>    <span class='hs-comment'>{-# INLINE (*) #-}</span>
+<a name="line-502"></a>    <span class='hs-layout'>(</span><span class='hs-comment'>-</span><span class='hs-layout'>)</span>         <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU2</span> <span class='hs-layout'>(</span><span class='hs-comment'>-</span><span class='hs-layout'>)</span>
+<a name="line-503"></a>    <span class='hs-comment'>{-# INLINE (-) #-}</span>
+<a name="line-504"></a>    <span class='hs-varid'>negate</span>      <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU</span> <span class='hs-varid'>negate</span>
+<a name="line-505"></a>    <span class='hs-comment'>{-# INLINE negate #-}</span>
+<a name="line-506"></a>    <span class='hs-varid'>abs</span>         <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU</span> <span class='hs-varid'>abs</span>
+<a name="line-507"></a>    <span class='hs-comment'>{-# INLINE abs #-}</span>
+<a name="line-508"></a>    <span class='hs-varid'>signum</span>      <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU</span> <span class='hs-varid'>signum</span>
+<a name="line-509"></a>    <span class='hs-comment'>{-# INLINE signum #-}</span>
+<a name="line-510"></a>    <span class='hs-varid'>fromInteger</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>exact</span> <span class='hs-varop'>.</span> <span class='hs-varid'>fromInteger</span>
+<a name="line-511"></a>    <span class='hs-comment'>{-# INLINE fromInteger #-}</span>
+<a name="line-512"></a>
+<a name="line-513"></a><a name="instance%20Fractional%20(Uncert%20a)"></a><span class='hs-keyword'>instance</span> <span class='hs-conid'>Fractional</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-conid'>Fractional</span> <span class='hs-layout'>(</span><span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyword'>where</span>
+<a name="line-514"></a>    <span class='hs-varid'>recip</span>        <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU</span> <span class='hs-varid'>recip</span>
+<a name="line-515"></a>    <span class='hs-comment'>{-# INLINE recip #-}</span>
+<a name="line-516"></a>    <span class='hs-layout'>(</span><span class='hs-varop'>/</span><span class='hs-layout'>)</span>          <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU2</span> <span class='hs-layout'>(</span><span class='hs-varop'>/</span><span class='hs-layout'>)</span>
+<a name="line-517"></a>    <span class='hs-comment'>{-# INLINE (/) #-}</span>
+<a name="line-518"></a>    <span class='hs-varid'>fromRational</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>exact</span> <span class='hs-varop'>.</span> <span class='hs-varid'>fromRational</span>
+<a name="line-519"></a>    <span class='hs-comment'>{-# INLINE fromRational #-}</span>
+<a name="line-520"></a>
+<a name="line-521"></a><a name="instance%20Floating%20(Uncert%20a)"></a><span class='hs-keyword'>instance</span> <span class='hs-conid'>Floating</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-conid'>Floating</span> <span class='hs-layout'>(</span><span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyword'>where</span>
+<a name="line-522"></a>    <span class='hs-varid'>pi</span>      <span class='hs-keyglyph'>=</span> <span class='hs-varid'>exact</span> <span class='hs-varid'>pi</span>
+<a name="line-523"></a>    <span class='hs-comment'>{-# INLINE pi #-}</span>
+<a name="line-524"></a>    <span class='hs-varid'>exp</span>     <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU</span> <span class='hs-varid'>exp</span>
+<a name="line-525"></a>    <span class='hs-comment'>{-# INLINE exp #-}</span>
+<a name="line-526"></a>    <span class='hs-varid'>log</span>     <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU</span> <span class='hs-varid'>log</span>
+<a name="line-527"></a>    <span class='hs-comment'>{-# INLINE log #-}</span>
+<a name="line-528"></a>    <span class='hs-varid'>sqrt</span>    <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU</span> <span class='hs-varid'>sqrt</span>
+<a name="line-529"></a>    <span class='hs-comment'>{-# INLINE sqrt #-}</span>
+<a name="line-530"></a>    <span class='hs-layout'>(</span><span class='hs-varop'>**</span><span class='hs-layout'>)</span>    <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU2</span> <span class='hs-layout'>(</span><span class='hs-varop'>**</span><span class='hs-layout'>)</span>
+<a name="line-531"></a>    <span class='hs-comment'>{-# INLINE (**) #-}</span>
+<a name="line-532"></a>    <span class='hs-varid'>logBase</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU2</span> <span class='hs-varid'>logBase</span>
+<a name="line-533"></a>    <span class='hs-comment'>{-# INLINE logBase #-}</span>
+<a name="line-534"></a>    <span class='hs-varid'>sin</span>     <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU</span> <span class='hs-varid'>sin</span>
+<a name="line-535"></a>    <span class='hs-comment'>{-# INLINE sin #-}</span>
+<a name="line-536"></a>    <span class='hs-varid'>cos</span>     <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU</span> <span class='hs-varid'>cos</span>
+<a name="line-537"></a>    <span class='hs-comment'>{-# INLINE cos #-}</span>
+<a name="line-538"></a>    <span class='hs-varid'>asin</span>    <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU</span> <span class='hs-varid'>asin</span>
+<a name="line-539"></a>    <span class='hs-comment'>{-# INLINE asin #-}</span>
+<a name="line-540"></a>    <span class='hs-varid'>acos</span>    <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU</span> <span class='hs-varid'>acos</span>
+<a name="line-541"></a>    <span class='hs-comment'>{-# INLINE acos #-}</span>
+<a name="line-542"></a>    <span class='hs-varid'>atan</span>    <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU</span> <span class='hs-varid'>atan</span>
+<a name="line-543"></a>    <span class='hs-comment'>{-# INLINE atan #-}</span>
+<a name="line-544"></a>    <span class='hs-varid'>sinh</span>    <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU</span> <span class='hs-varid'>sinh</span>
+<a name="line-545"></a>    <span class='hs-comment'>{-# INLINE sinh #-}</span>
+<a name="line-546"></a>    <span class='hs-varid'>cosh</span>    <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU</span> <span class='hs-varid'>cosh</span>
+<a name="line-547"></a>    <span class='hs-comment'>{-# INLINE cosh #-}</span>
+<a name="line-548"></a>    <span class='hs-varid'>asinh</span>   <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU</span> <span class='hs-varid'>asinh</span>
+<a name="line-549"></a>    <span class='hs-comment'>{-# INLINE asinh #-}</span>
+<a name="line-550"></a>    <span class='hs-varid'>acosh</span>   <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU</span> <span class='hs-varid'>acosh</span>
+<a name="line-551"></a>    <span class='hs-comment'>{-# INLINE acosh #-}</span>
+<a name="line-552"></a>    <span class='hs-varid'>atanh</span>   <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU</span> <span class='hs-varid'>atanh</span>
+<a name="line-553"></a>    <span class='hs-comment'>{-# INLINE atanh #-}</span>
+<a name="line-554"></a>
+<a name="line-555"></a><a name="instance%20Eq%20(Uncert%20a)"></a><span class='hs-keyword'>instance</span> <span class='hs-conid'>Eq</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-conid'>Eq</span> <span class='hs-layout'>(</span><span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyword'>where</span>
+<a name="line-556"></a>    <span class='hs-layout'>(</span><span class='hs-varop'>==</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-layout'>(</span><span class='hs-varop'>==</span><span class='hs-layout'>)</span> <span class='hs-varop'>`on`</span> <span class='hs-varid'>uMean</span>
+<a name="line-557"></a>    <span class='hs-comment'>{-# INLINE (==) #-}</span>
+<a name="line-558"></a>    <span class='hs-layout'>(</span><span class='hs-varop'>/=</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-layout'>(</span><span class='hs-varop'>/=</span><span class='hs-layout'>)</span> <span class='hs-varop'>`on`</span> <span class='hs-varid'>uMean</span>
+<a name="line-559"></a>    <span class='hs-comment'>{-# INLINE (/=) #-}</span>
+<a name="line-560"></a>
+<a name="line-561"></a><a name="instance%20Ord%20(Uncert%20a)"></a><span class='hs-keyword'>instance</span> <span class='hs-conid'>Ord</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-conid'>Ord</span> <span class='hs-layout'>(</span><span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyword'>where</span>
+<a name="line-562"></a>    <span class='hs-varid'>compare</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>comparing</span> <span class='hs-varid'>uMean</span>
+<a name="line-563"></a>    <span class='hs-comment'>{-# INLINE compare #-}</span>
+<a name="line-564"></a>
+<a name="line-565"></a><a name="instance%20Real%20(Uncert%20a)"></a><span class='hs-keyword'>instance</span> <span class='hs-layout'>(</span><span class='hs-conid'>Fractional</span> <span class='hs-varid'>a</span><span class='hs-layout'>,</span> <span class='hs-conid'>Real</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-conid'>Real</span> <span class='hs-layout'>(</span><span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyword'>where</span>
+<a name="line-566"></a>    <span class='hs-varid'>toRational</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>toRational</span> <span class='hs-varop'>.</span> <span class='hs-varid'>uMean</span>
+<a name="line-567"></a>    <span class='hs-comment'>{-# INLINE toRational #-}</span>
+<a name="line-568"></a>
+<a name="line-569"></a><a name="instance%20RealFrac%20(Uncert%20a)"></a><span class='hs-keyword'>instance</span> <span class='hs-conid'>RealFrac</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-conid'>RealFrac</span> <span class='hs-layout'>(</span><span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyword'>where</span>
+<a name="line-570"></a>    <span class='hs-varid'>properFraction</span> <span class='hs-varid'>x</span> <span class='hs-keyglyph'>=</span> <span class='hs-layout'>(</span><span class='hs-varid'>n</span><span class='hs-layout'>,</span> <span class='hs-varid'>d</span><span class='hs-layout'>)</span>
+<a name="line-571"></a>      <span class='hs-keyword'>where</span>
+<a name="line-572"></a>        <span class='hs-varid'>d</span>    <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU</span> <span class='hs-layout'>(</span><span class='hs-varid'>snd'</span> <span class='hs-varop'>.</span> <span class='hs-varid'>properFraction</span><span class='hs-layout'>)</span> <span class='hs-varid'>x</span>
+<a name="line-573"></a>        <span class='hs-varid'>n</span>    <span class='hs-keyglyph'>=</span> <span class='hs-varid'>fst</span> <span class='hs-varop'>.</span> <span class='hs-varid'>properFraction</span> <span class='hs-varop'>$</span> <span class='hs-varid'>uMean</span> <span class='hs-varid'>x</span>
+<a name="line-574"></a>        <span class='hs-varid'>snd'</span> <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-conid'>Int</span><span class='hs-layout'>,</span> <span class='hs-varid'>b</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>b</span>
+<a name="line-575"></a>        <span class='hs-varid'>snd'</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>snd</span>
+<a name="line-576"></a>    <span class='hs-comment'>{-# INLINABLE properFraction #-}</span>
+<a name="line-577"></a>    <span class='hs-varid'>truncate</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>truncate</span> <span class='hs-varop'>.</span> <span class='hs-varid'>uMean</span>
+<a name="line-578"></a>    <span class='hs-comment'>{-# INLINE truncate #-}</span>
+<a name="line-579"></a>    <span class='hs-varid'>round</span>    <span class='hs-keyglyph'>=</span> <span class='hs-varid'>round</span>    <span class='hs-varop'>.</span> <span class='hs-varid'>uMean</span>
+<a name="line-580"></a>    <span class='hs-comment'>{-# INLINE round #-}</span>
+<a name="line-581"></a>    <span class='hs-varid'>ceiling</span>  <span class='hs-keyglyph'>=</span> <span class='hs-varid'>ceiling</span>  <span class='hs-varop'>.</span> <span class='hs-varid'>uMean</span>
+<a name="line-582"></a>    <span class='hs-comment'>{-# INLINE ceiling #-}</span>
+<a name="line-583"></a>    <span class='hs-varid'>floor</span>    <span class='hs-keyglyph'>=</span> <span class='hs-varid'>floor</span>    <span class='hs-varop'>.</span> <span class='hs-varid'>uMean</span>
+<a name="line-584"></a>    <span class='hs-comment'>{-# INLINE floor #-}</span>
+<a name="line-585"></a>
+<a name="line-586"></a><a name="instance%20RealFloat%20(Uncert%20a)"></a><span class='hs-keyword'>instance</span> <span class='hs-conid'>RealFloat</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-conid'>RealFloat</span> <span class='hs-layout'>(</span><span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-keyword'>where</span>
+<a name="line-587"></a>    <span class='hs-varid'>floatRadix</span>      <span class='hs-keyglyph'>=</span> <span class='hs-varid'>floatRadix</span>     <span class='hs-varop'>.</span> <span class='hs-varid'>uMean</span>
+<a name="line-588"></a>    <span class='hs-comment'>{-# INLINE floatRadix #-}</span>
+<a name="line-589"></a>    <span class='hs-varid'>floatDigits</span>     <span class='hs-keyglyph'>=</span> <span class='hs-varid'>floatDigits</span>    <span class='hs-varop'>.</span> <span class='hs-varid'>uMean</span>
+<a name="line-590"></a>    <span class='hs-comment'>{-# INLINE floatDigits #-}</span>
+<a name="line-591"></a>    <span class='hs-varid'>floatRange</span>      <span class='hs-keyglyph'>=</span> <span class='hs-varid'>floatRange</span>     <span class='hs-varop'>.</span> <span class='hs-varid'>uMean</span>
+<a name="line-592"></a>    <span class='hs-comment'>{-# INLINE floatRange #-}</span>
+<a name="line-593"></a>    <span class='hs-varid'>decodeFloat</span>     <span class='hs-keyglyph'>=</span> <span class='hs-varid'>decodeFloat</span>    <span class='hs-varop'>.</span> <span class='hs-varid'>uMean</span>
+<a name="line-594"></a>    <span class='hs-comment'>{-# INLINE decodeFloat #-}</span>
+<a name="line-595"></a>    <span class='hs-varid'>exponent</span>        <span class='hs-keyglyph'>=</span> <span class='hs-varid'>exponent</span>       <span class='hs-varop'>.</span> <span class='hs-varid'>uMean</span>
+<a name="line-596"></a>    <span class='hs-comment'>{-# INLINE exponent #-}</span>
+<a name="line-597"></a>    <span class='hs-varid'>isNaN</span>           <span class='hs-keyglyph'>=</span> <span class='hs-varid'>isNaN</span>          <span class='hs-varop'>.</span> <span class='hs-varid'>uMean</span>
+<a name="line-598"></a>    <span class='hs-comment'>{-# INLINE isNaN #-}</span>
+<a name="line-599"></a>    <span class='hs-varid'>isInfinite</span>      <span class='hs-keyglyph'>=</span> <span class='hs-varid'>isInfinite</span>     <span class='hs-varop'>.</span> <span class='hs-varid'>uMean</span>
+<a name="line-600"></a>    <span class='hs-comment'>{-# INLINE isInfinite #-}</span>
+<a name="line-601"></a>    <span class='hs-varid'>isDenormalized</span>  <span class='hs-keyglyph'>=</span> <span class='hs-varid'>isDenormalized</span> <span class='hs-varop'>.</span> <span class='hs-varid'>uMean</span>
+<a name="line-602"></a>    <span class='hs-comment'>{-# INLINE isDenormalized #-}</span>
+<a name="line-603"></a>    <span class='hs-varid'>isNegativeZero</span>  <span class='hs-keyglyph'>=</span> <span class='hs-varid'>isNegativeZero</span> <span class='hs-varop'>.</span> <span class='hs-varid'>uMean</span>
+<a name="line-604"></a>    <span class='hs-comment'>{-# INLINE isNegativeZero #-}</span>
+<a name="line-605"></a>    <span class='hs-varid'>isIEEE</span>          <span class='hs-keyglyph'>=</span> <span class='hs-varid'>isIEEE</span>         <span class='hs-varop'>.</span> <span class='hs-varid'>uMean</span>
+<a name="line-606"></a>    <span class='hs-comment'>{-# INLINE isIEEE #-}</span>
+<a name="line-607"></a>    <span class='hs-varid'>encodeFloat</span> <span class='hs-varid'>a</span> <span class='hs-varid'>b</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>exact</span> <span class='hs-layout'>(</span><span class='hs-varid'>encodeFloat</span> <span class='hs-varid'>a</span> <span class='hs-varid'>b</span><span class='hs-layout'>)</span>
+<a name="line-608"></a>    <span class='hs-comment'>{-# INLINE encodeFloat #-}</span>
+<a name="line-609"></a>    <span class='hs-varid'>significand</span>     <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU</span> <span class='hs-varid'>significand</span>
+<a name="line-610"></a>    <span class='hs-comment'>{-# INLINE significand #-}</span>
+<a name="line-611"></a>    <span class='hs-varid'>atan2</span>           <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftU2</span> <span class='hs-varid'>atan2</span>
+<a name="line-612"></a>    <span class='hs-comment'>{-# INLINE atan2 #-}</span>
+<a name="line-613"></a>
 </pre></body>
 </html>
