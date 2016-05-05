@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP               #-}
 {-# LANGUAGE DeriveFoldable    #-}
 {-# LANGUAGE DeriveFunctor     #-}
 {-# LANGUAGE DeriveTraversable #-}
@@ -24,6 +25,12 @@ module Data.Hople
   , uncurryH1, uncurryH2, uncurryH3, uncurryH4, uncurryH5
   )
   where
+
+#if __GLASGOW_HASKELL__ < 710
+import Data.Foldable
+import Data.Traversable
+#endif
+
 
 data H1 a = H1 !a
   deriving (Functor, Foldable, Traversable, Show)

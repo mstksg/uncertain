@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -25,6 +26,11 @@ import           Data.Hople
 import           Data.Uncertain
 import           Numeric.AD.Mode.Sparse
 import qualified Data.IntMap.Strict        as M
+
+#if __GLASGOW_HASKELL__ < 710
+import           Control.Applicative (Applicative)
+import           Data.Functor        ((<$>))
+#endif
 
 -- | Represents a single sample (or a value calculated from samples) within
 -- the 'Corr' monad.  These can be created with 'sampleUncert',
@@ -68,7 +74,11 @@ data CorrF :: * -> * -> * -> * where
         -> (Uncert a -> b)
         -> CorrF s a b
 
-deriving instance Functor (CorrF s a)
+instance Functor (CorrF s a) where
+    fmap f = \case Gen u    next -> Gen u    (f . next)
+                   Fun g us next -> Fun g us (f . next)
+                   Rei v    next -> Rei v    (f . next)
+
 
 -- | The 'Corr' monad allows us to keep track of correlated and
 -- non-independent samples.  It fixes a basic "failure" of the 'Uncert'

@@ -40,13 +40,18 @@ module Data.Uncertain
   where
 
 import           Data.Data
-import           Data.Foldable
+import           Data.Foldable          (toList, foldl')
 import           Data.Function
 import           Data.Hople
 import           Data.Ord
 import           GHC.Generics
 import           Numeric.AD.Mode.Sparse
 import qualified Numeric.AD.Mode.Tower  as T
+
+#if __GLASGOW_HASKELL__ < 710
+import           Data.Functor     ((<$>))
+import           Data.Traversable (Traversable)
+#endif
 
 -- | Represents an independent experimental value centered around a mean
 -- value with "inherent" and independent uncertainty.
@@ -93,9 +98,9 @@ import qualified Numeric.AD.Mode.Tower  as T
 -- @
 --
 -- Can be deconstructed with ':+/-', the pattern synonym/pseudo-constructor
--- which matches on the mean and a standard deviation.  You can also access
--- properties with 'uMean', 'uStd', 'uVar', 'uMeanStd', 'uMeanVar',
--- 'uRange', etc.
+-- which matches on the mean and a standard deviation (supported on GHC
+-- 7.8+).  You can also access properties with 'uMean', 'uStd', 'uVar',
+-- 'uMeanStd', 'uMeanVar', 'uRange', etc.
 --
 -- It's important to remember that each "occurrence" represents a unique
 -- independent sample, so:
@@ -190,10 +195,14 @@ withVar x vx = Un x (abs vx)
 --
 -- /Note:/ Only supported on GHC 7.8 and above.
 --
+#if __GLASGOW_HASKELL__ >= 710
 pattern (:+/-) :: () => Floating a => a -> a -> Uncert a
+#endif
 pattern x :+/- dx <- Un x (sqrt->dx)
+#if __GLASGOW_HASKELL__ >= 710
   where
     x :+/- dx = Un x (dx*dx)
+#endif
 #endif
 
 -- | Infer an 'Uncert' from a given list of independent /samples/ of an
@@ -244,7 +253,7 @@ withPrecisionAtBase
     -> a            -- ^ The approximate value of the 'Uncert'
     -> Int          -- ^ The number of "digits" of precision to take
     -> Uncert a
-withPrecisionAtBase b x p = x' :+/- dx'
+withPrecisionAtBase b x p = x' +/- dx'
   where
     leading :: Int
     leading = negate . floor . logBase (fromIntegral b) $ x
@@ -276,7 +285,7 @@ uNormalizeAtBase
     => Int          -- ^ The base to normalize with respect to
     -> Uncert a
     -> Uncert a
-uNormalizeAtBase b u = x' :+/- dx'
+uNormalizeAtBase b u = x' +/- dx'
   where
     x :+/- dx = u
     uncert    :: Int

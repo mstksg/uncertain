@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP             #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ImplicitParams  #-}
 
@@ -72,13 +73,23 @@ import Data.Uncertain (Uncert, pattern (:+/-), fromSamples)
 import System.Random.MWC
 import System.Random.MWC.Distributions
 
+#if __GLASGOW_HASKELL__ < 710
+import Control.Applicative (Applicative)
+import Data.Functor        ((<$>))
+import Data.Traversable    (Traversable(..))
+#endif
+
 -- | Sample a random 'Double' from the distribution specified by an
 -- @'Uncert' 'Double'@.  @x '+/-' dx@ is treated as a random variable whose
 -- probability density is the normal distribution with mean @x@ and
 -- standard deviation @dx@.
 --
 sampleUncert
+#if __GLASGOW_HASKELL__ < 710
     :: PrimMonad m
+#else
+    :: (PrimMonad m, Functor m)
+#endif
     => Uncert Double
     -> Gen (PrimState m)
     -> m Double
@@ -96,7 +107,11 @@ sampleUncert u g = normal x dx g
 -- @
 --
 liftU
+#if __GLASGOW_HASKELL__ >= 710
     :: PrimMonad m
+#else
+    :: (PrimMonad m, Functor m)
+#endif
     => (Double -> Double)
     -> Uncert Double
     -> Gen (PrimState m)
@@ -114,7 +129,11 @@ liftU = liftU' 1000
 -- @
 --
 liftUF
+#if __GLASGOW_HASKELL__ >= 710
     :: (Traversable f, PrimMonad m)
+#else
+    :: (Traversable f, PrimMonad m, Applicative m)
+#endif
     => (f Double -> Double)
     -> f (Uncert Double)
     -> Gen (PrimState m)
@@ -131,7 +150,11 @@ liftUF = liftUF' 1000
 -- @
 --
 liftU2
+#if __GLASGOW_HASKELL__ >= 710
     :: PrimMonad m
+#else
+    :: (PrimMonad m, Applicative m)
+#endif
     => (Double -> Double -> Double)
     -> Uncert Double
     -> Uncert Double
@@ -142,7 +165,11 @@ liftU2 = liftU2' 1000
 -- | Lifts a three-argument (curried) function over three 'Uncert's.  See
 -- 'liftU2' and 'liftUF' for more details.
 liftU3
+#if __GLASGOW_HASKELL__ >= 710
     :: PrimMonad m
+#else
+    :: (PrimMonad m, Applicative m)
+#endif
     => (Double -> Double -> Double -> Double)
     -> Uncert Double
     -> Uncert Double
@@ -154,7 +181,11 @@ liftU3 = liftU3' 1000
 -- | Lifts a four-argument (curried) function over four 'Uncert's.  See
 -- 'liftU2' and 'liftUF' for more details.
 liftU4
+#if __GLASGOW_HASKELL__ >= 710
     :: PrimMonad m
+#else
+    :: (PrimMonad m, Applicative m)
+#endif
     => (Double -> Double -> Double -> Double -> Double)
     -> Uncert Double
     -> Uncert Double
@@ -167,7 +198,11 @@ liftU4 = liftU4' 1000
 -- | Lifts a five-argument (curried) function over five 'Uncert's.  See
 -- 'liftU2' and 'liftUF' for more details.
 liftU5
+#if __GLASGOW_HASKELL__ >= 710
     :: PrimMonad m
+#else
+    :: (PrimMonad m, Applicative m)
+#endif
     => (Double -> Double -> Double -> Double -> Double -> Double)
     -> Uncert Double
     -> Uncert Double
@@ -181,7 +216,11 @@ liftU5 = liftU5' 1000
 -- | Like 'liftU', but allows you to specify the number of samples to run
 -- the Monte Carlo simulation with.
 liftU'
+#if __GLASGOW_HASKELL__ >= 710
     :: PrimMonad m
+#else
+    :: (PrimMonad m, Functor m)
+#endif
     => Int
     -> (Double -> Double)
     -> Uncert Double
@@ -194,7 +233,11 @@ liftU' n f u g = fromSamples <$> replicateM n samp
 -- | Like 'liftUF', but allows you to specify the number of samples to run
 -- the Monte Carlo simulation with.
 liftUF'
+#if __GLASGOW_HASKELL__ >= 710
     :: (Traversable f, PrimMonad m)
+#else
+    :: (Traversable f, PrimMonad m, Applicative m)
+#endif
     => Int
     -> (f Double -> Double)
     -> f (Uncert Double)
@@ -207,7 +250,11 @@ liftUF' n f us g = fromSamples <$> replicateM n samp
 -- | Like 'liftU2', but allows you to specify the number of samples to run
 -- the Monte Carlo simulation with.
 liftU2'
+#if __GLASGOW_HASKELL__ >= 710
     :: PrimMonad m
+#else
+    :: (PrimMonad m, Applicative m)
+#endif
     => Int
     -> (Double -> Double -> Double)
     -> Uncert Double
@@ -219,7 +266,11 @@ liftU2' n f x y = liftUF' n (uncurryH2 f) (H2 x y)
 -- | Like 'liftU3', but allows you to specify the number of samples to run
 -- the Monte Carlo simulation with.
 liftU3'
+#if __GLASGOW_HASKELL__ >= 710
     :: PrimMonad m
+#else
+    :: (PrimMonad m, Applicative m)
+#endif
     => Int
     -> (Double -> Double -> Double -> Double)
     -> Uncert Double
@@ -232,7 +283,11 @@ liftU3' n f x y z = liftUF' n (uncurryH3 f) (H3 x y z)
 -- | Like 'liftU4', but allows you to specify the number of samples to run
 -- the Monte Carlo simulation with.
 liftU4'
+#if __GLASGOW_HASKELL__ >= 710
     :: PrimMonad m
+#else
+    :: (PrimMonad m, Applicative m)
+#endif
     => Int
     -> (Double -> Double -> Double -> Double -> Double)
     -> Uncert Double
@@ -246,7 +301,11 @@ liftU4' n f x y z a = liftUF' n (uncurryH4 f) (H4 x y z a)
 -- | Like 'liftU5', but allows you to specify the number of samples to run
 -- the Monte Carlo simulation with.
 liftU5'
+#if __GLASGOW_HASKELL__ >= 710
     :: PrimMonad m
+#else
+    :: (PrimMonad m, Applicative m)
+#endif
     => Int
     -> (Double -> Double -> Double -> Double -> Double -> Double)
     -> Uncert Double
