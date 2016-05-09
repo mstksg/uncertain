@@ -3,6 +3,7 @@
 {-# LANGUAGE DeriveGeneric       #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE LambdaCase          #-}
+{-# LANGUAGE NoImplicitPrelude   #-}
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns        #-}
@@ -47,12 +48,8 @@ import           Data.Hople
 import           Data.Ord
 import           GHC.Generics
 import           Numeric.AD.Mode.Sparse
+import           Prelude.Compat
 import qualified Numeric.AD.Mode.Tower  as T
-
-#if __GLASGOW_HASKELL__ < 710
-import           Data.Functor     ((<$>))
-import           Data.Traversable (Traversable)
-#endif
 
 
 -- | Represents an independent experimental value centered around a mean
