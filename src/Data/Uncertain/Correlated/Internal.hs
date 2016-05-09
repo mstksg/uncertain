@@ -1,10 +1,10 @@
-{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE KindSignatures             #-}
 {-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE NoImplicitPrelude          #-}
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE StandaloneDeriving         #-}
@@ -36,15 +36,12 @@ module Data.Uncertain.Correlated.Internal
 import           Control.Arrow             ((***))
 import           Control.Monad.Free
 import           Control.Monad.Trans.State
+import           Prelude.Compat
 import           Data.Hople
 import           Data.Uncertain
 import           Numeric.AD.Mode.Sparse
 import qualified Data.IntMap.Strict        as M
 
-#if __GLASGOW_HASKELL__ < 710
-import           Control.Applicative (Applicative)
-import           Data.Functor        ((<$>))
-#endif
 
 -- | Represents a single sample (or a value calculated from samples) within
 -- the 'Corr' monad.  These can be created with 'sampleUncert',
