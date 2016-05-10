@@ -33,6 +33,9 @@ module Data.Uncertain.Correlated
 
 import           Control.Monad.Free
 import           Control.Monad.Trans.State
+import           Data.Connected
+import           Data.Type.Combinator
+import           Data.Type.Vector
 import           Data.Uncertain
 import           Data.Uncertain.Correlated.Internal
 import qualified Data.IntMap.Strict                 as M
@@ -45,7 +48,7 @@ import qualified Data.IntMap.Strict                 as M
 -- qualification is mostly a type system trick to ensure that you aren't
 -- allowed to ever use 'evalCorr' to evaluate a 'CVar'.
 evalCorr :: Fractional a => (forall s. Corr s a b) -> b
-evalCorr c = evalState (corrToState c) (0, M.empty)
+evalCorr c = evalState (corrToState c) (0, (M.empty, M.empty))
 {-# INLINABLE evalCorr #-}
 
 -- | Generate a sample in 'Corr' from an 'Uncert' value, independently from
@@ -54,7 +57,7 @@ evalCorr c = evalState (corrToState c) (0, M.empty)
 -- Note that you can only sample @'Uncert' a@s within a @'Corr' s a@, meaning
 -- that all other "sampled" values are also @a@s.
 sampleUncert :: Uncert a -> Corr s a (CVar s a)
-sampleUncert u = liftF $ Gen u id
+sampleUncert u = liftF $ Gen (u :+ ØV) (ØV :*~ ØC) (getI . head')
 {-# INLINE sampleUncert #-}
 
 -- | Generate an exact sample in 'Corr' with zero uncertainty,

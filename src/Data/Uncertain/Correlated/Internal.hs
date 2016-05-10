@@ -26,20 +26,26 @@
 
 module Data.Uncertain.Correlated.Internal
   ( CVar, dephantom
-  , CorrF(..), Corr
+  , CorrF(..), Corr, CorrState
   , liftCF
   , constC, liftC, liftC2, liftC3, liftC4, liftC5
   , corrToState
   )
   where
 
+import           Control.Applicative
 import           Control.Arrow             ((***))
 import           Control.Monad.Free
 import           Control.Monad.Trans.State
-import           Prelude.Compat
+import           Data.Bifunctor
+import           Data.Connected
+import           Data.Foldable
 import           Data.Hople
+import           Data.Type.Combinator
+import           Data.Type.Vector
 import           Data.Uncertain
 import           Numeric.AD.Mode.Sparse
+import           Prelude.Compat
 import qualified Data.IntMap.Strict        as M
 
 
@@ -77,7 +83,10 @@ dephantom = \case CK x    -> CK x
                   CF f xs -> CF f (dephantom <$> xs)
 
 data CorrF :: * -> * -> * -> * where
-    Gen :: Uncert a -> (CVar s a -> b) -> CorrF s a b
+    Gen :: V n (Uncert a)
+        -> Conn n a
+        -> (V n (CVar s a) -> b)
+        -> CorrF s a b
     Fun :: Functor f
         => (forall t. f (AD t (Sparse a)) -> AD t (Sparse a))
         -> f (CVar s a)
@@ -88,9 +97,11 @@ data CorrF :: * -> * -> * -> * where
         -> CorrF s a b
 
 instance Functor (CorrF s a) where
-    fmap f = \case Gen u    next -> Gen u    (f . next)
+    fmap f = \case Gen u c  next -> Gen u c  (f . next)
                    Fun g us next -> Fun g us (f . next)
                    Rei v    next -> Rei v    (f . next)
+
+type CorrState a = (M.Key, (M.IntMap (Uncert a), M.IntMap (M.IntMap a)))
 
 
 -- | The 'Corr' monad allows us to keep track of correlated and
@@ -158,19 +169,37 @@ deriving instance MonadFree (CorrF s a) (Corr s a)
 corrToState
     :: (Monad m, Fractional a)
     => Corr s a b
-    -> StateT (M.Key, M.IntMap (Uncert a)) m b
+    -> StateT (CorrState a) m b
 corrToState = iterM go . corrFree
   where
     go = \case
-            Gen u next    -> do
-              i <- gets fst
-              modify $ succ *** M.insert i u
-              next (CV i)
+            Gen u c next  -> do
+              ks <- buildKeys u c
+              next (CV <$> ks)
             Fun f us next ->
               next $ CF f us
             Rei v next    -> do
-              u <- gets (getCVar v . snd)
+              u <- gets (getCVar v . fst . snd)
               next u
+    buildKeys
+        :: Monad m
+        => V n (Uncert a)
+        -> Conn n a
+        -> StateT (CorrState a) m (V n M.Key)
+    buildKeys = \case
+        ØV -> \case
+          ØC -> return ØV
+          _  -> error "impossible"
+        u :* us -> \case
+          c :*~ cs -> do
+            ks <- buildKeys us cs
+            k  <- gets fst
+            let corrKeys = zip (toList ks) (toList c)
+            modify . second $
+                M.insert k (getI u)
+                  *** M.insert k (M.fromList corrKeys)
+            return $ k :+ ks
+          _  -> error "impossible"
     getCVar
         :: forall a s. Fractional a
         => CVar s a

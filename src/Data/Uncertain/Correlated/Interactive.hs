@@ -76,9 +76,9 @@ import qualified Data.Uncertain.Correlated          as C
 type CVarIO = CVar RealWorld Double
 
 -- ssh, don't tell anyone we're using 'unsafePerformIO'
-globalCorrMap :: IORef (M.Key, M.IntMap (Uncert Double))
+globalCorrMap :: IORef (CorrState Double)
 {-# NOINLINE globalCorrMap #-}
-globalCorrMap = unsafePerformIO $ newIORef (0, M.empty)
+globalCorrMap = unsafePerformIO $ newIORef (0, (M.empty, M.empty))
 
 runCorrIO :: Corr RealWorld Double a -> IO a
 runCorrIO c = atomicModifyIORef' globalCorrMap
