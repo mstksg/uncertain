@@ -8,10 +8,10 @@
 --   
 --   Documentation maintained at <a>https://mstksg.github.io/uncertain</a>
 @package uncertain
-@version 0.2.0.0
+@version 0.3.0.0
 
 
-module Data.Uncertain
+module Numeric.Uncertain
 
 -- | Represents an independent experimental value centered around a mean
 --   value with "inherent" and independent uncertainty.
@@ -280,32 +280,32 @@ uShow :: (Show a, Floating a) => Uncert a -> String
 --   value (see <a>uNormalize</a>) before showing. See documentation for
 --   <a>showsPrec</a> for more information on how this is meant to be used.
 uShowsPrec :: (Show a, Floating a) => Int -> Uncert a -> ShowS
-instance GHC.Generics.Selector Data.Uncertain.S1_0_1Uncert
-instance GHC.Generics.Selector Data.Uncertain.S1_0_0Uncert
-instance GHC.Generics.Constructor Data.Uncertain.C1_0Uncert
-instance GHC.Generics.Datatype Data.Uncertain.D1Uncert
-instance GHC.Generics.Generic1 Data.Uncertain.Uncert
-instance GHC.Generics.Generic (Data.Uncertain.Uncert a)
-instance Data.Data.Data a => Data.Data.Data (Data.Uncertain.Uncert a)
-instance (GHC.Show.Show a, GHC.Float.Floating a, GHC.Real.RealFrac a) => GHC.Show.Show (Data.Uncertain.Uncert a)
-instance GHC.Real.Fractional a => GHC.Num.Num (Data.Uncertain.Uncert a)
-instance GHC.Real.Fractional a => GHC.Real.Fractional (Data.Uncertain.Uncert a)
-instance GHC.Float.Floating a => GHC.Float.Floating (Data.Uncertain.Uncert a)
-instance GHC.Classes.Eq a => GHC.Classes.Eq (Data.Uncertain.Uncert a)
-instance GHC.Classes.Ord a => GHC.Classes.Ord (Data.Uncertain.Uncert a)
-instance (GHC.Real.Fractional a, GHC.Real.Real a) => GHC.Real.Real (Data.Uncertain.Uncert a)
-instance GHC.Real.RealFrac a => GHC.Real.RealFrac (Data.Uncertain.Uncert a)
-instance GHC.Float.RealFloat a => GHC.Float.RealFloat (Data.Uncertain.Uncert a)
+instance GHC.Generics.Selector Numeric.Uncertain.S1_0_1Uncert
+instance GHC.Generics.Selector Numeric.Uncertain.S1_0_0Uncert
+instance GHC.Generics.Constructor Numeric.Uncertain.C1_0Uncert
+instance GHC.Generics.Datatype Numeric.Uncertain.D1Uncert
+instance GHC.Generics.Generic1 Numeric.Uncertain.Uncert
+instance GHC.Generics.Generic (Numeric.Uncertain.Uncert a)
+instance Data.Data.Data a => Data.Data.Data (Numeric.Uncertain.Uncert a)
+instance (GHC.Show.Show a, GHC.Float.Floating a, GHC.Real.RealFrac a) => GHC.Show.Show (Numeric.Uncertain.Uncert a)
+instance GHC.Real.Fractional a => GHC.Num.Num (Numeric.Uncertain.Uncert a)
+instance GHC.Real.Fractional a => GHC.Real.Fractional (Numeric.Uncertain.Uncert a)
+instance GHC.Float.Floating a => GHC.Float.Floating (Numeric.Uncertain.Uncert a)
+instance GHC.Classes.Eq a => GHC.Classes.Eq (Numeric.Uncertain.Uncert a)
+instance GHC.Classes.Ord a => GHC.Classes.Ord (Numeric.Uncertain.Uncert a)
+instance (GHC.Real.Fractional a, GHC.Real.Real a) => GHC.Real.Real (Numeric.Uncertain.Uncert a)
+instance GHC.Real.RealFrac a => GHC.Real.RealFrac (Numeric.Uncertain.Uncert a)
+instance GHC.Float.RealFloat a => GHC.Float.RealFloat (Numeric.Uncertain.Uncert a)
 
 
 -- | Provides the <a>Corr</a> monad, which allows one to describe complex
 --   relationships between random variables and evaluate their propagated
 --   uncertainties <i>respecting</i> their inter-correlations.
 --   
---   See the <a>Data.Uncertain.Correlated.Interactive</a> module for an
+--   See the <a>Numeric.Uncertain.Correlated.Interactive</a> module for an
 --   "interactive" and exploratory interface for this module's
 --   functionality.
-module Data.Uncertain.Correlated
+module Numeric.Uncertain.Correlated
 
 -- | The <a>Corr</a> monad allows us to keep track of correlated and
 --   non-independent samples. It fixes a basic "failure" of the
@@ -513,12 +513,12 @@ liftC5 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t 
 liftCF :: (Functor f, Fractional a) => (forall t. f (AD t (Sparse a)) -> AD t (Sparse a)) -> f (CVar s a) -> CVar s a
 
 
--- | Exports all of the interface of <a>Data.Uncertain.Correlated</a>,
+-- | Exports all of the interface of <a>Numeric.Uncertain.Correlated</a>,
 --   except meant to be run in a <i>ghci</i> session "interactively" for
 --   exploratory purposes, or in a plain <a>IO</a> action (instead of
 --   inside a <a>Corr</a> monad).
 --   
---   For example, with the <a>Data.Uncertain.Correlated</a> interface:
+--   For example, with the <a>Numeric.Uncertain.Correlated</a> interface:
 --   
 --   <pre>
 --   ghci&gt; evalCorr $ do
@@ -547,7 +547,7 @@ liftCF :: (Functor f, Fractional a) => (forall t. f (AD t (Sparse a)) -> AD t (S
 --   uncertainty.
 --   
 --   Because many of the names overlap with the names from the
---   <a>Data.Uncertain.Correlated</a> module, it is recommended that you
+--   <a>Numeric.Uncertain.Correlated</a> module, it is recommended that you
 --   never have both imported at the same time in <i>ghci</i> or in a file,
 --   or import them qualified if you must.
 --   
@@ -557,7 +557,7 @@ liftCF :: (Functor f, Fractional a) => (forall t. f (AD t (Sparse a)) -> AD t (S
 --   
 --   Be aware that this module is not robustly tested in heavily concurrent
 --   situations/applications.
-module Data.Uncertain.Correlated.Interactive
+module Numeric.Uncertain.Correlated.Interactive
 
 -- | Represents a single sample (or a value calculated from samples) within
 --   the <a>Corr</a> monad. These can be created with
@@ -704,12 +704,12 @@ liftCF :: (Functor f, Fractional a) => (forall t. f (AD t (Sparse a)) -> AD t (S
 --   deviation <tt>dx</tt>.
 --   
 --   This module attempts to duplicate the API offered by
---   <a>Data.Uncertain</a> and is meant to be imported qualified alongside
---   <a>Data.Uncertain</a>
+--   <a>Numeric.Uncertain</a> and is meant to be imported qualified
+--   alongside <a>Numeric.Uncertain</a>
 --   
 --   <pre>
---   import           Data.Uncertain
---   import qualified Data.Uncertain.MonteCarlo as MC
+--   import           Numeric.Uncertain
+--   import qualified Numeric.Uncertain.MonteCarlo as MC
 --   </pre>
 --   
 --   Actions are parameterized over all <a>PrimMonad</a> instances, so can
@@ -718,7 +718,7 @@ liftCF :: (Functor f, Fractional a) => (forall t. f (AD t (Sparse a)) -> AD t (S
 --   <a>System.Random.MWC</a> for random value generation purposes.
 --   
 --   <pre>
---   ghci&gt; import qualified Data.Uncertain.MonteCarlo as MC
+--   ghci&gt; import qualified Numeric.Uncertain.MonteCarlo as MC
 --   ghci&gt; import System.Random.MWC
 --   ghci&gt; let x = 1.52 <tt>+/-</tt> 0.07
 --   ghci&gt; let y = 781.4 +/- 0.3
@@ -737,7 +737,7 @@ liftCF :: (Functor f, Fractional a) => (forall t. f (AD t (Sparse a)) -> AD t (S
 --   ghci&gt; MC.liftU2 (a b -&gt; pi + 3 * logBase a b) x y g
 --   51 +/- 5
 --   </pre>
-module Data.Uncertain.MonteCarlo
+module Numeric.Uncertain.MonteCarlo
 
 -- | Sample a random <a>Double</a> from the distribution specified by an
 --   <tt><a>Uncert</a> <a>Double</a></tt>. <tt>x <tt>+/-</tt> dx</tt> is
