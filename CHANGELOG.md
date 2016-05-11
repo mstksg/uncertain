@@ -1,6 +1,15 @@
 Changelog
 =========
 
+Version 0.3.0.0
+---------------
+
+<https://github.com/mstksg/uncertain/releases/tag/v0.3.0.0>
+
+*   **(Breaking change)** Moved the top-level modules from `Data` to `Numeric`,
+    to better reflect the nature of the library and to align with the
+    convention of other similar libraries.
+
 Version 0.2.0.0
 ---------------
 
