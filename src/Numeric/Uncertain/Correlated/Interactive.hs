@@ -14,8 +14,8 @@
 -- For example, with the "Numeric.Uncertain.Correlated" interface:
 --
 -- @
--- ghci> evalCorr $ do
---         x <- sampleUncert $ 12.5 +/- 0.8
+-- ghci> 'evalCorr' $ do
+--         x <- sampleUncert $ 12.5 '+/-' 0.8
 --         y <- sampleUncert $ 15.9 +/- 0.5
 --         z <- sampleUncert $ 1.52 +/- 0.07
 --         let k = y**x
@@ -43,8 +43,8 @@
 -- have both imported at the same time in /ghci/ or in a file, or import
 -- them qualified if you must.
 --
--- Also note that all of these methods only work with @'Uncertain'
--- 'Double'@s, and are not polymorphic over different numeric types.
+-- Also note that all of these methods only work with @'Uncert' 'Double'@s,
+-- and are not polymorphic over different numeric types.
 --
 -- Be aware that this module is not robustly tested in heavily concurrent
 -- situations/applications.

@@ -23,8 +23,8 @@ import Numeric.Uncertain
 12.5 `withVar` 0.36
 'exact' 7.9512
 81.42 `withPrecision` 4
-7    :: Uncertain Double
-9.18 :: Uncertain Double
+7    :: Uncert Double
+9.18 :: Uncert Double
 fromSamples [12.5, 12.7, 12.6, 12.6, 12.5]
 ```
 

@@ -47,11 +47,11 @@
 -- 2.4 +/- 0.2
 -- ghci> exp x / z * sin (y ** z)
 -- 10.9 +/- 0.9
--- ghci> MC.liftU3 (\a b c -> exp a / c * sin (b**c)) x y z g
+-- ghci> MC.liftU3 (\\a b c -> exp a / c * sin (b**c)) x y z g
 -- 10.8 +/- 1.0
 -- ghci> pi + 3 * logBase x y
 -- 52 +/- 5
--- ghci> MC.liftU2 (\a b -> pi + 3 * logBase a b) x y g
+-- ghci> MC.liftU2 (\\a b -> pi + 3 * logBase a b) x y g
 -- 51 +/- 5
 -- @
 --
@@ -98,7 +98,7 @@ sampleUncert (uMeanStd->(x, dx)) g = normal x dx g
 --
 -- @
 -- ghci> g <- 'create'
--- ghci> MC.liftU (\x -> log x ^ 2) (12.2 +/- 0.5) g
+-- ghci> MC.liftU (\\x -> log x ^ 2) (12.2 +/- 0.5) g
 -- 6.3 +/- 0.2
 -- @
 --
@@ -121,7 +121,7 @@ liftU = liftU' 1000
 --
 -- @
 -- ghci> g <- 'create'
--- ghci> M.liftUF (\[x,y,z] -> x*y+z) [12.2 +/- 0.5, 56 +/- 2, 0.12 +/- 0.08] g
+-- ghci> M.liftUF (\\[x,y,z] -> x*y+z) [12.2 +/- 0.5, 56 +/- 2, 0.12 +/- 0.08] g
 -- 680 +/- 40
 -- @
 --
@@ -143,7 +143,7 @@ liftUF = liftUF' 1000
 --
 -- @
 -- ghci> g <- 'create'
--- ghci> MC.liftU2 (\x y -> x**y) (13.5 +/- 0.1) (1.64 +/- 0.08)
+-- ghci> MC.liftU2 (\\x y -> x**y) (13.5 +/- 0.1) (1.64 +/- 0.08)
 -- 70 +/- 20
 -- @
 --
