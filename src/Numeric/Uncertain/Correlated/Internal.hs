@@ -199,11 +199,11 @@ corrToState = iterM go . corrFree
 -- you can use things like '*', 'sqrt', 'atan2', etc.
 --
 -- @
--- ghci> evalCorr $ do
---         x <- sampleUncert $ 12.5 +/- 0.8
+-- ghci> 'evalCorr' $ do
+--         x <- 'sampleUncert' $ 12.5 '+/-' 0.8
 --         y <- sampleUncert $ 15.9 +/- 0.5
 --         z <- sampleUncert $ 1.52 +/- 0.07
---         resolveUncert $ liftCF (\[a,b,c] -> (a+c) * logBase c (b**a)) x y z
+--         'resolveUncert' $ liftCF (\\[a,b,c] -> (a+c) * logBase c (b**a)) x y z
 -- 1200 +/- 200
 -- @
 --
@@ -231,10 +231,10 @@ constC = CK
 -- you can use things like 'sqrt', 'sin', 'negate', etc.
 --
 -- @
--- ghci> evalCorr $ do
---         x <- sampleUncert $ 12.5 +/- 0.8
+-- ghci> 'evalCorr' $ do
+--         x <- 'sampleUncert' $ 12.5 '+/-' 0.8
 --         y <- sampleUncert $ 15.9 +/- 0.5
---         resolveUncert $ liftC (\z -> log z ^ 2) (x + y)
+--         'resolveUncert' $ liftC (\\z -> log z ^ 2) (x + y)
 -- 11.2 +/- 0.2
 -- @
 --
@@ -258,10 +258,10 @@ liftC f = curryH1 $ liftCF (uncurryH1 f)
 -- you can use things like '*', 'atan2', '**', etc.
 --
 -- @
--- ghci> evalCorr $ do
---         x <- sampleUncert $ 12.5 +/- 0.8
+-- ghci> 'evalCorr' $ do
+--         x <- 'sampleUncert' $ 12.5 '+/-' 0.8
 --         y <- sampleUncert $ 15.9 +/- 0.5
---         resolveUncert $ liftC2 (\a b -> log (a + b) ^ 2) x y
+--         'resolveUncert' $ liftC2 (\\a b -> log (a + b) ^ 2) x y
 -- 11.2 +/- 0.2
 -- @
 --

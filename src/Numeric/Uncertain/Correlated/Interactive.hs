@@ -14,8 +14,8 @@
 -- For example, with the "Numeric.Uncertain.Correlated" interface:
 --
 -- @
--- ghci> evalCorr $ do
---         x <- sampleUncert $ 12.5 +/- 0.8
+-- ghci> 'evalCorr' $ do
+--         x <- sampleUncert $ 12.5 '+/-' 0.8
 --         y <- sampleUncert $ 15.9 +/- 0.5
 --         z <- sampleUncert $ 1.52 +/- 0.07
 --         let k = y**x

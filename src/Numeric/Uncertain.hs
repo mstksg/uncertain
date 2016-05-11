@@ -362,7 +362,7 @@ uShow u = uShowsPrec 0 u ""
 -- you can use things like '*', 'sqrt', 'atan2', etc.
 --
 -- @
--- ghci> liftUF (\[x,y,z] -> x*y+z) [12.2 +/- 0.5, 56 +/- 2, 0.12 +/- 0.08]
+-- ghci> liftUF (\\[x,y,z] -> x*y+z) [12.2 +/- 0.5, 56 +/- 2, 0.12 +/- 0.08]
 -- 680 +/- 40
 -- @
 --
@@ -405,7 +405,7 @@ liftUF f us = Un y vy
 -- you can use things like 'sqrt', 'sin', 'negate', etc.
 --
 -- @
--- ghci> liftU (\x -> log x ^ 2) (12.2 +/- 0.5)
+-- ghci> liftU (\\x -> log x ^ 2) (12.2 +/- 0.5)
 -- 6.3 +/- 0.2
 -- @
 liftU
@@ -430,7 +430,7 @@ liftU f (Un x vx) = Un y vy
 -- you can use things like '*', 'atan2', '**', etc.
 --
 -- @
--- ghci> liftU2 (\x y -> x**y) (13.5 +/- 0.1) (1.64 +/- 0.08)
+-- ghci> liftU2 (\\x y -> x**y) (13.5 +/- 0.1) (1.64 +/- 0.08)
 -- 70 +/- 10
 -- @
 liftU2
