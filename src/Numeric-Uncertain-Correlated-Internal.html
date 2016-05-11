@@ -208,11 +208,11 @@
 <a name="line-199"></a><span class='hs-comment'>-- you can use things like '*', 'sqrt', 'atan2', etc.</span>
 <a name="line-200"></a><span class='hs-comment'>--</span>
 <a name="line-201"></a><span class='hs-comment'>-- @</span>
-<a name="line-202"></a><span class='hs-comment'>-- ghci&gt; evalCorr $ do</span>
-<a name="line-203"></a><span class='hs-comment'>--         x &lt;- sampleUncert $ 12.5 +/- 0.8</span>
+<a name="line-202"></a><span class='hs-comment'>-- ghci&gt; 'evalCorr' $ do</span>
+<a name="line-203"></a><span class='hs-comment'>--         x &lt;- 'sampleUncert' $ 12.5 '+/-' 0.8</span>
 <a name="line-204"></a><span class='hs-comment'>--         y &lt;- sampleUncert $ 15.9 +/- 0.5</span>
 <a name="line-205"></a><span class='hs-comment'>--         z &lt;- sampleUncert $ 1.52 +/- 0.07</span>
-<a name="line-206"></a><span class='hs-comment'>--         resolveUncert $ liftCF (\[a,b,c] -&gt; (a+c) * logBase c (b**a)) x y z</span>
+<a name="line-206"></a><span class='hs-comment'>--         'resolveUncert' $ liftCF (\\[a,b,c] -&gt; (a+c) * logBase c (b**a)) x y z</span>
 <a name="line-207"></a><span class='hs-comment'>-- 1200 +/- 200</span>
 <a name="line-208"></a><span class='hs-comment'>-- @</span>
 <a name="line-209"></a><span class='hs-comment'>--</span>
@@ -240,10 +240,10 @@
 <a name="line-231"></a><span class='hs-comment'>-- you can use things like 'sqrt', 'sin', 'negate', etc.</span>
 <a name="line-232"></a><span class='hs-comment'>--</span>
 <a name="line-233"></a><span class='hs-comment'>-- @</span>
-<a name="line-234"></a><span class='hs-comment'>-- ghci&gt; evalCorr $ do</span>
-<a name="line-235"></a><span class='hs-comment'>--         x &lt;- sampleUncert $ 12.5 +/- 0.8</span>
+<a name="line-234"></a><span class='hs-comment'>-- ghci&gt; 'evalCorr' $ do</span>
+<a name="line-235"></a><span class='hs-comment'>--         x &lt;- 'sampleUncert' $ 12.5 '+/-' 0.8</span>
 <a name="line-236"></a><span class='hs-comment'>--         y &lt;- sampleUncert $ 15.9 +/- 0.5</span>
-<a name="line-237"></a><span class='hs-comment'>--         resolveUncert $ liftC (\z -&gt; log z ^ 2) (x + y)</span>
+<a name="line-237"></a><span class='hs-comment'>--         'resolveUncert' $ liftC (\z -&gt; log z ^ 2) (x + y)</span>
 <a name="line-238"></a><span class='hs-comment'>-- 11.2 +/- 0.2</span>
 <a name="line-239"></a><span class='hs-comment'>-- @</span>
 <a name="line-240"></a><span class='hs-comment'>--</span>
@@ -267,10 +267,10 @@
 <a name="line-258"></a><span class='hs-comment'>-- you can use things like '*', 'atan2', '**', etc.</span>
 <a name="line-259"></a><span class='hs-comment'>--</span>
 <a name="line-260"></a><span class='hs-comment'>-- @</span>
-<a name="line-261"></a><span class='hs-comment'>-- ghci&gt; evalCorr $ do</span>
-<a name="line-262"></a><span class='hs-comment'>--         x &lt;- sampleUncert $ 12.5 +/- 0.8</span>
+<a name="line-261"></a><span class='hs-comment'>-- ghci&gt; 'evalCorr' $ do</span>
+<a name="line-262"></a><span class='hs-comment'>--         x &lt;- 'sampleUncert' $ 12.5 '+/-' 0.8</span>
 <a name="line-263"></a><span class='hs-comment'>--         y &lt;- sampleUncert $ 15.9 +/- 0.5</span>
-<a name="line-264"></a><span class='hs-comment'>--         resolveUncert $ liftC2 (\a b -&gt; log (a + b) ^ 2) x y</span>
+<a name="line-264"></a><span class='hs-comment'>--         'resolveUncert' $ liftC2 (\a b -&gt; log (a + b) ^ 2) x y</span>
 <a name="line-265"></a><span class='hs-comment'>-- 11.2 +/- 0.2</span>
 <a name="line-266"></a><span class='hs-comment'>-- @</span>
 <a name="line-267"></a><span class='hs-comment'>--</span>

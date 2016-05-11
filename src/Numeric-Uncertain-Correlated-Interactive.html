@@ -23,8 +23,8 @@
 <a name="line-14"></a><span class='hs-comment'>-- For example, with the "Numeric.Uncertain.Correlated" interface:</span>
 <a name="line-15"></a><span class='hs-comment'>--</span>
 <a name="line-16"></a><span class='hs-comment'>-- @</span>
-<a name="line-17"></a><span class='hs-comment'>-- ghci&gt; evalCorr $ do</span>
-<a name="line-18"></a><span class='hs-comment'>--         x &lt;- sampleUncert $ 12.5 +/- 0.8</span>
+<a name="line-17"></a><span class='hs-comment'>-- ghci&gt; 'evalCorr' $ do</span>
+<a name="line-18"></a><span class='hs-comment'>--         x &lt;- sampleUncert $ 12.5 '+/-' 0.8</span>
 <a name="line-19"></a><span class='hs-comment'>--         y &lt;- sampleUncert $ 15.9 +/- 0.5</span>
 <a name="line-20"></a><span class='hs-comment'>--         z &lt;- sampleUncert $ 1.52 +/- 0.07</span>
 <a name="line-21"></a><span class='hs-comment'>--         let k = y**x</span>

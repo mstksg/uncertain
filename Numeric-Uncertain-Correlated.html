@@ -70,10 +70,10 @@ sampleExact 10 &#8801; return 10
  taylor expansion expansion of the function.  Note that if the
  higher-degree taylor series terms are large with respect to the mean and
  variance, this approximation may be inaccurate.</p><p>Should take any function sufficiently polymorphic over numeric types, so
- you can use things like <code><a href="../base-4.8.2.0/Prelude.html#v:sqrt">sqrt</a></code>, <code><a href="../base-4.8.2.0/Prelude.html#v:sin">sin</a></code>, <code><a href="../base-4.8.2.0/Prelude.html#v:negate">negate</a></code>, etc.</p><pre>ghci&gt; evalCorr $ do
-        x &lt;- sampleUncert $ 12.5 +/- 0.8
+ you can use things like <code><a href="../base-4.8.2.0/Prelude.html#v:sqrt">sqrt</a></code>, <code><a href="../base-4.8.2.0/Prelude.html#v:sin">sin</a></code>, <code><a href="../base-4.8.2.0/Prelude.html#v:negate">negate</a></code>, etc.</p><pre>ghci&gt; <code>evalCorr</code> $ do
+        x &lt;- <code>sampleUncert</code> $ 12.5 <code><a href="Numeric-Uncertain.html#v:-43--47--45-">+/-</a></code> 0.8
         y &lt;- sampleUncert $ 15.9 +/- 0.5
-        resolveUncert $ liftC (z -&gt; log z ^ 2) (x + y)
+        <code>resolveUncert</code> $ liftC (z -&gt; log z ^ 2) (x + y)
 11.2 +/- 0.2
 </pre></div></div><div class="top"><p class="src"><a name="v:liftC2" class="def">liftC2</a> :: <a href="../base-4.8.2.0/Prelude.html#t:Fractional">Fractional</a> a =&gt; (<span class="keyword">forall</span> t. <a href="../ad-4.3.2/Numeric-AD-Internal-Type.html#t:AD">AD</a> t (<a href="../ad-4.3.2/Numeric-AD-Rank1-Sparse.html#t:Sparse">Sparse</a> a) -&gt; <a href="../ad-4.3.2/Numeric-AD-Internal-Type.html#t:AD">AD</a> t (<a href="../ad-4.3.2/Numeric-AD-Rank1-Sparse.html#t:Sparse">Sparse</a> a) -&gt; <a href="../ad-4.3.2/Numeric-AD-Internal-Type.html#t:AD">AD</a> t (<a href="../ad-4.3.2/Numeric-AD-Rank1-Sparse.html#t:Sparse">Sparse</a> a)) -&gt; <a href="Numeric-Uncertain-Correlated.html#t:CVar">CVar</a> s a -&gt; <a href="Numeric-Uncertain-Correlated.html#t:CVar">CVar</a> s a -&gt; <a href="Numeric-Uncertain-Correlated.html#t:CVar">CVar</a> s a <a href="src/Numeric-Uncertain-Correlated-Internal.html#liftC2" class="link">Source</a></p><div class="doc"><p>Lifts a two-argument (curried) function over the samples represented
  by two <code><a href="Numeric-Uncertain-Correlated.html#t:CVar">CVar</a></code>s.  Correctly propagates the uncertainty according to the
@@ -82,10 +82,10 @@ sampleExact 10 &#8801; return 10
  inter-correlations between the <code><a href="Numeric-Uncertain-Correlated.html#t:CVar">CVar</a></code> samples.  Note that if the
  higher-degree taylor series terms are large with respect to the mean and
  variance, this approximation may be inaccurate.</p><p>Should take any function sufficiently polymorphic over numeric types, so
- you can use things like <code><a href="../base-4.8.2.0/Prelude.html#v:-42-">*</a></code>, <code><a href="../base-4.8.2.0/Prelude.html#v:atan2">atan2</a></code>, <code><a href="../base-4.8.2.0/Prelude.html#v:-42--42-">**</a></code>, etc.</p><pre>ghci&gt; evalCorr $ do
-        x &lt;- sampleUncert $ 12.5 +/- 0.8
+ you can use things like <code><a href="../base-4.8.2.0/Prelude.html#v:-42-">*</a></code>, <code><a href="../base-4.8.2.0/Prelude.html#v:atan2">atan2</a></code>, <code><a href="../base-4.8.2.0/Prelude.html#v:-42--42-">**</a></code>, etc.</p><pre>ghci&gt; <code>evalCorr</code> $ do
+        x &lt;- <code>sampleUncert</code> $ 12.5 <code><a href="Numeric-Uncertain.html#v:-43--47--45-">+/-</a></code> 0.8
         y &lt;- sampleUncert $ 15.9 +/- 0.5
-        resolveUncert $ liftC2 (a b -&gt; log (a + b) ^ 2) x y
+        <code>resolveUncert</code> $ liftC2 (a b -&gt; log (a + b) ^ 2) x y
 11.2 +/- 0.2
 </pre></div></div><div class="top"><p class="src"><a name="v:liftC3" class="def">liftC3</a> :: <a href="../base-4.8.2.0/Prelude.html#t:Fractional">Fractional</a> a =&gt; (<span class="keyword">forall</span> t. <a href="../ad-4.3.2/Numeric-AD-Internal-Type.html#t:AD">AD</a> t (<a href="../ad-4.3.2/Numeric-AD-Rank1-Sparse.html#t:Sparse">Sparse</a> a) -&gt; <a href="../ad-4.3.2/Numeric-AD-Internal-Type.html#t:AD">AD</a> t (<a href="../ad-4.3.2/Numeric-AD-Rank1-Sparse.html#t:Sparse">Sparse</a> a) -&gt; <a href="../ad-4.3.2/Numeric-AD-Internal-Type.html#t:AD">AD</a> t (<a href="../ad-4.3.2/Numeric-AD-Rank1-Sparse.html#t:Sparse">Sparse</a> a) -&gt; <a href="../ad-4.3.2/Numeric-AD-Internal-Type.html#t:AD">AD</a> t (<a href="../ad-4.3.2/Numeric-AD-Rank1-Sparse.html#t:Sparse">Sparse</a> a)) -&gt; <a href="Numeric-Uncertain-Correlated.html#t:CVar">CVar</a> s a -&gt; <a href="Numeric-Uncertain-Correlated.html#t:CVar">CVar</a> s a -&gt; <a href="Numeric-Uncertain-Correlated.html#t:CVar">CVar</a> s a -&gt; <a href="Numeric-Uncertain-Correlated.html#t:CVar">CVar</a> s a <a href="src/Numeric-Uncertain-Correlated-Internal.html#liftC3" class="link">Source</a></p><div class="doc"><p>Lifts a three-argument (curried) function over the samples represented
  by three <code><a href="Numeric-Uncertain-Correlated.html#t:CVar">CVar</a></code>s.  See <code><a href="Numeric-Uncertain-Correlated.html#v:liftC2">liftC2</a></code> and <code><a href="Numeric-Uncertain-Correlated.html#v:liftCF">liftCF</a></code> for more details.</p></div></div><div class="top"><p class="src"><a name="v:liftC4" class="def">liftC4</a> :: <a href="../base-4.8.2.0/Prelude.html#t:Fractional">Fractional</a> a =&gt; (<span class="keyword">forall</span> t. <a href="../ad-4.3.2/Numeric-AD-Internal-Type.html#t:AD">AD</a> t (<a href="../ad-4.3.2/Numeric-AD-Rank1-Sparse.html#t:Sparse">Sparse</a> a) -&gt; <a href="../ad-4.3.2/Numeric-AD-Internal-Type.html#t:AD">AD</a> t (<a href="../ad-4.3.2/Numeric-AD-Rank1-Sparse.html#t:Sparse">Sparse</a> a) -&gt; <a href="../ad-4.3.2/Numeric-AD-Internal-Type.html#t:AD">AD</a> t (<a href="../ad-4.3.2/Numeric-AD-Rank1-Sparse.html#t:Sparse">Sparse</a> a) -&gt; <a href="../ad-4.3.2/Numeric-AD-Internal-Type.html#t:AD">AD</a> t (<a href="../ad-4.3.2/Numeric-AD-Rank1-Sparse.html#t:Sparse">Sparse</a> a) -&gt; <a href="../ad-4.3.2/Numeric-AD-Internal-Type.html#t:AD">AD</a> t (<a href="../ad-4.3.2/Numeric-AD-Rank1-Sparse.html#t:Sparse">Sparse</a> a)) -&gt; <a href="Numeric-Uncertain-Correlated.html#t:CVar">CVar</a> s a -&gt; <a href="Numeric-Uncertain-Correlated.html#t:CVar">CVar</a> s a -&gt; <a href="Numeric-Uncertain-Correlated.html#t:CVar">CVar</a> s a -&gt; <a href="Numeric-Uncertain-Correlated.html#t:CVar">CVar</a> s a -&gt; <a href="Numeric-Uncertain-Correlated.html#t:CVar">CVar</a> s a <a href="src/Numeric-Uncertain-Correlated-Internal.html#liftC4" class="link">Source</a></p><div class="doc"><p>Lifts a four-argument (curried) function over the samples represented
@@ -97,10 +97,10 @@ sampleExact 10 &#8801; return 10
  track of all inter-correlations between the <code><a href="Numeric-Uncertain-Correlated.html#t:CVar">CVar</a></code> samples.  Note that
  if the higher-degree taylor series terms are large with respect to the
  means and variances, this approximation may be inaccurate.</p><p>Should take any function sufficiently polymorphic over numeric types, so
- you can use things like <code><a href="../base-4.8.2.0/Prelude.html#v:-42-">*</a></code>, <code><a href="../base-4.8.2.0/Prelude.html#v:sqrt">sqrt</a></code>, <code><a href="../base-4.8.2.0/Prelude.html#v:atan2">atan2</a></code>, etc.</p><pre>ghci&gt; evalCorr $ do
-        x &lt;- sampleUncert $ 12.5 +/- 0.8
+ you can use things like <code><a href="../base-4.8.2.0/Prelude.html#v:-42-">*</a></code>, <code><a href="../base-4.8.2.0/Prelude.html#v:sqrt">sqrt</a></code>, <code><a href="../base-4.8.2.0/Prelude.html#v:atan2">atan2</a></code>, etc.</p><pre>ghci&gt; <code>evalCorr</code> $ do
+        x &lt;- <code>sampleUncert</code> $ 12.5 <code><a href="Numeric-Uncertain.html#v:-43--47--45-">+/-</a></code> 0.8
         y &lt;- sampleUncert $ 15.9 +/- 0.5
         z &lt;- sampleUncert $ 1.52 +/- 0.07
-        resolveUncert $ liftCF ([a,b,c] -&gt; (a+c) * logBase c (b**a)) x y z
+        <code>resolveUncert</code> $ liftCF (\[a,b,c] -&gt; (a+c) * logBase c (b**a)) x y z
 1200 +/- 200
 </pre></div></div></div></div><div id="footer"><p>Produced by <a href="http://www.haskell.org/haddock/">Haddock</a> version 2.16.1</p></div></body></html>

@@ -447,10 +447,10 @@ resolveUncert :: CVar s a -> Corr s a (Uncert a)
 --   etc.
 --   
 --   <pre>
---   ghci&gt; evalCorr $ do
---           x &lt;- sampleUncert $ 12.5 +/- 0.8
+--   ghci&gt; <tt>evalCorr</tt> $ do
+--           x &lt;- <tt>sampleUncert</tt> $ 12.5 <a>+/-</a> 0.8
 --           y &lt;- sampleUncert $ 15.9 +/- 0.5
---           resolveUncert $ liftC (z -&gt; log z ^ 2) (x + y)
+--           <tt>resolveUncert</tt> $ liftC (z -&gt; log z ^ 2) (x + y)
 --   11.2 +/- 0.2
 --   </pre>
 liftC :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a
@@ -467,10 +467,10 @@ liftC :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a)) -> CVar 
 --   so you can use things like <a>*</a>, <a>atan2</a>, <a>**</a>, etc.
 --   
 --   <pre>
---   ghci&gt; evalCorr $ do
---           x &lt;- sampleUncert $ 12.5 +/- 0.8
+--   ghci&gt; <tt>evalCorr</tt> $ do
+--           x &lt;- <tt>sampleUncert</tt> $ 12.5 <a>+/-</a> 0.8
 --           y &lt;- sampleUncert $ 15.9 +/- 0.5
---           resolveUncert $ liftC2 (a b -&gt; log (a + b) ^ 2) x y
+--           <tt>resolveUncert</tt> $ liftC2 (a b -&gt; log (a + b) ^ 2) x y
 --   11.2 +/- 0.2
 --   </pre>
 liftC2 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a
@@ -503,11 +503,11 @@ liftC5 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t 
 --   so you can use things like <a>*</a>, <a>sqrt</a>, <a>atan2</a>, etc.
 --   
 --   <pre>
---   ghci&gt; evalCorr $ do
---           x &lt;- sampleUncert $ 12.5 +/- 0.8
+--   ghci&gt; <tt>evalCorr</tt> $ do
+--           x &lt;- <tt>sampleUncert</tt> $ 12.5 <a>+/-</a> 0.8
 --           y &lt;- sampleUncert $ 15.9 +/- 0.5
 --           z &lt;- sampleUncert $ 1.52 +/- 0.07
---           resolveUncert $ liftCF ([a,b,c] -&gt; (a+c) * logBase c (b**a)) x y z
+--           <tt>resolveUncert</tt> $ liftCF (\[a,b,c] -&gt; (a+c) * logBase c (b**a)) x y z
 --   1200 +/- 200
 --   </pre>
 liftCF :: (Functor f, Fractional a) => (forall t. f (AD t (Sparse a)) -> AD t (Sparse a)) -> f (CVar s a) -> CVar s a
@@ -521,8 +521,8 @@ liftCF :: (Functor f, Fractional a) => (forall t. f (AD t (Sparse a)) -> AD t (S
 --   For example, with the <a>Numeric.Uncertain.Correlated</a> interface:
 --   
 --   <pre>
---   ghci&gt; evalCorr $ do
---           x &lt;- sampleUncert $ 12.5 +/- 0.8
+--   ghci&gt; <tt>evalCorr</tt> $ do
+--           x &lt;- sampleUncert $ 12.5 <a>+/-</a> 0.8
 --           y &lt;- sampleUncert $ 15.9 +/- 0.5
 --           z &lt;- sampleUncert $ 1.52 +/- 0.07
 --           let k = y**x
@@ -627,10 +627,10 @@ resolveUncert :: CVarIO -> IO (Uncert Double)
 --   etc.
 --   
 --   <pre>
---   ghci&gt; evalCorr $ do
---           x &lt;- sampleUncert $ 12.5 +/- 0.8
+--   ghci&gt; <tt>evalCorr</tt> $ do
+--           x &lt;- <tt>sampleUncert</tt> $ 12.5 <a>+/-</a> 0.8
 --           y &lt;- sampleUncert $ 15.9 +/- 0.5
---           resolveUncert $ liftC (z -&gt; log z ^ 2) (x + y)
+--           <tt>resolveUncert</tt> $ liftC (z -&gt; log z ^ 2) (x + y)
 --   11.2 +/- 0.2
 --   </pre>
 liftC :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a
@@ -647,10 +647,10 @@ liftC :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a)) -> CVar 
 --   so you can use things like <a>*</a>, <a>atan2</a>, <a>**</a>, etc.
 --   
 --   <pre>
---   ghci&gt; evalCorr $ do
---           x &lt;- sampleUncert $ 12.5 +/- 0.8
+--   ghci&gt; <tt>evalCorr</tt> $ do
+--           x &lt;- <tt>sampleUncert</tt> $ 12.5 <a>+/-</a> 0.8
 --           y &lt;- sampleUncert $ 15.9 +/- 0.5
---           resolveUncert $ liftC2 (a b -&gt; log (a + b) ^ 2) x y
+--           <tt>resolveUncert</tt> $ liftC2 (a b -&gt; log (a + b) ^ 2) x y
 --   11.2 +/- 0.2
 --   </pre>
 liftC2 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a
@@ -683,11 +683,11 @@ liftC5 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t 
 --   so you can use things like <a>*</a>, <a>sqrt</a>, <a>atan2</a>, etc.
 --   
 --   <pre>
---   ghci&gt; evalCorr $ do
---           x &lt;- sampleUncert $ 12.5 +/- 0.8
+--   ghci&gt; <tt>evalCorr</tt> $ do
+--           x &lt;- <tt>sampleUncert</tt> $ 12.5 <a>+/-</a> 0.8
 --           y &lt;- sampleUncert $ 15.9 +/- 0.5
 --           z &lt;- sampleUncert $ 1.52 +/- 0.07
---           resolveUncert $ liftCF ([a,b,c] -&gt; (a+c) * logBase c (b**a)) x y z
+--           <tt>resolveUncert</tt> $ liftCF (\[a,b,c] -&gt; (a+c) * logBase c (b**a)) x y z
 --   1200 +/- 200
 --   </pre>
 liftCF :: (Functor f, Fractional a) => (forall t. f (AD t (Sparse a)) -> AD t (Sparse a)) -> f (CVar s a) -> CVar s a
