@@ -131,7 +131,7 @@ data Uncert a = Un { _uMean :: !a
                    }
   deriving (Data, Typeable, Generic, Generic1)
 
--- | Get the mean/central value/expected value of an 'Uncert'.
+-- | Get the mean (central) value of an 'Uncert'.
 uMean :: Uncert a -> a
 uMean = _uMean
 {-# INLINE uMean #-}
