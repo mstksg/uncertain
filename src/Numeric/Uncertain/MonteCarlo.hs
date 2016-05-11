@@ -1,6 +1,7 @@
-{-# LANGUAGE CPP             #-}
-{-# LANGUAGE ImplicitParams  #-}
-{-# LANGUAGE ViewPatterns    #-}
+{-# LANGUAGE CPP               #-}
+{-# LANGUAGE ImplicitParams    #-}
+{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE ViewPatterns      #-}
 
 -- |
 -- Module      : Numeric.Uncertain.MonteCarlo
@@ -70,14 +71,10 @@ import Control.Monad
 import Control.Monad.Primitive
 import Data.Hople
 import Numeric.Uncertain               (Uncert, fromSamples, uMeanStd)
+import Prelude.Compat
 import System.Random.MWC
 import System.Random.MWC.Distributions
 
-#if __GLASGOW_HASKELL__ < 710
-import Control.Applicative (Applicative)
-import Data.Functor        ((<$>))
-import Data.Traversable    (Traversable(..))
-#endif
 
 -- | Sample a random 'Double' from the distribution specified by an
 -- @'Uncert' 'Double'@.  @x '+/-' dx@ is treated as a random variable whose
