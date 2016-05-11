@@ -1,9 +1,10 @@
-{-# LANGUAGE CPP             #-}
-{-# LANGUAGE ImplicitParams  #-}
-{-# LANGUAGE ViewPatterns    #-}
+{-# LANGUAGE CPP               #-}
+{-# LANGUAGE ImplicitParams    #-}
+{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE ViewPatterns      #-}
 
 -- |
--- Module      : Data.Uncertain.MonteCarlo
+-- Module      : Numeric.Uncertain.MonteCarlo
 -- Copyright   : (c) Justin Le 2016
 -- License     : BSD3
 --
@@ -20,12 +21,12 @@
 -- a random variable whose probability density is the normal distribution
 -- with mean @x@ and standard deviation @dx@.
 --
--- This module attempts to duplicate the API offered by "Data.Uncertain"
--- and is meant to be imported qualified alongside "Data.Uncertain"
+-- This module attempts to duplicate the API offered by "Numeric.Uncertain"
+-- and is meant to be imported qualified alongside "Numeric.Uncertain"
 --
 -- @
--- import           Data.Uncertain
--- import qualified Data.Uncertain.MonteCarlo as MC
+-- import           Numeric.Uncertain
+-- import qualified Numeric.Uncertain.MonteCarlo as MC
 -- @
 --
 -- Actions are parameterized over all 'PrimMonad' instances, so can be run
@@ -34,7 +35,7 @@
 -- generation purposes.
 --
 -- @
--- ghci> import qualified Data.Uncertain.MonteCarlo as MC
+-- ghci> import qualified Numeric.Uncertain.MonteCarlo as MC
 -- ghci> import System.Random.MWC
 -- ghci> let x = 1.52 '+/-' 0.07
 -- ghci> let y = 781.4 +/- 0.3
@@ -55,7 +56,7 @@
 -- @
 --
 
-module Data.Uncertain.MonteCarlo
+module Numeric.Uncertain.MonteCarlo
   ( -- * Sampling from an 'Uncert'
     sampleUncert
     -- * Lifting functions via Monte Carlo simulation
@@ -69,15 +70,11 @@ module Data.Uncertain.MonteCarlo
 import Control.Monad
 import Control.Monad.Primitive
 import Data.Hople
-import Data.Uncertain (Uncert, fromSamples, uMeanStd)
+import Numeric.Uncertain               (Uncert, fromSamples, uMeanStd)
+import Prelude.Compat
 import System.Random.MWC
 import System.Random.MWC.Distributions
 
-#if __GLASGOW_HASKELL__ < 710
-import Control.Applicative (Applicative)
-import Data.Functor        ((<$>))
-import Data.Traversable    (Traversable(..))
-#endif
 
 -- | Sample a random 'Double' from the distribution specified by an
 -- @'Uncert' 'Double'@.  @x '+/-' dx@ is treated as a random variable whose

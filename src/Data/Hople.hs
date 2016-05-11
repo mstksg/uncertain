@@ -1,7 +1,7 @@
-{-# LANGUAGE CPP               #-}
 {-# LANGUAGE DeriveFoldable    #-}
 {-# LANGUAGE DeriveFunctor     #-}
 {-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 {-# OPTIONS_HADDOCK hide       #-}
 {-# OPTIONS_HADDOCK prune      #-}
 
@@ -27,10 +27,7 @@ module Data.Hople
   )
   where
 
-#if __GLASGOW_HASKELL__ < 710
-import Data.Foldable
-import Data.Traversable
-#endif
+import Prelude.Compat
 
 
 data H1 a = H1 !a

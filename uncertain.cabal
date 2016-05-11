@@ -2,7 +2,7 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 name:                uncertain
-version:             0.2.0.0
+version:             0.3.0.0
 synopsis:            Manipulating numbers with inherent experimental/measurement uncertainty
 description:         See <https://github.com/mstksg/uncertain/blob/master/README.md README.md>.
                      .
@@ -25,12 +25,12 @@ source-repository head
   location:            git://github.com/mstksg/uncertain.git
 
 library
-  exposed-modules:     Data.Uncertain
-                       Data.Uncertain.Correlated
-                       Data.Uncertain.Correlated.Interactive
-                       Data.Uncertain.MonteCarlo
+  exposed-modules:     Numeric.Uncertain
+                       Numeric.Uncertain.Correlated
+                       Numeric.Uncertain.Correlated.Interactive
+                       Numeric.Uncertain.MonteCarlo
   other-modules:       Data.Hople
-                       Data.Uncertain.Correlated.Internal
+                       Numeric.Uncertain.Correlated.Internal
   -- other-extensions:    
   build-depends:       base         >= 4.6 && < 5
                      , ad           >= 4
