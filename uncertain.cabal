@@ -25,12 +25,12 @@ source-repository head
   location:            git://github.com/mstksg/uncertain.git
 
 library
-  exposed-modules:     Data.Uncertain
-                       Data.Uncertain.Correlated
-                       Data.Uncertain.Correlated.Interactive
-                       Data.Uncertain.MonteCarlo
+  exposed-modules:     Numeric.Uncertain
+                       Numeric.Uncertain.Correlated
+                       Numeric.Uncertain.Correlated.Interactive
+                       Numeric.Uncertain.MonteCarlo
   other-modules:       Data.Hople
-                       Data.Uncertain.Correlated.Internal
+                       Numeric.Uncertain.Correlated.Internal
   -- other-extensions:    
   build-depends:       base         >= 4.6 && < 5
                      , ad           >= 4

@@ -1,7 +1,7 @@
 {-# LANGUAGE RankNTypes #-}
 
 -- |
--- Module      : Data.Uncertain.Correlated
+-- Module      : Numeric.Uncertain.Correlated
 -- Copyright   : (c) Justin Le 2016
 -- License     : BSD3
 --
@@ -13,11 +13,11 @@
 -- relationships between random variables and evaluate their propagated
 -- uncertainties /respecting/ their inter-correlations.
 --
--- See the "Data.Uncertain.Correlated.Interactive" module for an
+-- See the "Numeric.Uncertain.Correlated.Interactive" module for an
 -- "interactive" and exploratory interface for this module's functionality.
 --
 
-module Data.Uncertain.Correlated
+module Numeric.Uncertain.Correlated
   ( -- * 'Corr'
     Corr, evalCorr
     -- * Uncertain and Correlated Values
@@ -33,8 +33,8 @@ module Data.Uncertain.Correlated
 
 import           Control.Monad.Free
 import           Control.Monad.Trans.State
-import           Data.Uncertain
-import           Data.Uncertain.Correlated.Internal
+import           Numeric.Uncertain
+import           Numeric.Uncertain.Correlated.Internal
 import qualified Data.IntMap.Strict                 as M
 
 -- | Evaluates the value described by a 'Corr' monad, taking into account

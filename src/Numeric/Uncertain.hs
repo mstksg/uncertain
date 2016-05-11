@@ -13,7 +13,7 @@
 #endif
 
 -- |
--- Module      : Data.Uncertain
+-- Module      : Numeric.Uncertain
 -- Copyright   : (c) Justin Le 2016
 -- License     : BSD3
 --
@@ -22,7 +22,7 @@
 -- Portability : non-portable
 --
 
-module Data.Uncertain
+module Numeric.Uncertain
   ( -- * 'Uncert'
     Uncert
 #if __GLASGOW_HASKELL__ >= 708

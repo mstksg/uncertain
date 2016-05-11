@@ -12,7 +12,7 @@ Documentation maintained at <https://mstksg.github.io/uncertain>.
 ## Usage
 
 ```haskell
-import Data.Uncertain
+import Numeric.Uncertain
 ```
 
 ### Create numbers
@@ -67,7 +67,7 @@ Can propagate uncertainty on complex functions take from potentially correlated
 samples.
 
 ```haskell
-ghci> import Data.Uncertain.Correlated
+ghci> import Numeric.Uncertain.Correlated
 ghci> evalCorr $ do
         x <- sampleUncert $ 12.5 +/- 0.8
         y <- sampleUncert $ 15.9 +/- 0.5
@@ -99,7 +99,7 @@ simulations][]
 [Monte Carlo simulations]: https://en.wikipedia.org/wiki/Monte_Carlo_method
 
 ```haskell
-ghci> import qualified Data.Uncertain.MonteCarlo as MC
+ghci> import qualified Numeric.Uncertain.MonteCarlo as MC
 ghci> import System.Random.MWC
 ghci> let x = 1.52 +/- 0.07
 ghci> let y = 781.4 +/- 0.3

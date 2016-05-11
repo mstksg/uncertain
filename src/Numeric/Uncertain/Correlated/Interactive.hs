@@ -1,5 +1,5 @@
 -- |
--- Module      : Data.Uncertain.Correlated.Interactive
+-- Module      : Numeric.Uncertain.Correlated.Interactive
 -- Copyright   : (c) Justin Le 2016
 -- License     : BSD3
 --
@@ -7,11 +7,11 @@
 -- Stability   : experimental
 -- Portability : non-portable
 --
--- Exports all of the interface of "Data.Uncertain.Correlated", except
+-- Exports all of the interface of "Numeric.Uncertain.Correlated", except
 -- meant to be run in a /ghci/ session "interactively" for exploratory
 -- purposes, or in a plain 'IO' action (instead of inside a 'Corr' monad).
 --
--- For example, with the "Data.Uncertain.Correlated" interface:
+-- For example, with the "Numeric.Uncertain.Correlated" interface:
 --
 -- @
 -- ghci> evalCorr $ do
@@ -39,7 +39,7 @@
 -- complex and potentially correlated samples with uncertainty.
 --
 -- Because many of the names overlap with the names from the
--- "Data.Uncertain.Correlated" module, it is recommended that you never
+-- "Numeric.Uncertain.Correlated" module, it is recommended that you never
 -- have both imported at the same time in /ghci/ or in a file, or import
 -- them qualified if you must.
 --
@@ -49,7 +49,7 @@
 -- Be aware that this module is not robustly tested in heavily concurrent
 -- situations/applications.
 --
-module Data.Uncertain.Correlated.Interactive
+module Numeric.Uncertain.Correlated.Interactive
   ( -- * Uncertain and Correlated Values
     CVar, CVarIO
     -- ** Sampling
@@ -65,11 +65,11 @@ import           Control.Monad.ST
 import           Control.Monad.Trans.State
 import           Data.IORef
 import           Data.Tuple
-import           Data.Uncertain
-import           Data.Uncertain.Correlated.Internal
-import           System.IO.Unsafe                   (unsafePerformIO)
-import qualified Data.IntMap.Strict                 as M
-import qualified Data.Uncertain.Correlated          as C
+import           Numeric.Uncertain
+import           Numeric.Uncertain.Correlated.Internal
+import           System.IO.Unsafe                      (unsafePerformIO)
+import qualified Data.IntMap.Strict                    as M
+import qualified Numeric.Uncertain.Correlated          as C
 
 -- | A 'CVar' specialized to work in an "interactive" context, in /ghci/ or
 -- 'IO'.

@@ -12,7 +12,7 @@
 {-# OPTIONS_HADDOCK prune               #-}
 
 -- |
--- Module      : Data.Uncertain.Correlated.Internal
+-- Module      : Numeric.Uncertain.Correlated.Internal
 -- Copyright   : (c) Justin Le 2016
 -- License     : BSD3
 --
@@ -21,10 +21,11 @@
 -- Portability : non-portable
 --
 -- Internal utility functions for functionality shared by
--- "Data.Uncertain.Correlated" and "Data.Uncertain.Correlated.Interactive".
+-- "Numeric.Uncertain.Correlated" and
+-- "Numeric.Uncertain.Correlated.Interactive".
 --
 
-module Data.Uncertain.Correlated.Internal
+module Numeric.Uncertain.Correlated.Internal
   ( CVar, dephantom
   , CorrF(..), Corr
   , liftCF
@@ -38,7 +39,7 @@ import           Control.Monad.Free
 import           Control.Monad.Trans.State
 import           Prelude.Compat
 import           Data.Hople
-import           Data.Uncertain
+import           Numeric.Uncertain
 import           Numeric.AD.Mode.Sparse
 import qualified Data.IntMap.Strict        as M
 
