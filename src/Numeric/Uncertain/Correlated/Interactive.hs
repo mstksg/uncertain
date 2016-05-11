@@ -43,8 +43,8 @@
 -- have both imported at the same time in /ghci/ or in a file, or import
 -- them qualified if you must.
 --
--- Also note that all of these methods only work with @'Uncertain'
--- 'Double'@s, and are not polymorphic over different numeric types.
+-- Also note that all of these methods only work with @'Uncert' 'Double'@s,
+-- and are not polymorphic over different numeric types.
 --
 -- Be aware that this module is not robustly tested in heavily concurrent
 -- situations/applications.

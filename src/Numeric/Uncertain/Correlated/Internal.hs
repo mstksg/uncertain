@@ -147,7 +147,7 @@ instance Functor (CorrF s a) where
 -- The first parameter is a dummy phantom parameter used to prevent 'CVar's
 -- from leaking out of the computation (see 'evalCorr').  The second
 -- parameter is the numeric type of all samples within the description (for
--- example, if you ever sample an 'Uncert Double', the second parameter wil
+-- example, if you ever sample an @'Uncert' 'Double'@, the second parameter wil
 -- be 'Double').  The third parameter is the result type of the
 -- computation -- the value the 'Corr' is describing.
 newtype Corr s a b = Corr { corrFree :: Free (CorrF s a) b
