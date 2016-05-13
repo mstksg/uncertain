@@ -129,7 +129,7 @@
 <a name="line-120"></a><a name="Corr"></a><span class='hs-comment'>--         y1 &lt;- 'resolveUncert' $ sum (replicate 10 x)</span>
 <a name="line-121"></a><a name="Corr"></a><span class='hs-comment'>--         y2 &lt;- resolveUncert $ 10 * x</span>
 <a name="line-122"></a><a name="Corr"></a><span class='hs-comment'>--         return (y1, y2)</span>
-<a name="line-123"></a><a name="Corr"></a><span class='hs-comment'>-- (125 +/- 8, 125 +/- 8)</span>
+<a name="line-123"></a><a name="Corr"></a><span class='hs-comment'>-- (125 +\/- 8, 125 +\/- 8)</span>
 <a name="line-124"></a><a name="Corr"></a><span class='hs-comment'>--</span>
 <a name="line-125"></a><a name="Corr"></a><span class='hs-comment'>-- ghci&gt; 'evalCorr' $ do</span>
 <a name="line-126"></a><a name="Corr"></a><span class='hs-comment'>--         xs &lt;- replicateM 10 ('sampleUncert' (12.5 +/- 0.8))</span>
@@ -156,7 +156,7 @@
 <a name="line-147"></a><a name="Corr"></a><span class='hs-comment'>-- The first parameter is a dummy phantom parameter used to prevent 'CVar's</span>
 <a name="line-148"></a><a name="Corr"></a><span class='hs-comment'>-- from leaking out of the computation (see 'evalCorr').  The second</span>
 <a name="line-149"></a><a name="Corr"></a><span class='hs-comment'>-- parameter is the numeric type of all samples within the description (for</span>
-<a name="line-150"></a><a name="Corr"></a><span class='hs-comment'>-- example, if you ever sample an 'Uncert Double', the second parameter wil</span>
+<a name="line-150"></a><a name="Corr"></a><span class='hs-comment'>-- example, if you ever sample an @'Uncert' 'Double'@, the second parameter wil</span>
 <a name="line-151"></a><a name="Corr"></a><span class='hs-comment'>-- be 'Double').  The third parameter is the result type of the</span>
 <a name="line-152"></a><a name="Corr"></a><span class='hs-comment'>-- computation -- the value the 'Corr' is describing.</span>
 <a name="line-153"></a><a name="Corr"></a><span class='hs-keyword'>newtype</span> <span class='hs-conid'>Corr</span> <span class='hs-varid'>s</span> <span class='hs-varid'>a</span> <span class='hs-varid'>b</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Corr</span> <span class='hs-layout'>{</span> <span class='hs-varid'>corrFree</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Free</span> <span class='hs-layout'>(</span><span class='hs-conid'>CorrF</span> <span class='hs-varid'>s</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span> <span class='hs-varid'>b</span>
@@ -243,7 +243,7 @@
 <a name="line-234"></a><span class='hs-comment'>-- ghci&gt; 'evalCorr' $ do</span>
 <a name="line-235"></a><span class='hs-comment'>--         x &lt;- 'sampleUncert' $ 12.5 '+/-' 0.8</span>
 <a name="line-236"></a><span class='hs-comment'>--         y &lt;- sampleUncert $ 15.9 +/- 0.5</span>
-<a name="line-237"></a><span class='hs-comment'>--         'resolveUncert' $ liftC (\z -&gt; log z ^ 2) (x + y)</span>
+<a name="line-237"></a><span class='hs-comment'>--         'resolveUncert' $ liftC (\\z -&gt; log z ^ 2) (x + y)</span>
 <a name="line-238"></a><span class='hs-comment'>-- 11.2 +/- 0.2</span>
 <a name="line-239"></a><span class='hs-comment'>-- @</span>
 <a name="line-240"></a><span class='hs-comment'>--</span>
@@ -270,7 +270,7 @@
 <a name="line-261"></a><span class='hs-comment'>-- ghci&gt; 'evalCorr' $ do</span>
 <a name="line-262"></a><span class='hs-comment'>--         x &lt;- 'sampleUncert' $ 12.5 '+/-' 0.8</span>
 <a name="line-263"></a><span class='hs-comment'>--         y &lt;- sampleUncert $ 15.9 +/- 0.5</span>
-<a name="line-264"></a><span class='hs-comment'>--         'resolveUncert' $ liftC2 (\a b -&gt; log (a + b) ^ 2) x y</span>
+<a name="line-264"></a><span class='hs-comment'>--         'resolveUncert' $ liftC2 (\\a b -&gt; log (a + b) ^ 2) x y</span>
 <a name="line-265"></a><span class='hs-comment'>-- 11.2 +/- 0.2</span>
 <a name="line-266"></a><span class='hs-comment'>-- @</span>
 <a name="line-267"></a><span class='hs-comment'>--</span>

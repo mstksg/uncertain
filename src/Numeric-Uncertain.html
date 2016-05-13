@@ -140,7 +140,7 @@
 <a name="line-131"></a>                   <span class='hs-layout'>}</span>
 <a name="line-132"></a>  <span class='hs-keyword'>deriving</span> <span class='hs-layout'>(</span><span class='hs-conid'>Data</span><span class='hs-layout'>,</span> <span class='hs-conid'>Typeable</span><span class='hs-layout'>,</span> <span class='hs-conid'>Generic</span><span class='hs-layout'>,</span> <span class='hs-conid'>Generic1</span><span class='hs-layout'>)</span>
 <a name="line-133"></a>
-<a name="line-134"></a><a name="uMean"></a><span class='hs-comment'>-- | Get the mean/central value/expected value of an 'Uncert'.</span>
+<a name="line-134"></a><a name="uMean"></a><span class='hs-comment'>-- | Get the mean (central) value of an 'Uncert'.</span>
 <a name="line-135"></a><span class='hs-definition'>uMean</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Uncert</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>a</span>
 <a name="line-136"></a><span class='hs-definition'>uMean</span> <span class='hs-keyglyph'>=</span> <span class='hs-sel'>_uMean</span>
 <a name="line-137"></a><span class='hs-comment'>{-# INLINE uMean #-}</span>
@@ -371,7 +371,7 @@
 <a name="line-362"></a><span class='hs-comment'>-- you can use things like '*', 'sqrt', 'atan2', etc.</span>
 <a name="line-363"></a><span class='hs-comment'>--</span>
 <a name="line-364"></a><span class='hs-comment'>-- @</span>
-<a name="line-365"></a><span class='hs-comment'>-- ghci&gt; liftUF (\[x,y,z] -&gt; x*y+z) [12.2 +/- 0.5, 56 +/- 2, 0.12 +/- 0.08]</span>
+<a name="line-365"></a><span class='hs-comment'>-- ghci&gt; liftUF (\\[x,y,z] -&gt; x*y+z) [12.2 +/- 0.5, 56 +/- 2, 0.12 +/- 0.08]</span>
 <a name="line-366"></a><span class='hs-comment'>-- 680 +/- 40</span>
 <a name="line-367"></a><span class='hs-comment'>-- @</span>
 <a name="line-368"></a><span class='hs-comment'>--</span>
@@ -414,7 +414,7 @@
 <a name="line-405"></a><span class='hs-comment'>-- you can use things like 'sqrt', 'sin', 'negate', etc.</span>
 <a name="line-406"></a><span class='hs-comment'>--</span>
 <a name="line-407"></a><span class='hs-comment'>-- @</span>
-<a name="line-408"></a><span class='hs-comment'>-- ghci&gt; liftU (\x -&gt; log x ^ 2) (12.2 +/- 0.5)</span>
+<a name="line-408"></a><span class='hs-comment'>-- ghci&gt; liftU (\\x -&gt; log x ^ 2) (12.2 +/- 0.5)</span>
 <a name="line-409"></a><span class='hs-comment'>-- 6.3 +/- 0.2</span>
 <a name="line-410"></a><span class='hs-comment'>-- @</span>
 <a name="line-411"></a><span class='hs-definition'>liftU</span>
@@ -439,7 +439,7 @@
 <a name="line-430"></a><span class='hs-comment'>-- you can use things like '*', 'atan2', '**', etc.</span>
 <a name="line-431"></a><span class='hs-comment'>--</span>
 <a name="line-432"></a><span class='hs-comment'>-- @</span>
-<a name="line-433"></a><span class='hs-comment'>-- ghci&gt; liftU2 (\x y -&gt; x**y) (13.5 +/- 0.1) (1.64 +/- 0.08)</span>
+<a name="line-433"></a><span class='hs-comment'>-- ghci&gt; liftU2 (\\x y -&gt; x**y) (13.5 +/- 0.1) (1.64 +/- 0.08)</span>
 <a name="line-434"></a><span class='hs-comment'>-- 70 +/- 10</span>
 <a name="line-435"></a><span class='hs-comment'>-- @</span>
 <a name="line-436"></a><span class='hs-definition'>liftU2</span>

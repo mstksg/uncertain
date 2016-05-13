@@ -142,7 +142,7 @@ withVar :: Num a => a -> a -> Uncert a
 --   of an underlying uncertain or random distribution.
 fromSamples :: Fractional a => [a] -> Uncert a
 
--- | Get the mean<i>central value</i>expected value of an <a>Uncert</a>.
+-- | Get the mean (central) value of an <a>Uncert</a>.
 uMean :: Uncert a -> a
 
 -- | Get the <i>variance</i> of the uncertainty of an <a>Uncert</a>,
@@ -199,7 +199,7 @@ uRange :: Floating a => Uncert a -> (a, a)
 --   etc.
 --   
 --   <pre>
---   ghci&gt; liftU (x -&gt; log x ^ 2) (12.2 +/- 0.5)
+--   ghci&gt; liftU (\x -&gt; log x ^ 2) (12.2 +/- 0.5)
 --   6.3 +/- 0.2
 --   </pre>
 liftU :: Fractional a => (forall s. AD s (Tower a) -> AD s (Tower a)) -> Uncert a -> Uncert a
@@ -214,7 +214,7 @@ liftU :: Fractional a => (forall s. AD s (Tower a) -> AD s (Tower a)) -> Uncert 
 --   so you can use things like <a>*</a>, <a>atan2</a>, <a>**</a>, etc.
 --   
 --   <pre>
---   ghci&gt; liftU2 (x y -&gt; x**y) (13.5 +<i>- 0.1) (1.64 +</i>- 0.08)
+--   ghci&gt; liftU2 (\x y -&gt; x**y) (13.5 +<i>- 0.1) (1.64 +</i>- 0.08)
 --   70 +/- 10
 --   </pre>
 liftU2 :: Fractional a => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a)) -> Uncert a -> Uncert a -> Uncert a
@@ -242,7 +242,7 @@ liftU5 :: Fractional a => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s 
 --   so you can use things like <a>*</a>, <a>sqrt</a>, <a>atan2</a>, etc.
 --   
 --   <pre>
---   ghci&gt; liftUF ([x,y,z] -&gt; x*y+z) [12.2 +<i>- 0.5, 56 +</i>- 2, 0.12 +/- 0.08]
+--   ghci&gt; liftUF (\[x,y,z] -&gt; x*y+z) [12.2 +<i>- 0.5, 56 +</i>- 2, 0.12 +/- 0.08]
 --   680 +/- 40
 --   </pre>
 liftUF :: (Traversable f, Fractional a) => (forall s. f (AD s (Sparse a)) -> AD s (Sparse a)) -> f (Uncert a) -> Uncert a
@@ -333,7 +333,7 @@ module Numeric.Uncertain.Correlated
 --           y1 &lt;- <tt>resolveUncert</tt> $ sum (replicate 10 x)
 --           y2 &lt;- resolveUncert $ 10 * x
 --           return (y1, y2)
---   (125 +<i>- 8, 125 +</i>- 8)
+--   (125 +/- 8, 125 +/- 8)
 --   
 --   ghci&gt; <tt>evalCorr</tt> $ do
 --           xs &lt;- replicateM 10 (<tt>sampleUncert</tt> (12.5 +/- 0.8))
@@ -361,9 +361,9 @@ module Numeric.Uncertain.Correlated
 --   <a>CVar</a>s from leaking out of the computation (see
 --   <tt>evalCorr</tt>). The second parameter is the numeric type of all
 --   samples within the description (for example, if you ever sample an
---   'Uncert Double', the second parameter wil be <a>Double</a>). The third
---   parameter is the result type of the computation -- the value the
---   <a>Corr</a> is describing.
+--   <tt><a>Uncert</a> <a>Double</a></tt>, the second parameter wil be
+--   <a>Double</a>). The third parameter is the result type of the
+--   computation -- the value the <a>Corr</a> is describing.
 data Corr s a b
 
 -- | Evaluates the value described by a <a>Corr</a> monad, taking into
@@ -450,7 +450,7 @@ resolveUncert :: CVar s a -> Corr s a (Uncert a)
 --   ghci&gt; <tt>evalCorr</tt> $ do
 --           x &lt;- <tt>sampleUncert</tt> $ 12.5 <a>+/-</a> 0.8
 --           y &lt;- sampleUncert $ 15.9 +/- 0.5
---           <tt>resolveUncert</tt> $ liftC (z -&gt; log z ^ 2) (x + y)
+--           <tt>resolveUncert</tt> $ liftC (\z -&gt; log z ^ 2) (x + y)
 --   11.2 +/- 0.2
 --   </pre>
 liftC :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a
@@ -470,7 +470,7 @@ liftC :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a)) -> CVar 
 --   ghci&gt; <tt>evalCorr</tt> $ do
 --           x &lt;- <tt>sampleUncert</tt> $ 12.5 <a>+/-</a> 0.8
 --           y &lt;- sampleUncert $ 15.9 +/- 0.5
---           <tt>resolveUncert</tt> $ liftC2 (a b -&gt; log (a + b) ^ 2) x y
+--           <tt>resolveUncert</tt> $ liftC2 (\a b -&gt; log (a + b) ^ 2) x y
 --   11.2 +/- 0.2
 --   </pre>
 liftC2 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a
@@ -551,9 +551,9 @@ liftCF :: (Functor f, Fractional a) => (forall t. f (AD t (Sparse a)) -> AD t (S
 --   never have both imported at the same time in <i>ghci</i> or in a file,
 --   or import them qualified if you must.
 --   
---   Also note that all of these methods only work with
---   <tt><tt>Uncertain</tt> <a>Double</a></tt>s, and are not polymorphic
---   over different numeric types.
+--   Also note that all of these methods only work with <tt><a>Uncert</a>
+--   <a>Double</a></tt>s, and are not polymorphic over different numeric
+--   types.
 --   
 --   Be aware that this module is not robustly tested in heavily concurrent
 --   situations/applications.
@@ -630,7 +630,7 @@ resolveUncert :: CVarIO -> IO (Uncert Double)
 --   ghci&gt; <tt>evalCorr</tt> $ do
 --           x &lt;- <tt>sampleUncert</tt> $ 12.5 <a>+/-</a> 0.8
 --           y &lt;- sampleUncert $ 15.9 +/- 0.5
---           <tt>resolveUncert</tt> $ liftC (z -&gt; log z ^ 2) (x + y)
+--           <tt>resolveUncert</tt> $ liftC (\z -&gt; log z ^ 2) (x + y)
 --   11.2 +/- 0.2
 --   </pre>
 liftC :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a
@@ -650,7 +650,7 @@ liftC :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a)) -> CVar 
 --   ghci&gt; <tt>evalCorr</tt> $ do
 --           x &lt;- <tt>sampleUncert</tt> $ 12.5 <a>+/-</a> 0.8
 --           y &lt;- sampleUncert $ 15.9 +/- 0.5
---           <tt>resolveUncert</tt> $ liftC2 (a b -&gt; log (a + b) ^ 2) x y
+--           <tt>resolveUncert</tt> $ liftC2 (\a b -&gt; log (a + b) ^ 2) x y
 --   11.2 +/- 0.2
 --   </pre>
 liftC2 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a
@@ -730,11 +730,11 @@ liftCF :: (Functor f, Fractional a) => (forall t. f (AD t (Sparse a)) -> AD t (S
 --   2.4 +/- 0.2
 --   ghci&gt; exp x / z * sin (y ** z)
 --   10.9 +/- 0.9
---   ghci&gt; MC.liftU3 (a b c -&gt; exp a / c * sin (b**c)) x y z g
+--   ghci&gt; MC.liftU3 (\a b c -&gt; exp a / c * sin (b**c)) x y z g
 --   10.8 +/- 1.0
 --   ghci&gt; pi + 3 * logBase x y
 --   52 +/- 5
---   ghci&gt; MC.liftU2 (a b -&gt; pi + 3 * logBase a b) x y g
+--   ghci&gt; MC.liftU2 (\a b -&gt; pi + 3 * logBase a b) x y g
 --   51 +/- 5
 --   </pre>
 module Numeric.Uncertain.MonteCarlo
@@ -750,7 +750,7 @@ sampleUncert :: (PrimMonad m, Functor m) => Uncert Double -> Gen (PrimState m) -
 --   
 --   <pre>
 --   ghci&gt; g &lt;- <a>create</a>
---   ghci&gt; MC.liftU (x -&gt; log x ^ 2) (12.2 +/- 0.5) g
+--   ghci&gt; MC.liftU (\x -&gt; log x ^ 2) (12.2 +/- 0.5) g
 --   6.3 +/- 0.2
 --   </pre>
 liftU :: PrimMonad m => (Double -> Double) -> Uncert Double -> Gen (PrimState m) -> m (Uncert Double)
@@ -760,7 +760,7 @@ liftU :: PrimMonad m => (Double -> Double) -> Uncert Double -> Gen (PrimState m)
 --   
 --   <pre>
 --   ghci&gt; g &lt;- <a>create</a>
---   ghci&gt; MC.liftU2 (x y -&gt; x**y) (13.5 +<i>- 0.1) (1.64 +</i>- 0.08)
+--   ghci&gt; MC.liftU2 (\x y -&gt; x**y) (13.5 +<i>- 0.1) (1.64 +</i>- 0.08)
 --   70 +/- 20
 --   </pre>
 liftU2 :: PrimMonad m => (Double -> Double -> Double) -> Uncert Double -> Uncert Double -> Gen (PrimState m) -> m (Uncert Double)
@@ -783,7 +783,7 @@ liftU5 :: PrimMonad m => (Double -> Double -> Double -> Double -> Double -> Doub
 --   
 --   <pre>
 --   ghci&gt; g &lt;- <a>create</a>
---   ghci&gt; M.liftUF ([x,y,z] -&gt; x*y+z) [12.2 +<i>- 0.5, 56 +</i>- 2, 0.12 +/- 0.08] g
+--   ghci&gt; M.liftUF (\[x,y,z] -&gt; x*y+z) [12.2 +<i>- 0.5, 56 +</i>- 2, 0.12 +/- 0.08] g
 --   680 +/- 40
 --   </pre>
 liftUF :: (Traversable f, PrimMonad m) => (f Double -> Double) -> f (Uncert Double) -> Gen (PrimState m) -> m (Uncert Double)

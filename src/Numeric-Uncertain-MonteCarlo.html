@@ -56,11 +56,11 @@
 <a name="line-47"></a><span class='hs-comment'>-- 2.4 +/- 0.2</span>
 <a name="line-48"></a><span class='hs-comment'>-- ghci&gt; exp x / z * sin (y ** z)</span>
 <a name="line-49"></a><span class='hs-comment'>-- 10.9 +/- 0.9</span>
-<a name="line-50"></a><span class='hs-comment'>-- ghci&gt; MC.liftU3 (\a b c -&gt; exp a / c * sin (b**c)) x y z g</span>
+<a name="line-50"></a><span class='hs-comment'>-- ghci&gt; MC.liftU3 (\\a b c -&gt; exp a / c * sin (b**c)) x y z g</span>
 <a name="line-51"></a><span class='hs-comment'>-- 10.8 +/- 1.0</span>
 <a name="line-52"></a><span class='hs-comment'>-- ghci&gt; pi + 3 * logBase x y</span>
 <a name="line-53"></a><span class='hs-comment'>-- 52 +/- 5</span>
-<a name="line-54"></a><span class='hs-comment'>-- ghci&gt; MC.liftU2 (\a b -&gt; pi + 3 * logBase a b) x y g</span>
+<a name="line-54"></a><span class='hs-comment'>-- ghci&gt; MC.liftU2 (\\a b -&gt; pi + 3 * logBase a b) x y g</span>
 <a name="line-55"></a><span class='hs-comment'>-- 51 +/- 5</span>
 <a name="line-56"></a><span class='hs-comment'>-- @</span>
 <a name="line-57"></a><span class='hs-comment'>--</span>
@@ -107,7 +107,7 @@
 <a name="line-98"></a><span class='hs-comment'>--</span>
 <a name="line-99"></a><span class='hs-comment'>-- @</span>
 <a name="line-100"></a><span class='hs-comment'>-- ghci&gt; g &lt;- 'create'</span>
-<a name="line-101"></a><span class='hs-comment'>-- ghci&gt; MC.liftU (\x -&gt; log x ^ 2) (12.2 +/- 0.5) g</span>
+<a name="line-101"></a><span class='hs-comment'>-- ghci&gt; MC.liftU (\\x -&gt; log x ^ 2) (12.2 +/- 0.5) g</span>
 <a name="line-102"></a><span class='hs-comment'>-- 6.3 +/- 0.2</span>
 <a name="line-103"></a><span class='hs-comment'>-- @</span>
 <a name="line-104"></a><span class='hs-comment'>--</span>
@@ -130,7 +130,7 @@
 <a name="line-121"></a><span class='hs-comment'>--</span>
 <a name="line-122"></a><span class='hs-comment'>-- @</span>
 <a name="line-123"></a><span class='hs-comment'>-- ghci&gt; g &lt;- 'create'</span>
-<a name="line-124"></a><span class='hs-comment'>-- ghci&gt; M.liftUF (\[x,y,z] -&gt; x*y+z) [12.2 +/- 0.5, 56 +/- 2, 0.12 +/- 0.08] g</span>
+<a name="line-124"></a><span class='hs-comment'>-- ghci&gt; M.liftUF (\\[x,y,z] -&gt; x*y+z) [12.2 +/- 0.5, 56 +/- 2, 0.12 +/- 0.08] g</span>
 <a name="line-125"></a><span class='hs-comment'>-- 680 +/- 40</span>
 <a name="line-126"></a><span class='hs-comment'>-- @</span>
 <a name="line-127"></a><span class='hs-comment'>--</span>
@@ -152,7 +152,7 @@
 <a name="line-143"></a><span class='hs-comment'>--</span>
 <a name="line-144"></a><span class='hs-comment'>-- @</span>
 <a name="line-145"></a><span class='hs-comment'>-- ghci&gt; g &lt;- 'create'</span>
-<a name="line-146"></a><span class='hs-comment'>-- ghci&gt; MC.liftU2 (\x y -&gt; x**y) (13.5 +/- 0.1) (1.64 +/- 0.08)</span>
+<a name="line-146"></a><span class='hs-comment'>-- ghci&gt; MC.liftU2 (\\x y -&gt; x**y) (13.5 +/- 0.1) (1.64 +/- 0.08)</span>
 <a name="line-147"></a><span class='hs-comment'>-- 70 +/- 20</span>
 <a name="line-148"></a><span class='hs-comment'>-- @</span>
 <a name="line-149"></a><span class='hs-comment'>--</span>
