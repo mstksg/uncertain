@@ -21,7 +21,7 @@ import Numeric.Uncertain
 7.13 +/- 0.05
 91800 +/- 100
 12.5 `withVar` 0.36
-'exact' 7.9512
+exact 7.9512
 81.42 `withPrecision` 4
 7    :: Uncert Double
 9.18 :: Uncert Double
@@ -138,7 +138,7 @@ For a clear example, take
 91. +/- 7.
 ```
 
-In a library like [interval], this would result in `91 +/- 10` (that is, a
+In a library like [intervals][], this would result in `91 +/- 10` (that is, a
 lower bound of 46 + 35 and an upper bound of 58 + 43).  However, with
 experimental data, errors in two independent samples tend to "cancel out", and
 result in an overall aggregate uncertainty in the sum of approximately 7.

@@ -120,7 +120,7 @@ instance Functor (CorrF s a) where
 --         y1 <- 'resolveUncert' $ sum (replicate 10 x)
 --         y2 <- resolveUncert $ 10 * x
 --         return (y1, y2)
--- (125 +/- 8, 125 +/- 8)
+-- (125 +\/- 8, 125 +\/- 8)
 --
 -- ghci> 'evalCorr' $ do
 --         xs <- replicateM 10 ('sampleUncert' (12.5 +/- 0.8))
