@@ -208,7 +208,7 @@ corrToState = iterM go . corrFree
 -- @
 --
 liftCF
-    :: (Functor f, Fractional a)
+    :: Functor f
     => (forall t. f (AD t (Sparse a)) -> AD t (Sparse a)) -- ^ Function on container of values to lift
     -> f (CVar s a)     -- ^ Container of 'CVar' samples to apply the function to
     -> CVar s a
@@ -239,8 +239,7 @@ constC = CK
 -- @
 --
 liftC
-    :: Fractional a
-    => (forall t. AD t (Sparse a) -> AD t (Sparse a)) -- ^ Function on values to lift
+    :: (forall t. AD t (Sparse a) -> AD t (Sparse a)) -- ^ Function on values to lift
     -> CVar s a         -- ^ 'CVar' sample to apply the function to
     -> CVar s a
 liftC f = curryH1 $ liftCF (uncurryH1 f)
@@ -266,8 +265,7 @@ liftC f = curryH1 $ liftCF (uncurryH1 f)
 -- @
 --
 liftC2
-    :: Fractional a
-    => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a))
+    :: (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a))
     -> CVar s a
     -> CVar s a
     -> CVar s a
@@ -277,8 +275,7 @@ liftC2 f = curryH2 $ liftCF (uncurryH2 f)
 -- | Lifts a three-argument (curried) function over the samples represented
 -- by three 'CVar's.  See 'liftC2' and 'liftCF' for more details.
 liftC3
-    :: Fractional a
-    => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a))
+    :: (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a))
     -> CVar s a
     -> CVar s a
     -> CVar s a
@@ -289,8 +286,7 @@ liftC3 f = curryH3 $ liftCF (uncurryH3 f)
 -- | Lifts a four-argument (curried) function over the samples represented
 -- by four 'CVar's.  See 'liftC2' and 'liftCF' for more details.
 liftC4
-    :: Fractional a
-    => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a))
+    :: (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a))
     -> CVar s a
     -> CVar s a
     -> CVar s a
@@ -302,8 +298,7 @@ liftC4 f = curryH4 $ liftCF (uncurryH4 f)
 -- | Lifts a five-argument (curried) function over the samples represented
 -- by five 'CVar's.  See 'liftC2' and 'liftCF' for more details.
 liftC5
-    :: Fractional a
-    => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a))
+    :: (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a))
     -> CVar s a
     -> CVar s a
     -> CVar s a
