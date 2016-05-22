@@ -2,7 +2,7 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 name:                uncertain
-version:             0.3.0.0
+version:             0.3.1.0
 synopsis:            Manipulating numbers with inherent experimental/measurement uncertainty
 description:         See <https://github.com/mstksg/uncertain/blob/master/README.md README.md>.
                      .

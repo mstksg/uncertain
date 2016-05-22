@@ -24,9 +24,13 @@
 
 module Numeric.Uncertain
   ( -- * 'Uncert'
+#if __GLASGOW_HASKELL__ >= 810
+    Uncert((:+/-))
+#else
     Uncert
 #if __GLASGOW_HASKELL__ >= 708
   , pattern (:+/-)
+#endif
 #endif
     -- ** Creating 'Uncert' values
   , (+/-), exact, withPrecision, withPrecisionAtBase, withVar, fromSamples
@@ -205,7 +209,9 @@ withVar x vx = Un x (abs vx)
 -- functionality (to allow use as a constructor) only supported on GHC
 -- 7.10 and above.
 --
-#if __GLASGOW_HASKELL__ >= 710
+#if __GLASGOW_HASKELL__ >= 800
+pattern (:+/-) :: Floating a => a -> a -> Uncert a
+#elif __GLASGOW_HASKELL__ >= 710
 pattern (:+/-) :: () => Floating a => a -> a -> Uncert a
 #endif
 pattern x :+/- dx <- Un x (sqrt->dx)

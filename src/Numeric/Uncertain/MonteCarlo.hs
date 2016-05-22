@@ -83,9 +83,9 @@ import System.Random.MWC.Distributions
 --
 sampleUncert
 #if __GLASGOW_HASKELL__ < 710
-    :: PrimMonad m
-#else
     :: (PrimMonad m, Functor m)
+#else
+    :: PrimMonad m
 #endif
     => Uncert Double
     -> Gen (PrimState m)
