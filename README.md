@@ -1,6 +1,9 @@
 Uncertain
 =========
 
+[![uncertain on Hackage](https://img.shields.io/hackage/v/uncertain.svg?maxAge=2592000)](https://hackage.haskell.org/package/uncertain)
+[![uncertain on Stackage LTS](http://stackage.org/package/uncertain/badge/lts)](http://stackage.org/lts/package/uncertain)
+[![uncertain on Stackage Nightly](http://stackage.org/package/uncertain/badge/nightly)](http://stackage.org/nightly/package/uncertain)
 [![Build Status](https://travis-ci.org/mstksg/uncertain.svg?branch=master)](https://travis-ci.org/mstksg/uncertain)
 
 Provides tools to manipulate numbers with inherent experimental/measurement
