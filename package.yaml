@@ -25,10 +25,6 @@ description: |
 
 ghc-options:
 - -Wall
-- -Wcompat
-- -Wincomplete-record-updates
-- -Wredundant-constraints
-- -fprint-explicit-kinds
 
 dependencies:
 - base >=4.6 && <5
