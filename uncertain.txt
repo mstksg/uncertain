@@ -8,7 +8,7 @@
 --   
 --   Documentation maintained at <a>https://mstksg.github.io/uncertain</a>
 @package uncertain
-@version 0.3.0.0
+@version 0.3.1.0
 
 
 module Numeric.Uncertain
@@ -100,6 +100,7 @@ data Uncert a
 --   <i>Note:</i> Only supported on GHC 7.8 and above. Bidirectional
 --   functionality (to allow use as a constructor) only supported on GHC
 --   7.10 and above.
+infixl 6 :+/-
 
 -- | Create an <a>Uncert</a> around a central value and a given "range" of
 --   uncertainty. The range is interpreted as the standard deviation of the
@@ -109,6 +110,7 @@ data Uncert a
 --   
 --   See <a>uStd</a> for more details.
 (+/-) :: Num a => a -> a -> Uncert a
+infixl 6 +/-
 
 -- | Create an <a>Uncert</a> with an exact value and 0 uncertainty.
 exact :: Num a => a -> Uncert a
@@ -280,11 +282,7 @@ uShow :: (Show a, Floating a) => Uncert a -> String
 --   value (see <a>uNormalize</a>) before showing. See documentation for
 --   <a>showsPrec</a> for more information on how this is meant to be used.
 uShowsPrec :: (Show a, Floating a) => Int -> Uncert a -> ShowS
-instance GHC.Generics.Selector Numeric.Uncertain.S1_0_1Uncert
-instance GHC.Generics.Selector Numeric.Uncertain.S1_0_0Uncert
-instance GHC.Generics.Constructor Numeric.Uncertain.C1_0Uncert
-instance GHC.Generics.Datatype Numeric.Uncertain.D1Uncert
-instance GHC.Generics.Generic1 Numeric.Uncertain.Uncert
+instance GHC.Generics.Generic1 * Numeric.Uncertain.Uncert
 instance GHC.Generics.Generic (Numeric.Uncertain.Uncert a)
 instance Data.Data.Data a => Data.Data.Data (Numeric.Uncertain.Uncert a)
 instance (GHC.Show.Show a, GHC.Float.Floating a, GHC.Real.RealFrac a) => GHC.Show.Show (Numeric.Uncertain.Uncert a)
@@ -453,7 +451,7 @@ resolveUncert :: CVar s a -> Corr s a (Uncert a)
 --           <tt>resolveUncert</tt> $ liftC (\z -&gt; log z ^ 2) (x + y)
 --   11.2 +/- 0.2
 --   </pre>
-liftC :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a
+liftC :: (forall t. AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a
 
 -- | Lifts a two-argument (curried) function over the samples represented
 --   by two <a>CVar</a>s. Correctly propagates the uncertainty according to
@@ -473,22 +471,22 @@ liftC :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a)) -> CVar 
 --           <tt>resolveUncert</tt> $ liftC2 (\a b -&gt; log (a + b) ^ 2) x y
 --   11.2 +/- 0.2
 --   </pre>
-liftC2 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a
+liftC2 :: (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a
 
 -- | Lifts a three-argument (curried) function over the samples represented
 --   by three <a>CVar</a>s. See <a>liftC2</a> and <a>liftCF</a> for more
 --   details.
-liftC3 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a -> CVar s a
+liftC3 :: (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a -> CVar s a
 
 -- | Lifts a four-argument (curried) function over the samples represented
 --   by four <a>CVar</a>s. See <a>liftC2</a> and <a>liftCF</a> for more
 --   details.
-liftC4 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a
+liftC4 :: (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a
 
 -- | Lifts a five-argument (curried) function over the samples represented
 --   by five <a>CVar</a>s. See <a>liftC2</a> and <a>liftCF</a> for more
 --   details.
-liftC5 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a
+liftC5 :: (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a
 
 -- | Lifts a multivariate numeric function on a container (given as an
 --   <tt>f a -&gt; a</tt>) to work on a container of <a>CVar</a>s.
@@ -510,7 +508,7 @@ liftC5 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t 
 --           <tt>resolveUncert</tt> $ liftCF (\[a,b,c] -&gt; (a+c) * logBase c (b**a)) x y z
 --   1200 +/- 200
 --   </pre>
-liftCF :: (Functor f, Fractional a) => (forall t. f (AD t (Sparse a)) -> AD t (Sparse a)) -> f (CVar s a) -> CVar s a
+liftCF :: Functor f => (forall t. f (AD t (Sparse a)) -> AD t (Sparse a)) -> f (CVar s a) -> CVar s a
 
 
 -- | Exports all of the interface of <a>Numeric.Uncertain.Correlated</a>,
@@ -633,7 +631,7 @@ resolveUncert :: CVarIO -> IO (Uncert Double)
 --           <tt>resolveUncert</tt> $ liftC (\z -&gt; log z ^ 2) (x + y)
 --   11.2 +/- 0.2
 --   </pre>
-liftC :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a
+liftC :: (forall t. AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a
 
 -- | Lifts a two-argument (curried) function over the samples represented
 --   by two <a>CVar</a>s. Correctly propagates the uncertainty according to
@@ -653,22 +651,22 @@ liftC :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a)) -> CVar 
 --           <tt>resolveUncert</tt> $ liftC2 (\a b -&gt; log (a + b) ^ 2) x y
 --   11.2 +/- 0.2
 --   </pre>
-liftC2 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a
+liftC2 :: (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a
 
 -- | Lifts a three-argument (curried) function over the samples represented
 --   by three <a>CVar</a>s. See <a>liftC2</a> and <a>liftCF</a> for more
 --   details.
-liftC3 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a -> CVar s a
+liftC3 :: (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a -> CVar s a
 
 -- | Lifts a four-argument (curried) function over the samples represented
 --   by four <a>CVar</a>s. See <a>liftC2</a> and <a>liftCF</a> for more
 --   details.
-liftC4 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a
+liftC4 :: (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a
 
 -- | Lifts a five-argument (curried) function over the samples represented
 --   by five <a>CVar</a>s. See <a>liftC2</a> and <a>liftCF</a> for more
 --   details.
-liftC5 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a
+liftC5 :: (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a -> CVar s a
 
 -- | Lifts a multivariate numeric function on a container (given as an
 --   <tt>f a -&gt; a</tt>) to work on a container of <a>CVar</a>s.
@@ -690,7 +688,7 @@ liftC5 :: Fractional a => (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t 
 --           <tt>resolveUncert</tt> $ liftCF (\[a,b,c] -&gt; (a+c) * logBase c (b**a)) x y z
 --   1200 +/- 200
 --   </pre>
-liftCF :: (Functor f, Fractional a) => (forall t. f (AD t (Sparse a)) -> AD t (Sparse a)) -> f (CVar s a) -> CVar s a
+liftCF :: Functor f => (forall t. f (AD t (Sparse a)) -> AD t (Sparse a)) -> f (CVar s a) -> CVar s a
 
 
 -- | Provides an interface for computing and propagating uncertainty by
@@ -743,7 +741,7 @@ module Numeric.Uncertain.MonteCarlo
 --   <tt><a>Uncert</a> <a>Double</a></tt>. <tt>x <tt>+/-</tt> dx</tt> is
 --   treated as a random variable whose probability density is the normal
 --   distribution with mean <tt>x</tt> and standard deviation <tt>dx</tt>.
-sampleUncert :: (PrimMonad m, Functor m) => Uncert Double -> Gen (PrimState m) -> m Double
+sampleUncert :: PrimMonad m => Uncert Double -> Gen (PrimState m) -> m Double
 
 -- | Lifts a numeric function over an <a>Uncert</a> using a Monte Carlo
 --   simulation with 1000 samples.
