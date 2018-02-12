@@ -282,7 +282,7 @@ uShow :: (Show a, Floating a) => Uncert a -> String
 --   value (see <a>uNormalize</a>) before showing. See documentation for
 --   <a>showsPrec</a> for more information on how this is meant to be used.
 uShowsPrec :: (Show a, Floating a) => Int -> Uncert a -> ShowS
-instance GHC.Generics.Generic1 * Numeric.Uncertain.Uncert
+instance GHC.Generics.Generic1 Numeric.Uncertain.Uncert
 instance GHC.Generics.Generic (Numeric.Uncertain.Uncert a)
 instance Data.Data.Data a => Data.Data.Data (Numeric.Uncertain.Uncert a)
 instance (GHC.Show.Show a, GHC.Float.Floating a, GHC.Real.RealFrac a) => GHC.Show.Show (Numeric.Uncertain.Uncert a)
