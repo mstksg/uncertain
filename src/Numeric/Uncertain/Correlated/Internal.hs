@@ -224,7 +224,7 @@ liftCF ::
   -- | Container of 'CVar' samples to apply the function to
   f (CVar s a) ->
   CVar s a
-liftCF f cs = CF f cs
+liftCF = CF
 {-# INLINE liftCF #-}
 
 -- | Creates a 'CVar' representing a completely independent sample from all

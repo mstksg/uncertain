@@ -1,5 +1,3 @@
-{-# LANGUAGE DeriveFoldable #-}
-{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# OPTIONS_HADDOCK hide #-}
@@ -36,7 +34,7 @@ where
 
 import Prelude.Compat
 
-data H1 a = H1 !a
+newtype H1 a = H1 a
   deriving (Functor, Foldable, Traversable, Show)
 
 data H2 a = H2 !a !a

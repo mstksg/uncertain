@@ -450,7 +450,7 @@ liftU ::
 liftU f (Un x vx) = Un y vy
   where
     (fx, dfx, ddfx) = case T.diffs0 f x of
-      fx : dfx : ddfx : _ -> (fx, dfx, ddfx)
+      a : b : c : _ -> (a, b, c)
       _ -> error "diffs0 should return an infinite list"
     y = fx + ddfx * vx / 2
     vy = dfx * dfx * vx

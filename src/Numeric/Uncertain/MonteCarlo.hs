@@ -1,5 +1,4 @@
 {-# LANGUAGE CPP #-}
-{-# LANGUAGE ImplicitParams #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 
@@ -95,7 +94,7 @@ sampleUncert ::
   Uncert Double ->
   Gen (PrimState m) ->
   m Double
-sampleUncert (uMeanStd -> (x, dx)) g = normal x dx g
+sampleUncert (uMeanStd -> (x, dx)) = normal x dx
 {-# INLINEABLE sampleUncert #-}
 
 -- | Lifts a numeric function over an 'Uncert' using a Monte Carlo
@@ -218,7 +217,7 @@ liftUF' ::
   m (Uncert Double)
 liftUF' n f us g = fromSamples <$> replicateM n samp
   where
-    samp = f <$> traverse (flip sampleUncert g) us
+    samp = f <$> traverse (`sampleUncert` g) us
 {-# INLINEABLE liftUF' #-}
 
 -- | Like 'liftU2', but allows you to specify the number of samples to run
