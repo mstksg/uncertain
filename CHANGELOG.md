@@ -1,5 +1,18 @@
+Changelog
+=========
+
+Version 0.4.0.0
+---------------
+
+*August 22, 2024*
+
+<https://github.com/mstksg/uncertain/releases/tag/v0.4.0.0>
+
+* Dropped support for GHC < 8.10
+* Fixed support for GHC 9.0
+
 Version 0.3.1.0
-===============
+---------------
 
 <https://github.com/mstksg/uncertain/releases/tag/v0.3.1.0>
 
@@ -13,7 +26,7 @@ Version 0.3.1.0
     module's `liftUX` functions.
 
 Version 0.3.0.0
-===============
+---------------
 
 <https://github.com/mstksg/uncertain/releases/tag/v0.3.0.0>
 
@@ -22,7 +35,7 @@ Version 0.3.0.0
     convention of other similar libraries.
 
 Version 0.2.0.0
-===============
+---------------
 
 <https://github.com/mstksg/uncertain/releases/tag/v0.2.0.0>
 
