@@ -24,14 +24,7 @@
 
 module Numeric.Uncertain
   ( -- * 'Uncert'
-#if __GLASGOW_HASKELL__ >= 810
     Uncert((:+/-))
-#else
-    Uncert
-#if __GLASGOW_HASKELL__ >= 708
-  , pattern (:+/-)
-#endif
-#endif
     -- ** Creating 'Uncert' values
   , (+/-), exact, withPrecision, withPrecisionAtBase, withVar, fromSamples
     -- ** Inspecting properties
@@ -46,7 +39,7 @@ module Numeric.Uncertain
   where
 
 import           Data.Data
-import           Data.Foldable          (toList, foldl')
+import           Data.Foldable          (toList)
 import           Data.Function
 import           Data.Hople
 import           Data.Ord
@@ -421,7 +414,9 @@ liftU
     -> Uncert a
 liftU f (Un x vx) = Un y vy
   where
-    fx:dfx:ddfx:_ = T.diffs0 f x
+    (fx,dfx,ddfx) = case T.diffs0 f x of
+      fx:dfx :ddfx:_ -> (fx,dfx,ddfx)
+      _ -> error "diffs0 should return an infinite list"
     y             = fx + ddfx * vx / 2
     vy            = dfx*dfx * vx
 {-# INLINABLE liftU #-}

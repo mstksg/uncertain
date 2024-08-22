@@ -37,6 +37,7 @@ module Numeric.Uncertain.Correlated.Internal
 import           Control.Arrow             ((***))
 import           Control.Monad.Free
 import           Control.Monad.Trans.State
+import Data.Kind
 import           Prelude.Compat
 import           Data.Hople
 import           Numeric.Uncertain
@@ -77,7 +78,7 @@ dephantom = \case CK x    -> CK x
                   CV k    -> CV k
                   CF f xs -> CF f (dephantom <$> xs)
 
-data CorrF :: * -> * -> * -> * where
+data CorrF :: Type -> Type -> Type -> Type where
     Gen :: Uncert a -> (CVar s a -> b) -> CorrF s a b
     Fun :: Functor f
         => (forall t. f (AD t (Sparse a)) -> AD t (Sparse a))

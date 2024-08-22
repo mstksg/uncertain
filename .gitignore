@@ -3,5 +3,5 @@
 /.cabal-sandbox
 /cabal.sandbox.config
 /dist
-/*.cabal
-
+/.direnv
+/dist-newstyle
