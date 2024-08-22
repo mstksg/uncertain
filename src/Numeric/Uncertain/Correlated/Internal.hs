@@ -190,12 +190,10 @@ corrToState = iterM go . corrFree
       Uncert a
     getCVar cv = liftUF (cVarToF cv)
       where
-        cVarToF ::
-          CVar s a ->
-          (forall t. M.IntMap (AD t (Sparse a)) -> AD t (Sparse a))
+        cVarToF :: CVar s a -> M.IntMap (AD t (Sparse a)) -> AD t (Sparse a)
         cVarToF (CK x) _ = auto x
         cVarToF (CV k) us = us M.! k
-        cVarToF (CF f cs) us = f (flip cVarToF us <$> cs)
+        cVarToF (CF f cs) us = f ((`cVarToF` us) <$> cs)
 {-# INLINEABLE corrToState #-}
 
 -- | Lifts a multivariate numeric function on a container (given as an @f

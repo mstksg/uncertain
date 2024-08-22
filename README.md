@@ -10,8 +10,6 @@ Provides tools to manipulate numbers with inherent experimental/measurement
 uncertainty, and propagates them through functions based on principles from
 statistics.
 
-Documentation maintained at <https://mstksg.github.io/uncertain>.
-
 ## Usage
 
 ```haskell
@@ -97,7 +95,8 @@ ghci> resolveUncert $ (x+z) * logBase z k
 ## Monte Carlo-based propagation of uncertainty
 
 Provides a module for propagating uncertainty using [Monte Carlo
-simulations][]
+simulations][], which could potentially be more accurate if third-order and
+higher taylor series expansion terms are non-negligible.
 
 [Monte Carlo simulations]: https://en.wikipedia.org/wiki/Monte_Carlo_method
 
@@ -125,11 +124,11 @@ ghci> MC.liftU2 (\a b -> pi + 3 * logBase a b) x y g
 ## Comparisons
 
 Note that this is very different from other libraries with similar data types
-(like from [intervals][] and [rounding][]); these do not attempt to maintain intervals or
-simply digit precisions; they instead are intended to model actual
-experimental and measurement data with their uncertainties, and apply
-functions to the data with the uncertainties and properly propagating the
-errors with sound statistical principles.
+(like from [intervals][] and [rounding][]); these do not attempt to maintain
+intervals or simply digit precisions; they instead are intended to model actual
+experimental and measurement data with their uncertainties, and apply functions
+to the data with the uncertainties and properly propagating the errors with
+sound statistical principles.
 
 [intervals]: https://hackage.haskell.org/package/intervals
 [rounding]: https://hackage.haskell.org/package/rounding

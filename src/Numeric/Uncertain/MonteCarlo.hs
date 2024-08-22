@@ -13,6 +13,8 @@
 --
 -- Provides an interface for computing and propagating uncertainty by using
 -- <https://en.wikipedia.org/wiki/Monte_Carlo_method Monte Carlo simulations>.
+-- These may be more accurate than the normal propagators if the third-order
+-- taylor series expansion terms are non-negligible.
 --
 -- Basically simulates sampling from the distribution represented by the given
 -- 'Uncert's, applying the function of interest, and aggregating the mean
