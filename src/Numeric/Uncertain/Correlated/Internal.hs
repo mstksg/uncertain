@@ -1,15 +1,15 @@
-{-# LANGUAGE DeriveFunctor              #-}
-{-# LANGUAGE GADTs                      #-}
+{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE KindSignatures             #-}
-{-# LANGUAGE LambdaCase                 #-}
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE NoImplicitPrelude          #-}
-{-# LANGUAGE RankNTypes                 #-}
-{-# LANGUAGE ScopedTypeVariables        #-}
-{-# LANGUAGE StandaloneDeriving         #-}
-{-# OPTIONS_HADDOCK hide                #-}
-{-# OPTIONS_HADDOCK prune               #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE NoImplicitPrelude #-}
+{-# OPTIONS_HADDOCK hide #-}
+{-# OPTIONS_HADDOCK prune #-}
 
 -- |
 -- Module      : Numeric.Uncertain.Correlated.Internal
@@ -23,27 +23,31 @@
 -- Internal utility functions for functionality shared by
 -- "Numeric.Uncertain.Correlated" and
 -- "Numeric.Uncertain.Correlated.Interactive".
---
+module Numeric.Uncertain.Correlated.Internal (
+  CVar,
+  dephantom,
+  CorrF (..),
+  Corr,
+  liftCF,
+  constC,
+  liftC,
+  liftC2,
+  liftC3,
+  liftC4,
+  liftC5,
+  corrToState,
+)
+where
 
-module Numeric.Uncertain.Correlated.Internal
-  ( CVar, dephantom
-  , CorrF(..), Corr
-  , liftCF
-  , constC, liftC, liftC2, liftC3, liftC4, liftC5
-  , corrToState
-  )
-  where
-
-import           Control.Arrow             ((***))
-import           Control.Monad.Free
-import           Control.Monad.Trans.State
+import Control.Arrow ((***))
+import Control.Monad.Free
+import Control.Monad.Trans.State
+import Data.Hople
+import qualified Data.IntMap.Strict as M
 import Data.Kind
-import           Prelude.Compat
-import           Data.Hople
-import           Numeric.Uncertain
-import           Numeric.AD.Mode.Sparse
-import qualified Data.IntMap.Strict        as M
-
+import Numeric.AD.Mode.Sparse
+import Numeric.Uncertain
+import Prelude.Compat
 
 -- | Represents a single sample (or a value calculated from samples) within
 -- the 'Corr' monad.  These can be created with 'sampleUncert',
@@ -64,36 +68,40 @@ import qualified Data.IntMap.Strict        as M
 -- s a@, meaning that the all samples within that 'Corr' are of the same
 -- type.
 data CVar s a where
-    CK :: a -> CVar s a
-    CV :: M.Key -> CVar s a
-    CF :: Functor f
-       => (forall t. f (AD t (Sparse a)) -> AD t (Sparse a))
-       -> f (CVar s a)
-       -> CVar s a
+  CK :: a -> CVar s a
+  CV :: M.Key -> CVar s a
+  CF ::
+    Functor f =>
+    (forall t. f (AD t (Sparse a)) -> AD t (Sparse a)) ->
+    f (CVar s a) ->
+    CVar s a
 
 -- | Unsafe function to bypass the universal qualification guard for
 -- returning 'CVar's from 'Corr's.
 dephantom :: CVar s a -> CVar t a
-dephantom = \case CK x    -> CK x
-                  CV k    -> CV k
-                  CF f xs -> CF f (dephantom <$> xs)
+dephantom = \case
+  CK x -> CK x
+  CV k -> CV k
+  CF f xs -> CF f (dephantom <$> xs)
 
 data CorrF :: Type -> Type -> Type -> Type where
-    Gen :: Uncert a -> (CVar s a -> b) -> CorrF s a b
-    Fun :: Functor f
-        => (forall t. f (AD t (Sparse a)) -> AD t (Sparse a))
-        -> f (CVar s a)
-        -> (CVar s a -> b)
-        -> CorrF s a b
-    Rei :: CVar s a
-        -> (Uncert a -> b)
-        -> CorrF s a b
+  Gen :: Uncert a -> (CVar s a -> b) -> CorrF s a b
+  Fun ::
+    Functor f =>
+    (forall t. f (AD t (Sparse a)) -> AD t (Sparse a)) ->
+    f (CVar s a) ->
+    (CVar s a -> b) ->
+    CorrF s a b
+  Rei ::
+    CVar s a ->
+    (Uncert a -> b) ->
+    CorrF s a b
 
 instance Functor (CorrF s a) where
-    fmap f = \case Gen u    next -> Gen u    (f . next)
-                   Fun g us next -> Fun g us (f . next)
-                   Rei v    next -> Rei v    (f . next)
-
+  fmap f = \case
+    Gen u next -> Gen u (f . next)
+    Fun g us next -> Fun g us (f . next)
+    Rei v next -> Rei v (f . next)
 
 -- | The 'Corr' monad allows us to keep track of correlated and
 -- non-independent samples.  It fixes a basic "failure" of the 'Uncert'
@@ -151,42 +159,44 @@ instance Functor (CorrF s a) where
 -- example, if you ever sample an @'Uncert' 'Double'@, the second parameter wil
 -- be 'Double').  The third parameter is the result type of the
 -- computation -- the value the 'Corr' is describing.
-newtype Corr s a b = Corr { corrFree :: Free (CorrF s a) b
-                          }
-                   deriving (Functor, Applicative, Monad)
+newtype Corr s a b = Corr
+  { corrFree :: Free (CorrF s a) b
+  }
+  deriving (Functor, Applicative, Monad)
 
 deriving instance MonadFree (CorrF s a) (Corr s a)
 
-corrToState
-    :: (Monad m, Fractional a)
-    => Corr s a b
-    -> StateT (M.Key, M.IntMap (Uncert a)) m b
+corrToState ::
+  (Monad m, Fractional a) =>
+  Corr s a b ->
+  StateT (M.Key, M.IntMap (Uncert a)) m b
 corrToState = iterM go . corrFree
   where
     go = \case
-            Gen u next    -> do
-              i <- gets fst
-              modify $ succ *** M.insert i u
-              next (CV i)
-            Fun f us next ->
-              next $ CF f us
-            Rei v next    -> do
-              u <- gets (getCVar v . snd)
-              next u
-    getCVar
-        :: forall a s. Fractional a
-        => CVar s a
-        -> M.IntMap (Uncert a)
-        -> Uncert a
+      Gen u next -> do
+        i <- gets fst
+        modify $ succ *** M.insert i u
+        next (CV i)
+      Fun f us next ->
+        next $ CF f us
+      Rei v next -> do
+        u <- gets (getCVar v . snd)
+        next u
+    getCVar ::
+      forall a s.
+      Fractional a =>
+      CVar s a ->
+      M.IntMap (Uncert a) ->
+      Uncert a
     getCVar cv = liftUF (cVarToF cv)
       where
-        cVarToF
-            :: CVar s a
-            -> (forall t. M.IntMap (AD t (Sparse a)) -> AD t (Sparse a))
-        cVarToF (CK x)    _  = auto x
-        cVarToF (CV k)    us = us M.! k
+        cVarToF ::
+          CVar s a ->
+          (forall t. M.IntMap (AD t (Sparse a)) -> AD t (Sparse a))
+        cVarToF (CK x) _ = auto x
+        cVarToF (CV k) us = us M.! k
         cVarToF (CF f cs) us = f (flip cVarToF us <$> cs)
-{-# INLINABLE corrToState #-}
+{-# INLINEABLE corrToState #-}
 
 -- | Lifts a multivariate numeric function on a container (given as an @f
 -- a -> a@) to work on a container of 'CVar's.  Correctly propagates the
@@ -207,12 +217,13 @@ corrToState = iterM go . corrFree
 --         'resolveUncert' $ liftCF (\\[a,b,c] -> (a+c) * logBase c (b**a)) x y z
 -- 1200 +/- 200
 -- @
---
-liftCF
-    :: Functor f
-    => (forall t. f (AD t (Sparse a)) -> AD t (Sparse a)) -- ^ Function on container of values to lift
-    -> f (CVar s a)     -- ^ Container of 'CVar' samples to apply the function to
-    -> CVar s a
+liftCF ::
+  Functor f =>
+  -- | Function on container of values to lift
+  (forall t. f (AD t (Sparse a)) -> AD t (Sparse a)) ->
+  -- | Container of 'CVar' samples to apply the function to
+  f (CVar s a) ->
+  CVar s a
 liftCF f cs = CF f cs
 {-# INLINE liftCF #-}
 
@@ -238,13 +249,14 @@ constC = CK
 --         'resolveUncert' $ liftC (\\z -> log z ^ 2) (x + y)
 -- 11.2 +/- 0.2
 -- @
---
-liftC
-    :: (forall t. AD t (Sparse a) -> AD t (Sparse a)) -- ^ Function on values to lift
-    -> CVar s a         -- ^ 'CVar' sample to apply the function to
-    -> CVar s a
+liftC ::
+  -- | Function on values to lift
+  (forall t. AD t (Sparse a) -> AD t (Sparse a)) ->
+  -- | 'CVar' sample to apply the function to
+  CVar s a ->
+  CVar s a
 liftC f = curryH1 $ liftCF (uncurryH1 f)
-{-# INLINABLE liftC #-}
+{-# INLINEABLE liftC #-}
 
 -- | Lifts a two-argument (curried) function over the samples represented
 -- by two 'CVar's.  Correctly propagates the uncertainty according to the
@@ -264,105 +276,113 @@ liftC f = curryH1 $ liftCF (uncurryH1 f)
 --         'resolveUncert' $ liftC2 (\\a b -> log (a + b) ^ 2) x y
 -- 11.2 +/- 0.2
 -- @
---
-liftC2
-    :: (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a))
-    -> CVar s a
-    -> CVar s a
-    -> CVar s a
+liftC2 ::
+  (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) ->
+  CVar s a ->
+  CVar s a ->
+  CVar s a
 liftC2 f = curryH2 $ liftCF (uncurryH2 f)
-{-# INLINABLE liftC2 #-}
+{-# INLINEABLE liftC2 #-}
 
 -- | Lifts a three-argument (curried) function over the samples represented
 -- by three 'CVar's.  See 'liftC2' and 'liftCF' for more details.
-liftC3
-    :: (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a))
-    -> CVar s a
-    -> CVar s a
-    -> CVar s a
-    -> CVar s a
+liftC3 ::
+  (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)) ->
+  CVar s a ->
+  CVar s a ->
+  CVar s a ->
+  CVar s a
 liftC3 f = curryH3 $ liftCF (uncurryH3 f)
-{-# INLINABLE liftC3 #-}
+{-# INLINEABLE liftC3 #-}
 
 -- | Lifts a four-argument (curried) function over the samples represented
 -- by four 'CVar's.  See 'liftC2' and 'liftCF' for more details.
-liftC4
-    :: (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a))
-    -> CVar s a
-    -> CVar s a
-    -> CVar s a
-    -> CVar s a
-    -> CVar s a
+liftC4 ::
+  ( forall t.
+    AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a)
+  ) ->
+  CVar s a ->
+  CVar s a ->
+  CVar s a ->
+  CVar s a ->
+  CVar s a
 liftC4 f = curryH4 $ liftCF (uncurryH4 f)
-{-# INLINABLE liftC4 #-}
+{-# INLINEABLE liftC4 #-}
 
 -- | Lifts a five-argument (curried) function over the samples represented
 -- by five 'CVar's.  See 'liftC2' and 'liftCF' for more details.
-liftC5
-    :: (forall t. AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a) -> AD t (Sparse a))
-    -> CVar s a
-    -> CVar s a
-    -> CVar s a
-    -> CVar s a
-    -> CVar s a
-    -> CVar s a
+liftC5 ::
+  ( forall t.
+    AD t (Sparse a) ->
+    AD t (Sparse a) ->
+    AD t (Sparse a) ->
+    AD t (Sparse a) ->
+    AD t (Sparse a) ->
+    AD t (Sparse a)
+  ) ->
+  CVar s a ->
+  CVar s a ->
+  CVar s a ->
+  CVar s a ->
+  CVar s a ->
+  CVar s a
 liftC5 f = curryH5 $ liftCF (uncurryH5 f)
-{-# INLINABLE liftC5 #-}
+{-# INLINEABLE liftC5 #-}
 
 instance Fractional a => Num (CVar s a) where
-    (+)    = liftC2 (+)
-    {-# INLINE (+) #-}
-    (*)    = liftC2 (*)
-    {-# INLINE (*) #-}
-    (-)    = liftC2 (-)
-    {-# INLINE (-) #-}
-    negate = liftC negate
-    {-# INLINE negate #-}
-    abs    = liftC abs
-    {-# INLINE abs #-}
-    signum = liftC signum
-    {-# INLINE signum #-}
-    fromInteger = constC . fromInteger
-    {-# INLINE fromInteger #-}
+  (+) = liftC2 (+)
+  {-# INLINE (+) #-}
+  (*) = liftC2 (*)
+  {-# INLINE (*) #-}
+  (-) = liftC2 (-)
+  {-# INLINE (-) #-}
+  negate = liftC negate
+  {-# INLINE negate #-}
+  abs = liftC abs
+  {-# INLINE abs #-}
+  signum = liftC signum
+  {-# INLINE signum #-}
+  fromInteger = constC . fromInteger
+  {-# INLINE fromInteger #-}
 
 instance Fractional a => Fractional (CVar s a) where
-    recip = liftC recip
-    {-# INLINE recip #-}
-    (/)   = liftC2 (/)
-    {-# INLINE (/) #-}
-    fromRational = constC . fromRational
-    {-# INLINE fromRational #-}
+  recip = liftC recip
+  {-# INLINE recip #-}
+  (/) = liftC2 (/)
+  {-# INLINE (/) #-}
+  fromRational = constC . fromRational
+  {-# INLINE fromRational #-}
 
 instance Floating a => Floating (CVar s a) where
-    pi      = constC pi
-    {-# INLINE pi #-}
-    exp     = liftC exp
-    {-# INLINE exp #-}
-    log     = liftC log
-    {-# INLINE log #-}
-    sqrt    = liftC sqrt
-    {-# INLINE sqrt #-}
-    (**)    = liftC2 (**)
-    {-# INLINE (**) #-}
-    logBase = liftC2 logBase
-    {-# INLINE logBase #-}
-    sin     = liftC sin
-    {-# INLINE sin #-}
-    cos     = liftC cos
-    {-# INLINE cos #-}
-    asin    = liftC asin
-    {-# INLINE asin #-}
-    acos    = liftC acos
-    {-# INLINE acos #-}
-    atan    = liftC atan
-    {-# INLINE atan #-}
-    sinh    = liftC sinh
-    {-# INLINE sinh #-}
-    cosh    = liftC cosh
-    {-# INLINE cosh #-}
-    asinh   = liftC asinh
-    {-# INLINE asinh #-}
-    acosh   = liftC acosh
-    {-# INLINE acosh #-}
-    atanh   = liftC atanh
-    {-# INLINE atanh #-}
+  pi = constC pi
+  {-# INLINE pi #-}
+  exp = liftC exp
+  {-# INLINE exp #-}
+  log = liftC log
+  {-# INLINE log #-}
+  sqrt = liftC sqrt
+  {-# INLINE sqrt #-}
+  (**) = liftC2 (**)
+  {-# INLINE (**) #-}
+  logBase = liftC2 logBase
+  {-# INLINE logBase #-}
+  sin = liftC sin
+  {-# INLINE sin #-}
+  cos = liftC cos
+  {-# INLINE cos #-}
+  asin = liftC asin
+  {-# INLINE asin #-}
+  acos = liftC acos
+  {-# INLINE acos #-}
+  atan = liftC atan
+  {-# INLINE atan #-}
+  sinh = liftC sinh
+  {-# INLINE sinh #-}
+  cosh = liftC cosh
+  {-# INLINE cosh #-}
+  asinh = liftC asinh
+  {-# INLINE asinh #-}
+  acosh = liftC acosh
+  {-# INLINE acosh #-}
+  atanh = liftC atanh
+  {-# INLINE atanh #-}

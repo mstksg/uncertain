@@ -1,12 +1,12 @@
-{-# LANGUAGE CPP                 #-}
-{-# LANGUAGE DeriveDataTypeable  #-}
-{-# LANGUAGE DeriveGeneric       #-}
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE LambdaCase          #-}
-{-# LANGUAGE NoImplicitPrelude   #-}
-{-# LANGUAGE RankNTypes          #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE ViewPatterns        #-}
+{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 
 #if __GLASGOW_HASKELL__ >= 708
 {-# LANGUAGE PatternSynonyms     #-}
@@ -20,34 +20,51 @@
 -- Maintainer  : justin@jle.im
 -- Stability   : experimental
 -- Portability : non-portable
---
+module Numeric.Uncertain (
+  -- * 'Uncert'
+  Uncert ((:+/-)),
 
-module Numeric.Uncertain
-  ( -- * 'Uncert'
-    Uncert((:+/-))
-    -- ** Creating 'Uncert' values
-  , (+/-), exact, withPrecision, withPrecisionAtBase, withVar, fromSamples
-    -- ** Inspecting properties
-  , uMean, uVar, uStd, uMeanVar, uMeanStd, uRange
-    -- * Applying arbitrary functions
-  , liftU
-  , liftU2, liftU3, liftU4, liftU5, liftUF
-    -- * Utility functions
-  , uNormalize, uNormalizeAtBase
-  , uShow, uShowsPrec
-  )
-  where
+  -- ** Creating 'Uncert' values
+  (+/-),
+  exact,
+  withPrecision,
+  withPrecisionAtBase,
+  withVar,
+  fromSamples,
 
-import           Data.Data
-import           Data.Foldable          (toList)
-import           Data.Function
-import           Data.Hople
-import           Data.Ord
-import           GHC.Generics
-import           Numeric.AD.Mode.Sparse
-import           Prelude.Compat
-import qualified Numeric.AD.Mode.Tower  as T
+  -- ** Inspecting properties
+  uMean,
+  uVar,
+  uStd,
+  uMeanVar,
+  uMeanStd,
+  uRange,
 
+  -- * Applying arbitrary functions
+  liftU,
+  liftU2,
+  liftU3,
+  liftU4,
+  liftU5,
+  liftUF,
+
+  -- * Utility functions
+  uNormalize,
+  uNormalizeAtBase,
+  uShow,
+  uShowsPrec,
+)
+where
+
+import Data.Data
+import Data.Foldable (toList)
+import Data.Function
+import Data.Hople
+import Data.Ord
+import GHC.Generics
+import Numeric.AD.Mode.Sparse
+import qualified Numeric.AD.Mode.Tower as T
+import Prelude.Compat
 
 -- | Represents an independent experimental value centered around a mean
 -- value with "inherent" and independent uncertainty.
@@ -122,10 +139,11 @@ import qualified Numeric.AD.Mode.Tower  as T
 -- Also be aware that the 'Show' instance "normalizes" the result, and
 -- won't show any mean/central point to a decimal precision smaller than
 -- the uncertainty, rounding off the excess.
---
-data Uncert a = Un { _uMean :: !a
-                   , _uVar  :: !a    -- ^ maintained to be positive!
-                   }
+data Uncert a = Un
+  { _uMean :: !a
+  , _uVar :: !a
+  -- ^ maintained to be positive!
+  }
   deriving (Data, Typeable, Generic, Generic1)
 
 -- | Get the mean (central) value of an 'Uncert'.
@@ -152,10 +170,11 @@ uStd = sqrt . uVar
 {-# INLINE uStd #-}
 
 -- | Create an 'Uncert' with an exact value and 0 uncertainty.
-exact
-    :: Num a
-    => a            -- ^ The exact value
-    -> Uncert a
+exact ::
+  Num a =>
+  -- | The exact value
+  a ->
+  Uncert a
 exact x = Un x 0
 {-# INLINE exact #-}
 
@@ -171,12 +190,14 @@ infixl 6 :+/-
 -- a bit nicer.
 --
 -- See 'uStd' for more details.
-(+/-)
-    :: Num a
-    => a            -- ^ The mean or central value
-    -> a            -- ^ The standard deviation of the underlying uncertainty
-    -> Uncert a
-x +/- dx = Un x (dx*dx)
+(+/-) ::
+  Num a =>
+  -- | The mean or central value
+  a ->
+  -- | The standard deviation of the underlying uncertainty
+  a ->
+  Uncert a
+x +/- dx = Un x (dx * dx)
 {-# INLINE (+/-) #-}
 
 -- | Create an 'Uncert' around a central value, specifying its uncertainty
@@ -184,11 +205,13 @@ x +/- dx = Un x (dx*dx)
 -- the square of the range of uncertainty.  See 'uStd' for more details.
 --
 -- "Negative variances" are treated as positive.
-withVar
-    :: Num a
-    => a            -- ^ The mean or central value
-    -> a            -- ^ The variance of the underlying uncertainty
-    -> Uncert a
+withVar ::
+  Num a =>
+  -- | The mean or central value
+  a ->
+  -- | The variance of the underlying uncertainty
+  a ->
+  Uncert a
 withVar x vx = Un x (abs vx)
 {-# INLINE withVar #-}
 
@@ -221,12 +244,12 @@ fromSamples = makeUn . foldStats
   where
     makeUn (H3 x0 x1 x2) = Un μ v
       where
-        μ = x1/x0
-        v = x2/x0 - μ*μ     -- maybe use pop var?
+        μ = x1 / x0
+        v = x2 / x0 - μ * μ -- maybe use pop var?
     foldStats = flip foldl' (H3 0 0 0) $
-                  \(H3 s0 s1 s2) x ->
-                    H3 (s0 + 1) (s1 + x) (s2 + x*x)
-{-# INLINABLE fromSamples #-}
+      \(H3 s0 s1 s2) x ->
+        H3 (s0 + 1) (s1 + x) (s2 + x * x)
+{-# INLINEABLE fromSamples #-}
 
 -- | Retrieve both the mean (central) value and the underlying variance of
 -- an 'Uncert' together.
@@ -251,65 +274,71 @@ uMeanStd (Un x vx) = (x, sqrt vx)
 --
 -- @uRange (x +/- dx) ≡ (x - dx, x + dx)@
 uRange :: Floating a => Uncert a -> (a, a)
-uRange (uMeanStd->(x, dx)) = (x - dx, x + dx)
-{-# INLINABLE uRange #-}
+uRange (uMeanStd -> (x, dx)) = (x - dx, x + dx)
+{-# INLINEABLE uRange #-}
 
 -- | Like 'withPrecision', except takes a number of "digits" of precision in
 -- the desired numeric base.  For example, in base 2, takes the number of
 -- /bits/ of precision.
 --
 -- @'withPrecision' ≡ withPrecisionAtBase 10@
-withPrecisionAtBase
-    :: (Floating a, RealFrac a)
-    => Int          -- ^ The base to determine precision with respect to
-    -> a            -- ^ The approximate value of the 'Uncert'
-    -> Int          -- ^ The number of "digits" of precision to take
-    -> Uncert a
+withPrecisionAtBase ::
+  (Floating a, RealFrac a) =>
+  -- | The base to determine precision with respect to
+  Int ->
+  -- | The approximate value of the 'Uncert'
+  a ->
+  -- | The number of "digits" of precision to take
+  Int ->
+  Uncert a
 withPrecisionAtBase b x p = x' +/- dx'
   where
     leading :: Int
     leading = negate . floor . logBase (fromIntegral b) $ x
-    uncert  :: Int
-    uncert  = leading - 1 + fromIntegral p
+    uncert :: Int
+    uncert = leading - 1 + fromIntegral p
     rounder = fromIntegral b ** fromIntegral uncert
-    x'      = (/ rounder) . fromIntegral . round' . (* rounder) $ x
-    dx'     = 1 / rounder
-    round'  :: RealFrac a => a -> Integer
-    round'  = round
-{-# INLINABLE withPrecisionAtBase #-}
+    x' = (/ rounder) . fromIntegral . round' . (* rounder) $ x
+    dx' = 1 / rounder
+    round' :: RealFrac a => a -> Integer
+    round' = round
+{-# INLINEABLE withPrecisionAtBase #-}
 
 -- | Create an 'Uncert' about a given approximate central value, with the
 -- given number of /digits of precision/ (in decimal notation).
 --
 -- @5.21 `withPrecision` 3 ≡ 5.21 '+/-' 0.01@
-withPrecision
-    :: (Floating a, RealFrac a)
-    => a            -- ^ The approximate value of the 'Uncert'
-    -> Int          -- ^ The number of "digits" of precision to take
-    -> Uncert a
+withPrecision ::
+  (Floating a, RealFrac a) =>
+  -- | The approximate value of the 'Uncert'
+  a ->
+  -- | The number of "digits" of precision to take
+  Int ->
+  Uncert a
 withPrecision = withPrecisionAtBase 10
-{-# INLINABLE withPrecision #-}
+{-# INLINEABLE withPrecision #-}
 
 -- | Like 'uNormalize', but takes a numerical base to round with respect
 -- to.
 --
 -- @'uNormalize' ≡ uNormalizeAtBase 10@
-uNormalizeAtBase
-    :: (Floating a, RealFrac a)
-    => Int          -- ^ The base to normalize with respect to
-    -> Uncert a
-    -> Uncert a
-uNormalizeAtBase b (uMeanStd->(x, dx)) = x' +/- dx'
+uNormalizeAtBase ::
+  (Floating a, RealFrac a) =>
+  -- | The base to normalize with respect to
+  Int ->
+  Uncert a ->
+  Uncert a
+uNormalizeAtBase b (uMeanStd -> (x, dx)) = x' +/- dx'
   where
-    uncert    :: Int
-    uncert    = negate . floor . logBase (fromIntegral b) $ dx
-    rounder   = fromIntegral b ** fromIntegral uncert
-    roundTo   = (/ rounder) . fromIntegral . round' . (* rounder)
-    x'        = roundTo x
-    dx'       = roundTo dx
-    round'    :: RealFrac a => a -> Integer
-    round'    = round
-{-# INLINABLE uNormalizeAtBase #-}
+    uncert :: Int
+    uncert = negate . floor . logBase (fromIntegral b) $ dx
+    rounder = fromIntegral b ** fromIntegral uncert
+    roundTo = (/ rounder) . fromIntegral . round' . (* rounder)
+    x' = roundTo x
+    dx' = roundTo dx
+    round' :: RealFrac a => a -> Integer
+    round' = round
+{-# INLINEABLE uNormalizeAtBase #-}
 
 -- | Attempts to "normalize" an 'Uncert'.  Rounds the uncertainty (the
 -- standard deviation) to one digit of precision, and rounds the central
@@ -322,25 +351,26 @@ uNormalizeAtBase b (uMeanStd->(x, dx)) = x' +/- dx'
 --
 -- Note that the 'Show' instance for 'Uncert' normalizes values before
 -- showing them.
-uNormalize
-    :: (Floating a, RealFrac a)
-    => Uncert a
-    -> Uncert a
+uNormalize ::
+  (Floating a, RealFrac a) =>
+  Uncert a ->
+  Uncert a
 uNormalize = uNormalizeAtBase 10
-{-# INLINABLE uNormalize #-}
+{-# INLINEABLE uNormalize #-}
 
 instance (Show a, Floating a, RealFrac a) => Show (Uncert a) where
-    showsPrec d = uShowsPrec d . uNormalize
+  showsPrec d = uShowsPrec d . uNormalize
 
 -- | Like 'showsPrec' for 'Uncert', but does not normalize the value (see
 -- 'uNormalize') before showing.  See documentation for 'showsPrec' for
 -- more information on how this is meant to be used.
 uShowsPrec :: (Show a, Floating a) => Int -> Uncert a -> ShowS
-uShowsPrec d (uMeanStd->(x, dx)) = showParen (d > 5) $
-                                       showsPrec 6 x
-                                     . showString " +/- "
-                                     . showsPrec 6 dx
-{-# INLINABLE uShowsPrec #-}
+uShowsPrec d (uMeanStd -> (x, dx)) =
+  showParen (d > 5) $
+    showsPrec 6 x
+      . showString " +/- "
+      . showsPrec 6 dx
+{-# INLINEABLE uShowsPrec #-}
 
 -- | Like 'show' for 'Uncert', but does not normalize the value (see
 -- 'uNormalize') before showing.
@@ -348,7 +378,7 @@ uShowsPrec d (uMeanStd->(x, dx)) = showParen (d > 5) $
 -- @'show' ≡ uShow . 'uNormalize'@
 uShow :: (Show a, Floating a) => Uncert a -> String
 uShow u = uShowsPrec 0 u ""
-{-# INLINABLE uShow #-}
+{-# INLINEABLE uShow #-}
 
 -- | Lifts a multivariate numeric function on a container (given as an @f
 -- a -> a@) to work on a container of 'Uncert's.  Correctly propagates the
@@ -364,35 +394,38 @@ uShow u = uShowsPrec 0 u ""
 -- ghci> liftUF (\\[x,y,z] -> x*y+z) [12.2 +/- 0.5, 56 +/- 2, 0.12 +/- 0.08]
 -- 680 +/- 40
 -- @
---
-liftUF
-    :: (Traversable f, Fractional a)
-    => (forall s. f (AD s (Sparse a)) -> AD s (Sparse a))   -- ^ Function on container of values to lift
-    -> f (Uncert a)         -- ^ Container of 'Uncert's to apply the function to
-    -> Uncert a
+liftUF ::
+  (Traversable f, Fractional a) =>
+  -- | Function on container of values to lift
+  (forall s. f (AD s (Sparse a)) -> AD s (Sparse a)) ->
+  -- | Container of 'Uncert's to apply the function to
+  f (Uncert a) ->
+  Uncert a
 liftUF f us = Un y vy
   where
-    xs          = uMean <$> us
-    vxs         = uVar  <$> us
-    vxsL        = toList vxs
+    xs = uMean <$> us
+    vxs = uVar <$> us
+    vxsL = toList vxs
     (fx, dfxsh) = hessian' f xs
-    dfxs        = fst <$> dfxsh
-    hess        = snd <$> dfxsh
-    y           = fx + hessQuad / 2
+    dfxs = fst <$> dfxsh
+    hess = snd <$> dfxsh
+    y = fx + hessQuad / 2
       where
-        hessQuad = dot vxsL
-                 . diag
-                 . toList
-                 $ fmap toList hess
-    vy          = dot vxsL ((^ (2::Int)) <$> dfxs)
+        hessQuad =
+          dot vxsL
+            . diag
+            . toList
+            $ fmap toList hess
+    vy = dot vxsL ((^ (2 :: Int)) <$> dfxs)
     dot x = sum . zipWith (*) x . toList
-    diag = \case []        -> []
-                 []   :yss -> diag (drop1 <$> yss)
-                 (x:_):yss -> x : diag (drop1 <$> yss)
+    diag = \case
+      [] -> []
+      [] : yss -> diag (drop1 <$> yss)
+      (x : _) : yss -> x : diag (drop1 <$> yss)
       where
-        drop1 []     = []
-        drop1 (_:zs) = zs
-{-# INLINABLE liftUF #-}
+        drop1 [] = []
+        drop1 (_ : zs) = zs
+{-# INLINEABLE liftUF #-}
 
 -- | Lifts a numeric function over an 'Uncert'.  Correctly propagates the
 -- uncertainty according to the second-order taylor expansion expansion of
@@ -407,19 +440,21 @@ liftUF f us = Un y vy
 -- ghci> liftU (\\x -> log x ^ 2) (12.2 +/- 0.5)
 -- 6.3 +/- 0.2
 -- @
-liftU
-    :: Fractional a
-    => (forall s. AD s (T.Tower a) -> AD s (T.Tower a))     -- ^ Function on values to lift
-    -> Uncert a     -- ^ 'Uncert' to apply the function to
-    -> Uncert a
+liftU ::
+  Fractional a =>
+  -- | Function on values to lift
+  (forall s. AD s (T.Tower a) -> AD s (T.Tower a)) ->
+  -- | 'Uncert' to apply the function to
+  Uncert a ->
+  Uncert a
 liftU f (Un x vx) = Un y vy
   where
-    (fx,dfx,ddfx) = case T.diffs0 f x of
-      fx:dfx :ddfx:_ -> (fx,dfx,ddfx)
+    (fx, dfx, ddfx) = case T.diffs0 f x of
+      fx : dfx : ddfx : _ -> (fx, dfx, ddfx)
       _ -> error "diffs0 should return an infinite list"
-    y             = fx + ddfx * vx / 2
-    vy            = dfx*dfx * vx
-{-# INLINABLE liftU #-}
+    y = fx + ddfx * vx / 2
+    vy = dfx * dfx * vx
+{-# INLINEABLE liftU #-}
 
 -- | Lifts a two-argument (curried) function over two 'Uncert's.  Correctly
 -- propagates the uncertainty according to the second-order (multivariate)
@@ -434,168 +469,176 @@ liftU f (Un x vx) = Un y vy
 -- ghci> liftU2 (\\x y -> x**y) (13.5 +/- 0.1) (1.64 +/- 0.08)
 -- 70 +/- 10
 -- @
-liftU2
-    :: Fractional a
-    => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a))
-    -> Uncert a
-    -> Uncert a
-    -> Uncert a
+liftU2 ::
+  Fractional a =>
+  (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a)) ->
+  Uncert a ->
+  Uncert a ->
+  Uncert a
 liftU2 f = curryH2 $ liftUF (uncurryH2 f)
-{-# INLINABLE liftU2 #-}
+{-# INLINEABLE liftU2 #-}
 
 -- | Lifts a three-argument (curried) function over three 'Uncert's.  See
 -- 'liftU2' and 'liftUF' for more details.
-liftU3
-    :: Fractional a
-    => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a))
-    -> Uncert a
-    -> Uncert a
-    -> Uncert a
-    -> Uncert a
+liftU3 ::
+  Fractional a =>
+  (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a)) ->
+  Uncert a ->
+  Uncert a ->
+  Uncert a ->
+  Uncert a
 liftU3 f = curryH3 $ liftUF (uncurryH3 f)
-{-# INLINABLE liftU3 #-}
+{-# INLINEABLE liftU3 #-}
 
 -- | Lifts a four-argument (curried) function over four 'Uncert's.  See
 -- 'liftU2' and 'liftUF' for more details.
-liftU4
-    :: Fractional a
-    => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a))
-    -> Uncert a
-    -> Uncert a
-    -> Uncert a
-    -> Uncert a
-    -> Uncert a
+liftU4 ::
+  Fractional a =>
+  ( forall s.
+    AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a)
+  ) ->
+  Uncert a ->
+  Uncert a ->
+  Uncert a ->
+  Uncert a ->
+  Uncert a
 liftU4 f = curryH4 $ liftUF (uncurryH4 f)
-{-# INLINABLE liftU4 #-}
+{-# INLINEABLE liftU4 #-}
 
 -- | Lifts a five-argument (curried) function over five 'Uncert's.  See
 -- 'liftU2' and 'liftUF' for more details.
-liftU5
-    :: Fractional a
-    => (forall s. AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a) -> AD s (Sparse a))
-    -> Uncert a
-    -> Uncert a
-    -> Uncert a
-    -> Uncert a
-    -> Uncert a
-    -> Uncert a
+liftU5 ::
+  Fractional a =>
+  ( forall s.
+    AD s (Sparse a) ->
+    AD s (Sparse a) ->
+    AD s (Sparse a) ->
+    AD s (Sparse a) ->
+    AD s (Sparse a) ->
+    AD s (Sparse a)
+  ) ->
+  Uncert a ->
+  Uncert a ->
+  Uncert a ->
+  Uncert a ->
+  Uncert a ->
+  Uncert a
 liftU5 f = curryH5 $ liftUF (uncurryH5 f)
-{-# INLINABLE liftU5 #-}
+{-# INLINEABLE liftU5 #-}
 
 instance Fractional a => Num (Uncert a) where
-    (+)         = liftU2 (+)
-    {-# INLINE (+) #-}
-    (*)         = liftU2 (*)
-    {-# INLINE (*) #-}
-    (-)         = liftU2 (-)
-    {-# INLINE (-) #-}
-    negate      = liftU negate
-    {-# INLINE negate #-}
-    abs         = liftU abs
-    {-# INLINE abs #-}
-    signum      = liftU signum
-    {-# INLINE signum #-}
-    fromInteger = exact . fromInteger
-    {-# INLINE fromInteger #-}
+  (+) = liftU2 (+)
+  {-# INLINE (+) #-}
+  (*) = liftU2 (*)
+  {-# INLINE (*) #-}
+  (-) = liftU2 (-)
+  {-# INLINE (-) #-}
+  negate = liftU negate
+  {-# INLINE negate #-}
+  abs = liftU abs
+  {-# INLINE abs #-}
+  signum = liftU signum
+  {-# INLINE signum #-}
+  fromInteger = exact . fromInteger
+  {-# INLINE fromInteger #-}
 
 instance Fractional a => Fractional (Uncert a) where
-    recip        = liftU recip
-    {-# INLINE recip #-}
-    (/)          = liftU2 (/)
-    {-# INLINE (/) #-}
-    fromRational = exact . fromRational
-    {-# INLINE fromRational #-}
+  recip = liftU recip
+  {-# INLINE recip #-}
+  (/) = liftU2 (/)
+  {-# INLINE (/) #-}
+  fromRational = exact . fromRational
+  {-# INLINE fromRational #-}
 
 instance Floating a => Floating (Uncert a) where
-    pi      = exact pi
-    {-# INLINE pi #-}
-    exp     = liftU exp
-    {-# INLINE exp #-}
-    log     = liftU log
-    {-# INLINE log #-}
-    sqrt    = liftU sqrt
-    {-# INLINE sqrt #-}
-    (**)    = liftU2 (**)
-    {-# INLINE (**) #-}
-    logBase = liftU2 logBase
-    {-# INLINE logBase #-}
-    sin     = liftU sin
-    {-# INLINE sin #-}
-    cos     = liftU cos
-    {-# INLINE cos #-}
-    asin    = liftU asin
-    {-# INLINE asin #-}
-    acos    = liftU acos
-    {-# INLINE acos #-}
-    atan    = liftU atan
-    {-# INLINE atan #-}
-    sinh    = liftU sinh
-    {-# INLINE sinh #-}
-    cosh    = liftU cosh
-    {-# INLINE cosh #-}
-    asinh   = liftU asinh
-    {-# INLINE asinh #-}
-    acosh   = liftU acosh
-    {-# INLINE acosh #-}
-    atanh   = liftU atanh
-    {-# INLINE atanh #-}
+  pi = exact pi
+  {-# INLINE pi #-}
+  exp = liftU exp
+  {-# INLINE exp #-}
+  log = liftU log
+  {-# INLINE log #-}
+  sqrt = liftU sqrt
+  {-# INLINE sqrt #-}
+  (**) = liftU2 (**)
+  {-# INLINE (**) #-}
+  logBase = liftU2 logBase
+  {-# INLINE logBase #-}
+  sin = liftU sin
+  {-# INLINE sin #-}
+  cos = liftU cos
+  {-# INLINE cos #-}
+  asin = liftU asin
+  {-# INLINE asin #-}
+  acos = liftU acos
+  {-# INLINE acos #-}
+  atan = liftU atan
+  {-# INLINE atan #-}
+  sinh = liftU sinh
+  {-# INLINE sinh #-}
+  cosh = liftU cosh
+  {-# INLINE cosh #-}
+  asinh = liftU asinh
+  {-# INLINE asinh #-}
+  acosh = liftU acosh
+  {-# INLINE acosh #-}
+  atanh = liftU atanh
+  {-# INLINE atanh #-}
 
 instance Eq a => Eq (Uncert a) where
-    (==) = (==) `on` uMean
-    {-# INLINE (==) #-}
-    (/=) = (/=) `on` uMean
-    {-# INLINE (/=) #-}
+  (==) = (==) `on` uMean
+  {-# INLINE (==) #-}
+  (/=) = (/=) `on` uMean
+  {-# INLINE (/=) #-}
 
 instance Ord a => Ord (Uncert a) where
-    compare = comparing uMean
-    {-# INLINE compare #-}
+  compare = comparing uMean
+  {-# INLINE compare #-}
 
 instance (Fractional a, Real a) => Real (Uncert a) where
-    toRational = toRational . uMean
-    {-# INLINE toRational #-}
+  toRational = toRational . uMean
+  {-# INLINE toRational #-}
 
 instance RealFrac a => RealFrac (Uncert a) where
-    properFraction x = (n, d)
-      where
-        d    = liftU (snd' . properFraction) x
-        n    = fst . properFraction $ uMean x
-        snd' :: (Int, b) -> b
-        snd' = snd
-    {-# INLINABLE properFraction #-}
-    truncate = truncate . uMean
-    {-# INLINE truncate #-}
-    round    = round    . uMean
-    {-# INLINE round #-}
-    ceiling  = ceiling  . uMean
-    {-# INLINE ceiling #-}
-    floor    = floor    . uMean
-    {-# INLINE floor #-}
+  properFraction x = (n, d)
+    where
+      d = liftU (snd' . properFraction) x
+      n = fst . properFraction $ uMean x
+      snd' :: (Int, b) -> b
+      snd' = snd
+  {-# INLINEABLE properFraction #-}
+  truncate = truncate . uMean
+  {-# INLINE truncate #-}
+  round = round . uMean
+  {-# INLINE round #-}
+  ceiling = ceiling . uMean
+  {-# INLINE ceiling #-}
+  floor = floor . uMean
+  {-# INLINE floor #-}
 
 instance RealFloat a => RealFloat (Uncert a) where
-    floatRadix      = floatRadix     . uMean
-    {-# INLINE floatRadix #-}
-    floatDigits     = floatDigits    . uMean
-    {-# INLINE floatDigits #-}
-    floatRange      = floatRange     . uMean
-    {-# INLINE floatRange #-}
-    decodeFloat     = decodeFloat    . uMean
-    {-# INLINE decodeFloat #-}
-    exponent        = exponent       . uMean
-    {-# INLINE exponent #-}
-    isNaN           = isNaN          . uMean
-    {-# INLINE isNaN #-}
-    isInfinite      = isInfinite     . uMean
-    {-# INLINE isInfinite #-}
-    isDenormalized  = isDenormalized . uMean
-    {-# INLINE isDenormalized #-}
-    isNegativeZero  = isNegativeZero . uMean
-    {-# INLINE isNegativeZero #-}
-    isIEEE          = isIEEE         . uMean
-    {-# INLINE isIEEE #-}
-    encodeFloat a b = exact (encodeFloat a b)
-    {-# INLINE encodeFloat #-}
-    significand     = liftU significand
-    {-# INLINE significand #-}
-    atan2           = liftU2 atan2
-    {-# INLINE atan2 #-}
-
+  floatRadix = floatRadix . uMean
+  {-# INLINE floatRadix #-}
+  floatDigits = floatDigits . uMean
+  {-# INLINE floatDigits #-}
+  floatRange = floatRange . uMean
+  {-# INLINE floatRange #-}
+  decodeFloat = decodeFloat . uMean
+  {-# INLINE decodeFloat #-}
+  exponent = exponent . uMean
+  {-# INLINE exponent #-}
+  isNaN = isNaN . uMean
+  {-# INLINE isNaN #-}
+  isInfinite = isInfinite . uMean
+  {-# INLINE isInfinite #-}
+  isDenormalized = isDenormalized . uMean
+  {-# INLINE isDenormalized #-}
+  isNegativeZero = isNegativeZero . uMean
+  {-# INLINE isNegativeZero #-}
+  isIEEE = isIEEE . uMean
+  {-# INLINE isIEEE #-}
+  encodeFloat a b = exact (encodeFloat a b)
+  {-# INLINE encodeFloat #-}
+  significand = liftU significand
+  {-# INLINE significand #-}
+  atan2 = liftU2 atan2
+  {-# INLINE atan2 #-}

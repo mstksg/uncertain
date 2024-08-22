@@ -48,28 +48,38 @@
 --
 -- Be aware that this module is not robustly tested in heavily concurrent
 -- situations/applications.
---
-module Numeric.Uncertain.Correlated.Interactive
-  ( -- * Uncertain and Correlated Values
-    CVar, CVarIO
-    -- ** Sampling
-  , sampleUncert, sampleExact, constC
-    -- ** Resolving
-  , resolveUncert
-    -- * Applying arbitrary functions
-  , liftC, liftC2, liftC3, liftC4, liftC5, liftCF
-  )
-  where
+module Numeric.Uncertain.Correlated.Interactive (
+  -- * Uncertain and Correlated Values
+  CVar,
+  CVarIO,
 
-import           Control.Monad.ST
-import           Control.Monad.Trans.State
-import           Data.IORef
-import           Data.Tuple
-import           Numeric.Uncertain
-import           Numeric.Uncertain.Correlated.Internal
-import           System.IO.Unsafe                      (unsafePerformIO)
-import qualified Data.IntMap.Strict                    as M
-import qualified Numeric.Uncertain.Correlated          as C
+  -- ** Sampling
+  sampleUncert,
+  sampleExact,
+  constC,
+
+  -- ** Resolving
+  resolveUncert,
+
+  -- * Applying arbitrary functions
+  liftC,
+  liftC2,
+  liftC3,
+  liftC4,
+  liftC5,
+  liftCF,
+)
+where
+
+import Control.Monad.ST
+import Control.Monad.Trans.State
+import Data.IORef
+import qualified Data.IntMap.Strict as M
+import Data.Tuple
+import Numeric.Uncertain
+import qualified Numeric.Uncertain.Correlated as C
+import Numeric.Uncertain.Correlated.Internal
+import System.IO.Unsafe (unsafePerformIO)
 
 -- | A 'CVar' specialized to work in an "interactive" context, in /ghci/ or
 -- 'IO'.
@@ -81,15 +91,17 @@ globalCorrMap :: IORef (M.Key, M.IntMap (Uncert Double))
 globalCorrMap = unsafePerformIO $ newIORef (0, M.empty)
 
 runCorrIO :: Corr RealWorld Double a -> IO a
-runCorrIO c = atomicModifyIORef' globalCorrMap
-                                 (swap . runState (corrToState c))
+runCorrIO c =
+  atomicModifyIORef'
+    globalCorrMap
+    (swap . runState (corrToState c))
 {-# INLINE runCorrIO #-}
 
 -- | Generate a sample in 'IO' from an @'Uncert' 'Double'@ value,
 -- independently from all other samples.
 sampleUncert :: Uncert Double -> IO CVarIO
 sampleUncert u = runCorrIO $ C.sampleUncert u
-{-# INLINABLE sampleUncert #-}
+{-# INLINEABLE sampleUncert #-}
 
 -- | Generate an exact sample in 'IO' with zero uncertainty,
 -- independently from all other samples.
@@ -105,7 +117,7 @@ sampleUncert u = runCorrIO $ C.sampleUncert u
 -- But is provided for completeness alongside 'sampleUncert'.
 sampleExact :: Double -> IO CVarIO
 sampleExact d = runCorrIO $ C.sampleExact d
-{-# INLINABLE sampleExact #-}
+{-# INLINEABLE sampleExact #-}
 
 -- | "Resolve" an 'Uncert' from a 'CVarIO' using its potential multiple
 -- samples and sample sources, taking into account inter-correlations
@@ -116,4 +128,4 @@ sampleExact d = runCorrIO $ C.sampleExact d
 -- only be used as the "final value" of your computation or exploration.
 resolveUncert :: CVarIO -> IO (Uncert Double)
 resolveUncert v = runCorrIO $ C.resolveUncert v
-{-# INLINABLE resolveUncert #-}
+{-# INLINEABLE resolveUncert #-}

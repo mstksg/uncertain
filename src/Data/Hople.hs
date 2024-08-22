@@ -1,9 +1,9 @@
-{-# LANGUAGE DeriveFoldable    #-}
-{-# LANGUAGE DeriveFunctor     #-}
+{-# LANGUAGE DeriveFoldable #-}
+{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE NoImplicitPrelude #-}
-{-# OPTIONS_HADDOCK hide       #-}
-{-# OPTIONS_HADDOCK prune      #-}
+{-# OPTIONS_HADDOCK hide #-}
+{-# OPTIONS_HADDOCK prune #-}
 
 -- |
 -- Module      : Data.Hople
@@ -15,20 +15,26 @@
 -- Portability : non-portable
 --
 -- Homogeneous strict tuples used for implementing 'liftU2', etc.
-
-module Data.Hople
-  ( H1(..)
-  , H2(..)
-  , H3(..)
-  , H4(..)
-  , H5(..)
-  , curryH1, curryH2, curryH3, curryH4, curryH5
-  , uncurryH1, uncurryH2, uncurryH3, uncurryH4, uncurryH5
-  )
-  where
+module Data.Hople (
+  H1 (..),
+  H2 (..),
+  H3 (..),
+  H4 (..),
+  H5 (..),
+  curryH1,
+  curryH2,
+  curryH3,
+  curryH4,
+  curryH5,
+  uncurryH1,
+  uncurryH2,
+  uncurryH3,
+  uncurryH4,
+  uncurryH5,
+)
+where
 
 import Prelude.Compat
-
 
 data H1 a = H1 !a
   deriving (Functor, Foldable, Traversable, Show)
@@ -84,4 +90,3 @@ uncurryH4 f (H4 x y z a) = f x y z a
 uncurryH5 :: (a -> a -> a -> a -> a -> a) -> H5 a -> a
 uncurryH5 f (H5 x y z a b) = f x y z a b
 {-# INLINE uncurryH5 #-}
-

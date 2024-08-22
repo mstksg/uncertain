@@ -15,27 +15,37 @@
 --
 -- See the "Numeric.Uncertain.Correlated.Interactive" module for an
 -- "interactive" and exploratory interface for this module's functionality.
---
+module Numeric.Uncertain.Correlated (
+  -- * 'Corr'
+  Corr,
+  evalCorr,
 
-module Numeric.Uncertain.Correlated
-  ( -- * 'Corr'
-    Corr, evalCorr
-    -- * Uncertain and Correlated Values
-  , CVar
-    -- ** Sampling
-  , sampleUncert, sampleExact, constC
-    -- ** Resolving
-  , resolveUncert
-    -- * Applying arbitrary functions
-  , liftC, liftC2, liftC3, liftC4, liftC5, liftCF
-  )
-  where
+  -- * Uncertain and Correlated Values
+  CVar,
 
-import           Control.Monad.Free
-import           Control.Monad.Trans.State
-import           Numeric.Uncertain
-import           Numeric.Uncertain.Correlated.Internal
-import qualified Data.IntMap.Strict                 as M
+  -- ** Sampling
+  sampleUncert,
+  sampleExact,
+  constC,
+
+  -- ** Resolving
+  resolveUncert,
+
+  -- * Applying arbitrary functions
+  liftC,
+  liftC2,
+  liftC3,
+  liftC4,
+  liftC5,
+  liftCF,
+)
+where
+
+import Control.Monad.Free
+import Control.Monad.Trans.State
+import qualified Data.IntMap.Strict as M
+import Numeric.Uncertain
+import Numeric.Uncertain.Correlated.Internal
 
 -- | Evaluates the value described by a 'Corr' monad, taking into account
 -- inter-correlations between samples.
@@ -46,7 +56,7 @@ import qualified Data.IntMap.Strict                 as M
 -- allowed to ever use 'evalCorr' to evaluate a 'CVar'.
 evalCorr :: Fractional a => (forall s. Corr s a b) -> b
 evalCorr c = evalState (corrToState c) (0, M.empty)
-{-# INLINABLE evalCorr #-}
+{-# INLINEABLE evalCorr #-}
 
 -- | Generate a sample in 'Corr' from an 'Uncert' value, independently from
 -- all other samples.
@@ -72,7 +82,6 @@ sampleUncert u = liftF $ Gen u id
 --
 -- Note that you can exactly sample an @a@ within a @'Corr' s a@, meaning
 -- that all other "sampled" values are also @a@s.
---
 sampleExact :: a -> Corr s a (CVar s a)
 sampleExact = return . constC
 {-# INLINE sampleExact #-}
@@ -87,4 +96,3 @@ sampleExact = return . constC
 resolveUncert :: CVar s a -> Corr s a (Uncert a)
 resolveUncert v = liftF $ Rei v id
 {-# INLINE resolveUncert #-}
-

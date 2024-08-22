@@ -12,7 +12,7 @@
     }:
     flake-utils.lib.eachDefaultSystem (system:
     let
-      name = "PACKAGENAME";
+      name = "uncertain";
       pkgs = import nixpkgs {
         inherit system;
         overlays = [ haskellProjectFlake.overlays."${system}".default ];
