@@ -57,7 +57,7 @@ module Numeric.Uncertain (
 where
 
 import Data.Data
-import Data.Foldable (toList)
+import Data.Foldable
 import Data.Function
 import Data.Hople
 import Data.Ord

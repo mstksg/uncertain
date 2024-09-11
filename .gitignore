@@ -6,3 +6,5 @@
 /.direnv
 /dist-newstyle
 /result
+/stack.yaml
+/stack.yaml.lock
