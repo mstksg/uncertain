@@ -1,6 +1,15 @@
 Changelog
 =========
 
+Version 0.4.0.1
+---------------
+
+*September 10, 2024*
+
+<https://github.com/mstksg/uncertain/releases/tag/v0.4.0.1>
+
+* Fix missing import for some versions of base
+
 Version 0.4.0.0
 ---------------
 
